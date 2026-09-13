@@ -1,65 +1,161 @@
-# Autoprime PDI — Mobile App & Stockyard "Yard Mode"
+# 06 — Mobile & Yard Mode
 
-> **The Reality Check:** An inspection app that works in an air-conditioned office is useless if a PDI engineer wearing rubber/leather work gloves in 43°C Jodhpur sun cannot tap a button or read the screen.
+The mobile app is not a shrunk web app. It is a field instrument used by someone standing outside,
+in sun, possibly wearing gloves, holding a torch or a clipboard, with one usable hand, on a
+₹12,000 Android phone, with two bars of signal, under pressure to clear 30 cars before lunch.
 
----
-
-## 1. Operating Environment & Constraints
-
-Stockyard inspections take place under harsh field conditions:
-1. **Intense Glare & Heat:** Ambient temperatures exceeding 43°C in Rajasthan/Gujarat, extreme direct sunlight causing screen wash-out.
-2. **PPE & Gloves:** Technicians wear inspection gloves; precision pinch gestures and tiny 24px targets fail completely.
-3. **One-Handed Operation:** One hand holds the phone while the other holds a flashlight, paint-depth gauge, or inspects panel gaps.
-4. **Zero / Flaky Connectivity:** Concrete stockyards and metal sheds create signal dead zones. The app must function 100% offline.
+Design for that person or the app gets abandoned for a paper checklist within a month.
 
 ---
 
-## 2. Yard Mode Specifications
+## 1. Physical Constraints → Design Responses
 
-When "Yard Mode" is engaged (automatically on mobile inspection routes or manually toggled via header):
-
-### 2.1 Touch Target Expansion
-- Standard Web touch target: `32px`
-- Standard Mobile touch target: `44px`
-- **Yard Mode touch target: strictly `52 × 52px` minimum**
-- Spacing between adjacent buttons: `>= 12px` to eliminate fat-finger mis-taps.
-
-### 2.2 Sunlight Contrast Override
-- Surface backgrounds switch to pure `#FFFFFF`.
-- Inks switch to pure `#000000` (or `#0E1116`).
-- Border lines increase from `1px` to `2px solid #000000` or `#D7DBE0`.
-- All secondary muted text (`--ink-3`) is darkened to `--ink-2` (`#4A5159`) to prevent sunlight invisibility.
-
-### 2.3 Thumb-Zone Architecture
-- All primary actions (`Pass`, `Fail`, `Add Defect`, `Next`) are anchored to a fixed **Bottom Action Bar** within natural thumb reach.
-- Destructive actions (`Reject Inspection`) are located behind a deliberate long-press or two-step confirmation dialog.
+| Constraint | Response |
+|---|---|
+| **Bright sunlight** | Near-white backgrounds, 1px+ borders, AA+ contrast minimum, no low-contrast grey-on-grey, no thin 300-weight type |
+| **Gloves / wet hands** | 44px minimum targets, 52px in Yard Mode, 12px minimum gaps, no long-press-only actions, no swipe-only actions (swipe may be a shortcut, never the only path) |
+| **One hand** | All primary actions in the bottom third. Nothing critical in the top-right corner |
+| **Torch or clipboard in the other hand** | No two-finger gestures anywhere. No drag-and-drop |
+| **Time pressure** | Auto-advance on answer, camera one tap away, zero confirmation dialogs on non-destructive actions |
+| **Weak network** | Offline-first everywhere; see `03#offline` |
+| **Mid-range Android** | Budget: < 2s cold start, 60fps list scroll, images decoded off the main thread, no heavy blur/shadow effects |
 
 ---
 
-## 3. Defect Capture & Camera Workflow
+## 2. Navigation
 
-Defect documentation must be instant.
+Bottom tab bar, five items, 56px + safe area:
 
 ```
-[Tap "Fail"] ──> [Full-Screen Camera Launches < 300ms] ──> [Snap Photo] ──> [Tap Damage Location] ──> [Severity Tag] ──> [Saved to Queue]
+  Home      Tasks      [Scan]      Alerts     Profile
+  home    clipboard-   scan-line     bell      user
+          check       (raised)
 ```
 
-1. **Instant Shutter:** Camera launches with zero transition lag.
-2. **Defect Pinning:** Inspector taps directly on the photo preview to place a defect pin (e.g. "Scratch", "Dent", "Misalignment").
-3. **Severity Toggle:** Three large 52px segmented buttons:
-   - `[Minor]` (Cosmetic, buffing required)
-   - `[Major]` (Part replacement / panel repaint)
-   - `[Critical]` (Safety hazard, vehicle immobilized)
-4. **Local Storage First:** High-resolution photos are compressed client-side and saved immediately to local storage (SQLite / WatermelonDB / IndexedDB) before background sync begins.
+- **Scan is the centre tab and is visually raised** (48px circle, `--color-action`, white glyph,
+  `--shadow-sticky`). It is the single most-used action in the product and deserves the best
+  position on the screen.
+- Tab labels always visible — icon-only tabs are guesswork in the field.
+- Alerts tab carries a count badge; danger fill when something is blocked or sync has failed.
+- No hamburger menu. No nested drawers. Maximum two levels deep from any tab.
 
 ---
 
-## 4. Offline Queue & Network Status Bar
+## 3. Yard Mode
 
-When working in the yard without cellular signal:
-- The app displays a sticky top status bar:
-  ```
-  [WifiOff Icon] Offline Mode • 14 actions queued for sync • Local storage healthy
-  ```
-- Technicians never see blocking modal alerts saying "Network Error".
-- When WiFi or 4G is re-established, the sync worker transmits records in order, displaying a non-intrusive progress counter: `Syncing 3 of 14 photos…`.
+A user-toggled profile (Profile → Yard Mode), remembered per device, and auto-suggested once via a
+dismissible banner when ambient light exceeds threshold or the screen brightness is at max.
+
+```
+[data-mode="yard"] overrides:
+  --t-body      14 → 16
+  --t-body-sm   13 → 15
+  --t-caption   12 → 13
+  --touch-min   44 → 52
+  --rail         3 → 5
+  --color-border          #D7DEE5 → #B9C4CF
+  --color-text-secondary  #4A5766 → #33404E
+  --photo-thumb  64 → 88
+```
+
+### Rules
+- Yard Mode changes **density and contrast only**. It never hides features, never changes layout
+  structure, never becomes a different app. Someone switching it on mid-inspection must not get lost.
+- Toggling never loses in-progress state.
+- Screenshots of both modes are required in any PR that touches a mobile screen.
+
+---
+
+## 4. Camera & Photo Flow
+
+```
+Tap "Add photo"
+  → camera opens directly (no intermediate sheet)
+  → guided overlay: dimmed frame + hairline guide + slot label ("Front exterior")
+  → capture (shutter 72px, bottom centre, thumb-reachable)
+  → immediate preview with [Retake] [Use photo]
+  → returns to the item, thumbnail animates into the strip
+  → compress to WebP 1920×1080 q0.82 off the main thread
+  → queue for upload; ring progress on the thumbnail
+```
+
+- The overlay guide is a hairline rectangle, not an illustrated car outline — outlines never match
+  the actual model and engineers stop trusting them.
+- Multiple photos per slot allowed; the strip is horizontally scrollable with a persistent
+  "+" tile at the end.
+- Capture **always succeeds locally**, even with zero storage headroom warnings pending; upload is a
+  separate concern the engineer is never blocked on.
+- Photo metadata shown on review: slot, time (mono), size, upload state.
+
+---
+
+## 5. Finding Capture Sheet
+
+Bottom sheet, `--radius-md`, drag handle, opens to 90% height.
+
+```
+Add finding                                   ✕
+Exterior · Headlamp alignment and function
+──────────────────────────────────────────────
+Severity *
+[⛔ Critical] [⚠ Major] [◔ Minor] [👁 Observation]   ← segmented, 52px
+Critical and major findings fail the inspection and create a repair ticket.
+
+Where *
+[ vehicle body map — tap a panel ]
+Front bumper ✕
+
+What you saw *
+[ Scratch ▾ ]   [ 8 cm, lower edge, below the fog lamp        ]
+
+Photos *  (required for critical)
+[ 📷 ] [thumb] [thumb]
+──────────────────────────────────────────────
+                        [ Cancel ] [ Save finding ]
+```
+
+- Severity first, because it determines everything downstream and the engineer already knows it.
+- The consequence of the chosen severity is stated in plain language under the selector, live.
+- Save is disabled with an inline reason until requirements are met — never a silent dead button.
+- Findings are editable until submission and read-only after; the UI says which state it is in.
+
+---
+
+## 6. Auth, Lock and Device
+
+- **Login:** employee ID + password, 44px fields, mono employee-ID field, "Show password" toggle,
+  no social logins, no "remember me" checkbox (device registration handles it).
+- **Biometric:** offered on second launch, never forced, always with a visible fallback path. The
+  prompt is the platform's own — no custom biometric UI.
+- **App lock:** full-screen cover, blurred nothing — a plain surface with the logo, the user's name,
+  and the unlock action. Sensitive content is removed from the view hierarchy before the app
+  backgrounds (`FLAG_SECURE` / `isCaptured`), so the app-switcher preview is a plain surface too.
+- **Device revoked:** a full-screen terminal state with the exact copy from `03#copy`, one action
+  ("Sign out"), no retry loop.
+
+---
+
+## 7. Performance Budget (Mobile)
+
+| Metric | Budget |
+|---|---|
+| Cold start → login | < 2s |
+| Warm start → biometric prompt | < 1s |
+| Checklist answer → local save + visual feedback | < 50ms |
+| Camera tap → viewfinder | < 300ms |
+| Capture → preview | < 300ms |
+| Category grid with 8 categories, 46 items | 60fps scroll |
+| List of 200 assigned vehicles | virtualised, 60fps |
+
+If an interaction cannot hit its budget, change the interaction — do not add a loader to cover it.
+
+---
+
+## 8. PWA Differences
+
+The PWA is a reduced surface and must **say so** rather than fail silently:
+- Camera quality and guided capture are degraded → show a one-time notice, keep the flow identical.
+- No biometric unlock → the toggle is absent, not disabled.
+- Offline works, but storage limits are real → surface remaining capacity on the sync screen when
+  below 20%.
+Never render a control the PWA cannot honour.

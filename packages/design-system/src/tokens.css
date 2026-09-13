@@ -221,17 +221,24 @@
   --danger:      var(--color-danger);
   --shadow-pop:  var(--shadow-modal);
   --rail-width:  var(--rail);
+  --touch-min:   44px;
+  --photo-thumb: 64px;
 }
 
 /* ==========================================================================
    3. YARD MODE OVERRIDES ([data-mode="yard"])
-   Mobile sunlight, glare & work gloves operational mode.
+   Mobile sunlight, glare & work gloves operational mode (06-mobile-yard.md §3)
    ========================================================================== */
 [data-mode="yard"] {
-  --color-border:        var(--p-n-300);
-  --color-text-secondary:var(--color-text-primary);
+  --t-body:              1rem;       /* 16px */
+  --t-body-sm:           0.9375rem;  /* 15px */
+  --t-caption:           0.8125rem;  /* 13px */
+  --touch-min:           52px;
   --rail:                5px;
   --rail-width:          5px;
+  --color-border:        var(--p-n-300); /* #B9C4CF */
+  --color-text-secondary:var(--p-n-700); /* #33404E */
+  --photo-thumb:         88px;
 }
 
 /* ==========================================================================

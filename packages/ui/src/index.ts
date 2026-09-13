@@ -37,5 +37,7 @@ export * from './components/BlurUpImage';
 export * from './components/BootLoader';
 export * from './components/InlineShimmerCell';
 export * from './components/VehicleBodyMap';
+export * from './components/FindingCaptureSheet';
+
 
 
