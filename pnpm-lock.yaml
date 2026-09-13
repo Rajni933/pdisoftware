@@ -115,6 +115,8 @@ importers:
 
   packages/config: {}
 
+  packages/design-system: {}
+
   packages/domain:
     dependencies:
       '@autoprime/types':

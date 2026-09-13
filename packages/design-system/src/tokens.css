@@ -1,0 +1,135 @@
+/**
+ * Autoprime Tata PDI Management Platform
+ * Design Tokens — CSS Custom Properties
+ * 
+ * Non-negotiable rule: Every visual style must resolve to one of these tokens.
+ * Never use raw hex codes, ad-hoc pixel values, or unlisted timing curves.
+ */
+
+:root {
+  /* Canvas & Surface Colors */
+  --canvas: #FAFAFA;
+  --surface: #FFFFFF;
+  --surface-hover: #F7F8F9;
+  --surface-active: #F0F2F5;
+
+  /* Line & Border Colors */
+  --line: #E8EAED;
+  --line-strong: #D7DBE0;
+  --line-subtle: #F1F3F5;
+
+  /* Typography / Ink Colors */
+  --ink: #0E1116;           /* Primary text, high emphasis */
+  --ink-2: #4A5159;         /* Secondary text, body copy, icons */
+  --ink-3: #858C95;         /* Muted labels, timestamps, placeholders */
+  --ink-disabled: #B0B7C0;  /* Disabled text and glyphs */
+
+  /* Primary Brand Accent (Deep Operations Blue) */
+  --accent: #1A3A6B;
+  --accent-hover: #254B85;
+  --accent-soft: #EEF2F8;
+  --accent-line: #C9D6E8;
+  --accent-600: #254B85;
+  --accent-400: #5B7CAE;
+  --accent-300: #8AA3C6;
+  --accent-200: #B6C5DA;
+
+  /* Semantic Status Colors (Used with glyph + label) */
+  /* Pass / Approved / Synced */
+  --ok: #0B7355;
+  --ok-soft: #E8F5E9;
+  --ok-line: #A3D9C9;
+
+  /* Pending / Warning / In Progress */
+  --warn: #A65A00;
+  --warn-soft: #FFF8E1;
+  --warn-line: #FFE082;
+
+  /* Fail / Critical / Error / Defect */
+  --danger: #B3253C;
+  --danger-soft: #FFEBEE;
+  --danger-line: #FFCDD2;
+
+  /* Tata Brand Red — BANNED from product UI, used strictly in logo lockup */
+  --brand-tata: #C8102E;
+
+  /* Typography Families */
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Typography Scale */
+  --text-label: 0.6875rem;   /* 11px */
+  --leading-label: 1rem;     /* 16px */
+  --tracking-label: 0.06em;  /* Eyebrows, uppercase badges */
+
+  --text-xs: 0.75rem;        /* 12px */
+  --leading-xs: 1.125rem;    /* 18px */
+
+  --text-sm: 0.8125rem;      /* 13px - Standard Table / Body text */
+  --leading-sm: 1.25rem;     /* 20px */
+
+  --text-base: 0.875rem;     /* 14px - Primary UI labels, form controls */
+  --leading-base: 1.375rem;  /* 22px */
+
+  --text-lg: 1.0625rem;      /* 17px - Panel headers, modal titles */
+  --leading-lg: 1.5rem;      /* 24px */
+  --tracking-lg: -0.011em;
+
+  --text-num: 1.625rem;      /* 26px - KPI metrics, large counter */
+  --leading-num: 1.875rem;   /* 30px */
+  --tracking-num: -0.02em;
+
+  /* Font Weights (700+ is strictly banned) */
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* Spacing Rhythm */
+  --space-1: 0.125rem;   /* 2px */
+  --space-2: 0.25rem;    /* 4px */
+  --space-3: 0.375rem;   /* 6px - Label to control gap */
+  --space-4: 0.5rem;     /* 8px - Compact internal padding */
+  --space-6: 0.75rem;    /* 12px - Related fields gap */
+  --space-8: 1rem;       /* 16px - Component groups gap */
+  --space-10: 1.25rem;   /* 20px */
+  --space-12: 1.5rem;    /* 24px - Section gutter & page padding */
+  --space-16: 2rem;      /* 32px - Major section separation */
+  --space-24: 3rem;      /* 48px */
+  --space-32: 4rem;      /* 64px */
+
+  /* Border Radii */
+  --radius-chip: 4px;    /* Chips, badges, small buttons, tags */
+  --radius-default: 6px; /* Form inputs, buttons, table cells */
+  --radius-panel: 10px;  /* Modals, panels, cards */
+
+  /* Elevation & Shadows (Borders separate, shadows elevate) */
+  --shadow-none: none;
+  --shadow-pop: 0 8px 28px -6px rgba(14, 17, 22, 0.16), 0 2px 6px -2px rgba(14, 17, 22, 0.08);
+
+  /* Signature Element: Status Rail */
+  --rail-width: 3px;
+
+  /* Component Dimensions & Touch Targets */
+  --height-table-row: 44px;
+  --height-top-bar: 56px;
+  --width-sidebar: 240px;
+  --width-sidebar-collapsed: 64px;
+
+  --touch-target-min-web: 32px;
+  --touch-target-min-mobile: 44px;
+  --touch-target-min-yard: 52px;
+
+  /* Transitions & Motion */
+  --transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-base: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Reduced motion accessibility override */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
