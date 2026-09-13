@@ -11,6 +11,7 @@ import { PdiQueuePage } from './pages/PdiQueue';
 import { PdiSessionPage } from './pages/PdiSession';
 import { RepairsPage } from './pages/Repairs';
 import { QaQueuePage } from './pages/QaQueue';
+import { QaReviewPage } from './pages/QaReview';
 import { ChallanInvoicingPage } from './pages/ChallanInvoicing';
 import { CertificateViewPage } from './pages/CertificateView';
 import { AdminMasterPanelPage } from './pages/AdminMasterPanel';
@@ -100,6 +101,14 @@ export const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <QaQueuePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/qa/:id"
+            element={
+              <ProtectedRoute>
+                <QaReviewPage />
               </ProtectedRoute>
             }
           />

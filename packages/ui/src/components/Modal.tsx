@@ -8,6 +8,7 @@ export interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 const maxWidthMap = {
@@ -24,8 +25,10 @@ export const Modal: React.FC<ModalProps> = ({
   description,
   children,
   footer,
-  maxWidth = 'md',
+  maxWidth,
+  size = 'md',
 }) => {
+  const resolvedWidth = maxWidth || size;
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -57,7 +60,7 @@ export const Modal: React.FC<ModalProps> = ({
       }}
     >
       <div
-        className={`w-full bg-surface border border-line rounded-panel shadow-pop flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 ${maxWidthMap[maxWidth]}`}
+        className={`w-full bg-surface border border-line rounded-panel shadow-pop flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 ${maxWidthMap[resolvedWidth]}`}
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between px-5 h-12 border-b border-line">

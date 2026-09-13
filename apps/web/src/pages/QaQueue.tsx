@@ -201,22 +201,12 @@ export const QaQueuePage: React.FC = () => {
                       </td>
                       <td className="py-2.5 px-3 text-center whitespace-nowrap">
                         {!isApproved ? (
-                          <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
-                            <button
-                              type="button"
-                              onClick={() => handleApprove(item.id)}
-                              className="h-7 px-2.5 rounded bg-ok text-white text-xs font-semibold transition-colors inline-flex items-center gap-1 whitespace-nowrap shadow-xs cursor-pointer"
-                            >
-                              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                              <span>Approve</span>
-                            </button>
-                            <button
-                              type="button"
-                              className="h-7 px-2.5 rounded bg-surface border border-danger/30 text-danger hover:bg-danger/10 text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer"
-                            >
-                              Reject
-                            </button>
-                          </div>
+                          <Link
+                            to={`/qa/${item.id}`}
+                            className="h-7 px-3 rounded bg-accent text-white text-xs font-semibold transition-colors inline-flex items-center gap-1 whitespace-nowrap shadow-xs hover:bg-accent-hover"
+                          >
+                            <span>Review in QA</span>
+                          </Link>
                         ) : (
                           <Link
                             to={`/certificates/${item.certId}`}

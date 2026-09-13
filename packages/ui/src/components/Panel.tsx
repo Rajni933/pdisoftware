@@ -1,21 +1,34 @@
 import React from 'react';
 
-export interface PanelProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface PanelProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
   children: React.ReactNode;
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  actions?: React.ReactNode;
+  noPadding?: boolean;
 }
 
-export const Panel: React.FC<PanelProps> = ({ children, className = '', ...props }) => {
+export const Panel: React.FC<PanelProps> = ({
+  children,
+  title,
+  subtitle,
+  actions,
+  noPadding = false,
+  className = '',
+  ...props
+}) => {
   return (
     <div
       className={`bg-surface border border-line rounded-panel overflow-hidden ${className}`}
       {...props}
     >
-      {children}
+      {title && <PanelHeader title={title} subtitle={subtitle} actions={actions} />}
+      {noPadding ? children : <div className="p-4">{children}</div>}
     </div>
   );
 };
 
-export interface PanelHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface PanelHeaderProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   actions?: React.ReactNode;

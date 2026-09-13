@@ -1,138 +1,245 @@
-# Autoprime PDI — Screen Blueprints & Layout Archetypes
+# 05 — Screen Blueprints & Layout Archetypes
 
-> Every screen belongs to one of six structural archetypes. Do not invent a bespoke layout when an archetype fits the task.
+Six archetypes cover every screen in the product. Pick one, then read the specific blueprint.
 
----
-
-## 1. Hierarchy Rules
-
-When arranging elements on any screen, apply the hierarchy tools in this strict order:
-1. **Position:** Top-left is highest priority; bottom/right is secondary.
-2. **Size:** 17px for container title, 14px for primary data, 11-13px for metadata.
-3. **Weight:** 600 for headings/KPIs, 500 for labels, 400 for values. (700+ is banned).
-4. **Colour:** Ink for values, Ink-3 for labels, Accent for active items, Semantic for status.
-5. **Border:** 1px hairlines to separate regions.
-6. **Background:** Canvas (`#FAFAFA`) vs Surface (`#FFFFFF`).
-7. **Shadow:** Prohibited on pages and panels. Used ONLY on floating overlays.
+| Archetype | Screens |
+|---|---|
+| **List** | Vehicles, PDI queue, Repair queue, QA queue, Users, Audit log |
+| **Detail** | Vehicle, Inspection, Repair ticket, Certificate, User |
+| **Workflow step** | Checklist category, Item response, Finding capture, Photo capture |
+| **Form** | Login, Create vehicle, Assign PDI, Template editor, Settings |
+| **Dashboard** | HO overview, Branch overview, Engineer home, Workshop board |
+| **Review** | QA review (its own archetype — decision under evidence) |
 
 ---
 
-## 2. The Six Layout Archetypes
-
-### 2.1 Archetype A: The List / Registry
-Used for vehicle inventories, inward truck queues, inspection queues, and user management.
+## A. App Shell (Web)
 
 ```
-+------------------------------------------------------------------------------------+
-| Page Title: Inward Vehicles Queue             [Filter Status] [Search VIN] [+ Inward]
-+------------------------------------------------------------------------------------+
-| Tabs: All (42) | Pending PDI (18) | In Progress (6) | Passed (14) | Rectification (4) |
-+------------------------------------------------------------------------------------+
-| [3px Rail]  VIN / Chassis      Model & Variant         Bay       Status     Defects |
-| [Green]     MAT628472P12891    Nexon EV Empowered+     Bay 02    [Passed]      0    |
-| [Amber]     MAT628472P12892    Harrier Fearless MT     Bay 04    [In Prog]     2    |
-| [Red]       MAT628472P12893    Safari Accomplished+    Bay 01    [Failed]      5    |
-+------------------------------------------------------------------------------------+
-| Pagination / Record Count: Showing 1-25 of 42 vehicles             < Prev  1 [2]  Next >
-+------------------------------------------------------------------------------------+
+┌──────────┬──────────────────────────────────────────────────────────────────┐
+│ ◧ Autoprime │ Vehicles                                    ⌕  ⚙  🔔 3   RM ▾ │ 56px top bar
+│  Jodhpur ▾ ├──────────────────────────────────────────────────────────────────┤
+│          │                                                                  │
+│ Overview │   ← content region, 24px padding, max-width 1440                 │
+│ Vehicles │                                                                  │
+│  Queue 12│                                                                  │
+│ PDI      │                                                                  │
+│ Repairs 4│                                                                  │
+│ QA     7 │                                                                  │
+│ ───────  │                                                                  │
+│ Reports  │                                                                  │
+│ Users    │                                                                  │
+│ Audit    │                                                                  │
+│          │                                                                  │
+│ ───────  │                                                                  │
+│ ⛅ Synced │  ← connection + last sync, always visible                        │
+│ R. Meena │                                                                  │
+└──────────┴──────────────────────────────────────────────────────────────────┘
+   240px
 ```
 
-### 2.2 Archetype B: The Detail Record
-Used for vehicle profiles, completed inspection dossiers, and audit trails.
+- Top bar holds: current page title (not a logo), global search (`/` focuses it), settings,
+  notifications, user menu. Branch switcher lives in the sidebar head, not the top bar — it scopes
+  the *data*, so it belongs with navigation.
+- Notification count uses the count badge; danger fill only when something is blocked.
+- Keyboard: `/` search · `g then v` vehicles · `g then q` QA queue · `j/k` move row selection ·
+  `Enter` open · `Esc` close. Show a `?` shortcut sheet. This is what makes a manager fast.
+
+---
+
+## B. List Archetype
 
 ```
-+------------------------------------------------------------------------------------+
-| <- Back to Queue   Vehicle: MAT628472P12891 (Nexon EV)      [Status Chip] [Action] |
-+---------------------------------------------------+--------------------------------+
-| MAIN CONTENT (2/3 Width)                          | SIDEBAR / METADATA (1/3 Width) |
-| +-----------------------------------------------+ | +----------------------------+ |
-| | Summary Cards (VIN, Engine, Battery, Inward)  | | | Vehicle Status Rail        | |
-| +-----------------------------------------------+ | | Location: Bay 02 (Jodhpur) | |
-| | Inspection Checkpoints (Grouped by Category)  | | | Assigned Tech: R. Sharma   | |
-| |   > Exterior & Paint (Pass - 18/18)           | | | Date: 13 Sep 2026 10:30 AM | |
-| |   > Electrical & Battery (Pass - 24/24)       | | +----------------------------+ |
-| |   > Underbody & Tyres (Pass - 12/12)          | | | Attached Documents         | |
-| +-----------------------------------------------+ | | - Gate Pass Inward PDF     | |
-| | Defect Gallery (0 defects logged)             | | | - OEM Transit Slip         | |
-| +-----------------------------------------------+ | +----------------------------+ |
-+---------------------------------------------------+--------------------------------+
+Page header ──────────────────────────────────────────────
+Vehicles                                        [ Add vehicle ]
+1,284 vehicles · 12 awaiting assignment
+───────────────────────────────────────────────────────────
+┌ Filter bar ─────────────────────────────────────────────┐
+│ ⌕ VIN, model or engineer   [Status ▾][Branch ▾][Date ▾]  │
+│ Status: QA pending ✕   Branch: Basni ✕        Clear all  │
+├─┬─────────────┬────────┬──────────────┬─────────┬────────┤
+│▌│ VIN         │ Model  │ Status       │ Engineer│ Age  ⋯ │
+├─┼─────────────┼────────┼──────────────┼─────────┼────────┤
+│▌│ MAT…4521    │ Nexon  │ ⏱ QA pending │ R.Meena │ 2d 4h ⋯│
+│▌│ MAT…4522    │ Punch  │ ⛔ Failed    │ S.Joshi │ 6h    ⋯│
+└─┴─────────────┴────────┴──────────────┴─────────┴────────┘
+                         Rows [20 ▾]  1–20 of 1,284   ‹ ›
 ```
 
-### 2.3 Archetype C: The Workflow Step (Active PDI)
-Optimized for one-handed mobile and tablet stockyard inspection. Dense, large tap targets.
+### Rules
+- Subtitle under the title is the count plus the one number that matters for this role. Not a
+  paragraph.
+- Default sort is *age descending within blocked status* — the oldest problem is always on top.
+  Never default to "recently created".
+- Age is computed and rendered in mono (`2d 4h`), and turns `--color-warning` past the SLA
+  threshold, `--color-danger` past 2×. This is the queue's whole value.
+- Every list has: a saved-view concept in the URL, an export action, and a bulk-select path if the
+  role can act in bulk.
+- Mobile: cards stacked, rail on the left, VIN + status on line one, model + engineer + age on line
+  two. No horizontal scroll.
+
+---
+
+## C. Detail Archetype — Vehicle
 
 ```
-+------------------------------------------------------------------------------------+
-| Top Bar: Step 2 of 4 — Exterior Body & Paint               [14 / 22 Checked] [Quit]|
-+------------------------------------------------------------------------------------+
-| Sub-category: Front Bumper & Headlamps                                             |
-|                                                                                    |
-| [Pass] [Fail]  1. Front bumper alignment and paint finish                          |
-| [Pass] [Fail]  2. LED headlamps and DRL operation (High/Low beam)                  |
-| [Pass] [Fail]  3. Fog lamp housing and bezel integrity                            |
-|                                                                                    |
-| [!] DEFECT LOGGED: Paint scratch 3cm on left quarter panel                         |
-|     [Photo Thumbnail] [Photo Thumbnail] [+ Add Photo]                              |
-|     Severity: [Minor] [Major] [Critical]                                           |
-+------------------------------------------------------------------------------------+
-| Sticky Bottom Bar:                                                                 |
-| [< Previous Step]                                        [Save & Continue to Next >]
-+------------------------------------------------------------------------------------+
+Vehicles / MAT…4521
+MAT621AB1234567890                    ⏱ QA pending     [ Reassign ] [ Open inspection ]
+Nexon XZ+ · Silver · Basni yard · Received 11 Sep 2026
+───────────────────────────────────────────────────────────────────────────────
+[ Overview ] [ Inspections 2 ] [ Findings 5 ] [ Repairs 1 ] [ Photos 18 ] [ History ]
+───────────────────────────────────────────────────────────────────────────────
+┌ Current inspection ─────────────────┐  ┌ Vehicle ──────────────────────────┐
+│ PDI-2026-0914  ·  R. Meena          │  │ VIN       MAT621AB1234567890      │
+│ Submitted 14:02 · 12 min            │  │ Chassis   AB1234567890            │
+│ 46 of 46 items · 5 findings         │  │ Engine    G12K7890                │
+│ ⛔ 1 critical  ⚠ 2 major  ◔ 2 minor │  │ Fuel      Petrol · Manual         │
+│                    [ Review in QA ] │  │ Yard      Basni · Bay 4           │
+└─────────────────────────────────────┘  └───────────────────────────────────┘
+┌ Timeline ───────────────────────────────────────────────────────────────────┐
+│ ● Today                                                                      │
+│ │ 14:02  R. Meena     Inspection submitted      In progress → QA pending     │
+│ │ 11:20  R. Meena     Inspection started        PDI pending → In progress    │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.4 Archetype D: The Operational Form
-Used for gate-in registration, driver handover, and manual vehicle inwarding.
+- Header is sticky and collapses to VIN + status chip + primary action.
+- Left column 2fr (what's happening), right column 1fr (what it is). Identity data is reference
+  material — it does not deserve the primary position.
+- Tab counts are real numbers, always. A tab with zero shows "0" in muted, never hides.
+- Findings summary in the inspection card uses severity tags with counts, ordered by severity.
+
+---
+
+## D. Review Archetype — QA Review (The Highest-Stakes Screen)
 
 ```
-+------------------------------------------------------------------------------------+
-| Form Title: Record Vehicle Inward Gate Pass                                        |
-+------------------------------------------------------------------------------------+
-| Panel 1: Carrier & Transit Details                                                 |
-|   Transporter Name: [ Tata Logistics Ltd.         ]  Truck No: [ RJ-19-GA-1234 ]   |
-|   Driver Name:      [ Suresh Kumar                ]  Phone:    [ +91 98290 12345 ] |
-|                                                                                    |
-| Panel 2: Vehicle Identification                                                    |
-|   VIN (Scan or Type): [ MAT628472P12891           ] [Scan Barcode]                 |
-|   Chassis No:         [ 12891                     ]  Engine:   [ REV20268491   ]   |
-|   Model:              [ Harrier MT                ]  Color:    [ Daytona Grey  ]   |
-+------------------------------------------------------------------------------------+
-| Footer Actions:                              [Cancel]   [Save Draft]   [Confirm Gate-In]
-+------------------------------------------------------------------------------------+
+┌ Evidence (scrollable, 2fr) ───────────────┐┌ Decision (sticky, 1fr) ─────────┐
+│ MAT…4521 · Nexon XZ+ · R. Meena           ││ 46 of 46 completed              │
+│                                            ││ ⛔ 1 critical                   │
+│ ▸ Exterior            12/12   ⛔1          ││ ⚠ 2 major                       │
+│   ├ Front bumper scratch      Critical     ││ ◔ 2 minor                       │
+│   │  [photo][photo]  "8cm scratch, lower"  ││ ─────────────────────────────── │
+│ ▸ Interior            10/10                ││ Reviewed by you · 3 min         │
+│ ▸ Electrical           8/8    ⚠1           ││                                 │
+│ ▸ Mechanical          10/10   ⚠1           ││ [ Reject inspection ]           │
+│ ▸ Documentation        6/6                 ││ [ Approve inspection ]          │
+└────────────────────────────────────────────┘└─────────────────────────────────┘
 ```
 
-### 2.5 Archetype E: The Operations Dashboard
-Real-time dealership visibility. High-density metrics, status distributions, aging alerts.
+- Categories collapsed by default **except** any containing a finding — those open automatically.
+  The QA manager should never have to hunt for the problem.
+- Photos open in a full-screen viewer with keyboard arrows.
+- Approve is primary but sits **below** reject in the stack so the destructive option isn't the
+  reflex tap; both require a confirm modal; reject requires a reason with a 10-character minimum and
+  a set of quick-reasons as chips.
+- If the submitting engineer is the current user, both buttons are absent and a banner explains why
+  (server enforces it too — the UI just tells the truth early).
+- Decision panel stays visible at all scroll positions. Never make someone scroll to a decision.
+
+---
+
+## E. Dashboard Archetype
 
 ```
-+------------------------------------------------------------------------------------+
-| Dealership: Autoprime Tata (Jodhpur Central)           [Today] [This Week] [Refresh]|
-+------------------+------------------+------------------+---------------------------+
-| Total Inward     | PDI Completed    | First-Pass Rate  | Aging > 48h in Yard       |
-| 142              | 118              | 91.4%            | 6 vehicles                |
-| +12 today        | 8 in progress    | +2.1% vs last wk | [Requires Escalation]     |
-+------------------+------------------+------------------+---------------------------+
-| Active Bay Allocation (12 Bays)             | PDI Bottleneck Queue (Top 5 Issues)  |
-| Bay 01: [Inward Check - Safari]             | 1. High-voltage battery firmware (4) |
-| Bay 02: [Exterior PDI - Nexon EV]           | 2. Transit clear-coat scratches (3)  |
-| Bay 03: [QA Final Signoff - Curvv]          | 3. Infotainment screen freeze (2)    |
-+---------------------------------------------+--------------------------------------+
+Branch overview · Basni                        Updated 14:41  ↻    [ Last 30 days ▾ ]
+┌──────────────┬──────────────┬──────────────┬──────────────┐
+│ In yard      │ Awaiting PDI │ Failed       │ Ready        │
+│ 142          │ 12           │ 4            │ 27           │
+│ ▲ 12 vs prev │ ▼ 3 vs prev  │ ▲ 1 vs prev  │ ▲ 6 vs prev  │
+└──────────────┴──────────────┴──────────────┴──────────────┘
+┌ Needs attention ────────────────────────────────────────────┐
+│ ▌MAT…4522  Failed 6h      1 critical      S.Joshi   [Open]  │
+│ ▌MAT…4519  QA pending 2d  —               R.Meena   [Open]  │
+│ ▌MAT…4488  Repair 4d      Parts awaited   Workshop  [Open]  │
+└─────────────────────────────────────────────────────────────┘
+┌ PDI throughput ─────────────┐┌ Defect rate by model ────────┐
+│ line chart, 1 series        ││ bar chart, sorted desc        │
+└─────────────────────────────┘└───────────────────────────────┘
 ```
 
-### 2.6 Archetype F: The Review & Approval Console
-Dual-column split interface for QA Managers to cross-examine checklist notes, defect photos, and sign off certificates.
+- **The dashboard's first job is a worklist, not charts.** "Needs attention" sits above the charts
+  because a branch manager opens this to find out what to chase, not to admire trends.
+- Freshness timestamp is mandatory and honest (aggregates are pre-computed; say when).
+- Four KPIs maximum per row. A KPI without a comparison is deleted.
+- Charts come last, are never more than four series, and every chart has a one-line answer to
+  "so what?" as its subtitle.
+- HO dashboard is the same layout with a branch-comparison table replacing "Needs attention".
+
+---
+
+## F. Form Archetype
 
 ```
-+------------------------------------------------------------------------------------+
-| Review PDI #PDI-2026-0842 — Tata Curvv Accomplished                [Reject] [Approve]
-+---------------------------------------------------+--------------------------------+
-| LEFT: Checklist Findings                          | RIGHT: Evidence & Photo Viewer |
-| Category: Body Panels                             | +----------------------------+ |
-| [Pass] Hood alignment                             | | High-Res Defect Photo      | |
-| [Fail] Rear tail-gate panel gap (>4.5mm)          | | (Annotated defect area)    | |
-|        Notes: Left gap 5.2mm vs spec 3.0mm        | | Timestamp: 11:14 AM        | |
-|                                                   | | Inspector: R. Sharma       | |
-| Rectification History:                            | +----------------------------+ |
-| Rectified by Workshop Bay 02 (12 Sep 15:00)       | [Thumb 1] [Thumb 2] [Thumb 3]  |
-| Post-fix gap measured: 3.1mm (Within spec)        |                                |
-+---------------------------------------------------+--------------------------------+
+Assign inspection
+Choose an engineer for MAT…4521.
+───────────────────────────────────────────
+Engineer *
+[ R. Meena — 2 active                   ▾ ]
+Shows current load so you don't overload one person.
+
+Due date
+[ 14 Sep 2026                          📅 ]
+
+Notes (optional)
+[                                         ]
+[                                         ]
+───────────────────────────────────────────
+                    [ Cancel ] [ Assign ]
 ```
+
+- Single column, max 560px. Never two-column forms — they double the eye's travel for no gain.
+- Helper text explains *why the field matters*, not what the field is.
+- The submit button names the action.
+- Dirty forms warn before navigation. Long forms autosave drafts and say so.
+- Validation summary at top only when the form is long enough that errors can be off-screen.
+
+---
+
+## G. Workflow Step Archetype (Mobile Inspection)
+
+```
+┌───────────────────────────────────────┐
+│ ‹  Exterior                     3/8   │  ← category, position; back exits with confirm
+│ ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬░░░░░░░░░░  62%       │  ← determinate, real completion
+├───────────────────────────────────────┤
+│                                       │
+│ Item 5 of 12                          │
+│ Headlamp alignment and function       │
+│ ⌄ How to check                        │
+│                                       │
+│ 📷 Add photo                          │
+│                                       │
+├───────────────────────────────────────┤
+│  Saved 14:32                          │
+│ ┌──────┐ ┌──────┐ ┌────────────────┐  │
+│ │ N/A  │ │ Fail │ │      Pass      │  │  ← sticky footer, 52px, --shadow-sticky
+│ └──────┘ └──────┘ └────────────────┘  │
+└───────────────────────────────────────┘
+```
+
+- One item per screen. No scrolling lists of 46 checkboxes — that is how items get missed.
+- Progress is real: items answered / items total, per category and overall.
+- Advancing is automatic on answer, with a 400ms window and an undo ("Back" restores the answer).
+- Fail opens the finding sheet immediately, pre-filled with the item and category.
+- The category grid screen shows all 8 categories as cards with `answered/total` and a severity
+  summary — the engineer's map of where they are.
+- Submit is only reachable from the category grid, and states exactly what is blocking it.
+
+See `references/06-mobile-yard.md` for the rest of the mobile surface.
+
+---
+
+## H. Screen Inventory — Quick Index
+
+**Web:** Login · Overview (HO/Regional/Branch) · Vehicle list · Vehicle detail · PDI queue ·
+Inspection detail · QA queue · QA review · Repair queue · Repair detail · Certificate view ·
+Reports · Analytics · Users · Roles · Branches · Checklist template editor · Devices · Settings ·
+Audit log · Notifications · Profile.
+
+**Mobile:** Splash · Login · Biometric · App lock · Home · My tasks · Scan VIN · Vehicle detail ·
+Start inspection · Category grid · Checklist item · Finding capture · Body map · Photo capture ·
+Photo review · Submit summary · Sync status · Notifications · Profile & Yard Mode.
+
+Each mobile screen maps to a workflow-step, list or form archetype above. Do not invent a new
+archetype for one screen.

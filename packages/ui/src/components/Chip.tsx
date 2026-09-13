@@ -90,18 +90,22 @@ export const Chip: React.FC<ChipProps> = ({
 export interface CountBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   count: number | string;
   isBlocked?: boolean;
+  variant?: 'neutral' | 'danger';
 }
 
 export const CountBadge: React.FC<CountBadgeProps> = ({
   count,
   isBlocked = false,
+  variant,
   className = '',
   ...props
 }) => {
+  const isDanger = isBlocked || variant === 'danger';
+
   return (
     <span
       className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[11px] font-mono tabular-nums leading-none select-none ${
-        isBlocked
+        isDanger
           ? 'bg-danger text-white'
           : 'bg-canvas text-ink-2 border border-line'
       } ${className}`}

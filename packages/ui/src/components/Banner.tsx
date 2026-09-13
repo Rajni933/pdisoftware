@@ -2,8 +2,10 @@ import React from 'react';
 
 export interface BannerProps {
   variant?: 'warn' | 'danger' | 'ok' | 'info';
+  tone?: 'warn' | 'danger' | 'ok' | 'info';
   title: string;
   description?: string;
+  message?: string;
   action?: React.ReactNode;
   className?: string;
 }
@@ -53,13 +55,17 @@ const bannerStyles = {
 };
 
 export const Banner: React.FC<BannerProps> = ({
-  variant = 'warn',
+  variant,
+  tone = 'warn',
   title,
   description,
+  message,
   action,
   className = '',
 }) => {
-  const current = bannerStyles[variant];
+  const resolvedVariant = variant || tone;
+  const current = bannerStyles[resolvedVariant] || bannerStyles.warn;
+  const bodyText = description || message;
 
   return (
     <div
@@ -73,7 +79,7 @@ export const Banner: React.FC<BannerProps> = ({
         </span>
         <div>
           <span className="font-semibold text-ink">{title}</span>
-          {description && <span className="text-ink-2 ml-2">{description}</span>}
+          {bodyText && <span className="text-ink-2 ml-2">{bodyText}</span>}
         </div>
       </div>
       {action && <div className="shrink-0">{action}</div>}

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
@@ -12,7 +12,7 @@ export const AppShell: React.FC<{ children?: React.ReactNode }> = ({ children })
       <Header isMobileMenuOpen={menuOpen} onToggleMobileMenu={() => setMenuOpen(!menuOpen)} />
 
       <div className="flex-1 flex overflow-hidden">
-        <div className="hidden lg:block w-56 shrink-0 h-full border-r border-line bg-surface">
+        <div className="hidden lg:block w-60 shrink-0 h-full border-r border-line bg-surface">
           <Sidebar />
         </div>
 
@@ -30,8 +30,10 @@ export const AppShell: React.FC<{ children?: React.ReactNode }> = ({ children })
           </div>
         )}
 
-        <main className="flex-1 h-full overflow-y-auto px-4 sm:px-6 py-5 pb-24 lg:pb-8">
-          {children || <Outlet />}
+        <main className="flex-1 h-full overflow-y-auto p-6 pb-24 lg:pb-8">
+          <div className="max-w-[1440px] mx-auto w-full">
+            {children || <Outlet />}
+          </div>
         </main>
       </div>
 
