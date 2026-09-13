@@ -1,371 +1,148 @@
 /**
- * Autoprime Tata PDI Management Platform
- * Design Tokens — TypeScript Constants & Types
- * 
- * 01 — Foundations Single Source of Truth
+ * Autoprime PDI — design tokens for TypeScript consumers.
+ * Web should prefer the CSS custom properties in tokens.css.
+ * This file exists for React Native (no CSS vars) and for logic that needs
+ * to map a domain value (status, severity) to a visual treatment.
+ *
+ * Never hard-code a colour anywhere else in the codebase.
  */
 
-export const primitives = {
-  neutrals: {
-    n0:   '#FFFFFF',
-    n25:  '#FBFCFD',
-    n50:  '#F4F6F8',
-    n100: '#E9EDF1',
-    n200: '#D7DEE5',
-    n300: '#B9C4CF',
-    n400: '#8A97A6',
-    n500: '#667487',
-    n600: '#4A5766',
-    n700: '#33404E',
-    n800: '#1F2A36',
-    n900: '#121A23',
-  },
-  navy: {
-    b50:  '#EDF2FA',
-    b100: '#D6E1F2',
-    b200: '#A9BFE0',
-    b300: '#6E8CBF',
-    b400: '#3C63A3',
-    b500: '#1A3A6B',
-    b600: '#15305A',
-    b700: '#0F2445',
-    b900: '#0A1930',
-  },
+export const color = {
+  bg: '#FBFCFD',
+  surface: '#FFFFFF',
+  surfaceSunken: '#F4F6F8',
+  surfaceHover: '#F4F6F8',
+  surfaceSelected: '#EDF2FA',
+  backdrop: 'rgba(18,26,35,0.45)',
+
+  textPrimary: '#121A23',
+  textSecondary: '#4A5766',
+  textTertiary: '#667487',
+  textDisabled: '#8A97A6',
+  textInverse: '#FFFFFF',
+
+  borderSubtle: '#E9EDF1',
+  border: '#D7DEE5',
+  borderStrong: '#B9C4CF',
+  borderFocus: '#3C63A3',
+
+  action: '#1A3A6B',
+  actionHover: '#15305A',
+  actionPressed: '#0F2445',
+  actionDisabled: '#6E8CBF',
+  actionSoft: '#EDF2FA',
+
+  success: '#0F7A46', successSoft: '#E8F6EF', successBorder: '#A5DCC1',
+  warning: '#8A5A00', warningSoft: '#FDF4E3', warningBorder: '#F0CE8A',
+  danger:  '#B3261E', dangerSoft:  '#FDECEB', dangerBorder:  '#F2B5B0',
+  info:    '#15558D', infoSoft:    '#EAF1F9', infoBorder:    '#A9C7E6',
+
+  /** Logo lockup only. Never use in interactive or semantic UI. */
   brandRed: '#C8102E',
-  semantic: {
-    green500: '#0F7A46',
-    green50:  '#E8F6EF',
-    green200: '#A5DCC1',
 
-    amber500: '#8A5A00',
-    amber50:  '#FDF4E3',
-    amber200: '#F0CE8A',
-    amber600: '#C2670B',
-
-    red500:   '#B3261E',
-    red50:    '#FDECEB',
-    red200:   '#F2B5B0',
-
-    blue500:  '#15558D',
-    blue50:   '#EAF1F9',
-    blue200:  '#A9C7E6',
-
-    teal500:  '#2F6E75',
-  },
-  severity: {
-    critical:    { color: '#B3261E', bg: '#FDECEB', border: '#F2B5B0' },
-    major:       { color: '#C2670B', bg: '#FDF1E4', border: '#F2CBA0' },
-    minor:       { color: '#2F6E75', bg: '#E8F3F4', border: '#A8D2D6' },
-    observation: { color: '#667487', bg: '#F1F3F6', border: '#CBD3DC' },
-  },
+  chart: ['#1A3A6B', '#2F6E75', '#C2670B', '#667487'] as const,
 } as const;
 
-export const colors = {
-  // Surfaces & Backgrounds
-  canvas:          primitives.neutrals.n25,
-  surface:         primitives.neutrals.n0,
-  surfaceSunken:   primitives.neutrals.n50,
-  surfaceHover:    primitives.neutrals.n50,
-  surfaceActive:   primitives.neutrals.n100,
-  surfaceSelected: primitives.navy.b50,
-  surfaceInverse:  primitives.navy.b900,
-  backdrop:        'rgba(18, 26, 35, 0.45)',
-
-  // Borders
-  lineSubtle: primitives.neutrals.n100,
-  line:       primitives.neutrals.n200,
-  lineStrong: primitives.neutrals.n300,
-  lineFocus:  primitives.navy.b400,
-
-  // Inks / Text
-  ink:         primitives.neutrals.n900,
-  inkHeading:  primitives.neutrals.n800,
-  inkBody:     primitives.neutrals.n700,
-  ink2:        primitives.neutrals.n600,
-  ink3:        primitives.neutrals.n500,
-  inkDisabled: primitives.neutrals.n400,
-  inkInverse:  primitives.neutrals.n0,
-  inkLink:     primitives.navy.b500,
-
-  // Action / Navy
-  accent: {
-    DEFAULT:  primitives.navy.b500,
-    hover:    primitives.navy.b600,
-    pressed:  primitives.navy.b700,
-    disabled: primitives.navy.b300,
-    soft:     primitives.navy.b50,
-    line:     primitives.navy.b100,
-    focus:    primitives.navy.b400,
-  },
-
-  // Semantic
-  semantic: {
-    ok: {
-      DEFAULT: primitives.semantic.green500,
-      soft:    primitives.semantic.green50,
-      line:    primitives.semantic.green200,
-    },
-    warn: {
-      DEFAULT: primitives.semantic.amber500,
-      soft:    primitives.semantic.amber50,
-      line:    primitives.semantic.amber200,
-    },
-    danger: {
-      DEFAULT: primitives.semantic.red500,
-      soft:    primitives.semantic.red50,
-      line:    primitives.semantic.red200,
-    },
-    info: {
-      DEFAULT: primitives.semantic.blue500,
-      soft:    primitives.semantic.blue50,
-      line:    primitives.semantic.blue200,
-    },
-  },
-
-  brandTata: primitives.brandRed,
+export const space = {
+  0: 0, 1: 4, 1.5: 6, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64,
 } as const;
 
-export const color = colors;
+export const radius = { xs: 3, sm: 6, md: 10, full: 999 } as const;
 
-export const statusFamily = {
-  intake: {
-    label: 'Intake',
-    color: primitives.neutrals.n600,
-    bg: primitives.neutrals.n100,
-    border: primitives.neutrals.n300,
-    glyph: 'Inbox',
-    statuses: ['RECEIVED', 'PDI_PENDING'],
-  },
-  inProgress: {
-    label: 'In progress',
-    color: primitives.semantic.blue500,
-    bg: primitives.semantic.blue50,
-    border: primitives.semantic.blue200,
-    glyph: 'Loader',
-    statuses: ['PDI_IN_PROGRESS', 'REPAIR_IN_PROGRESS', 'REINSPECTION'],
-  },
-  waiting: {
-    label: 'Waiting',
-    color: primitives.semantic.amber500,
-    bg: primitives.semantic.amber50,
-    border: primitives.semantic.amber200,
-    glyph: 'Clock',
-    statuses: ['REPAIR_PENDING', 'QA_PENDING'],
-  },
-  blocked: {
-    label: 'Blocked',
-    color: primitives.semantic.red500,
-    bg: primitives.semantic.red50,
-    border: primitives.semantic.red200,
-    glyph: 'OctagonAlert',
-    statuses: ['FAILED', 'QA_REJECTED'],
-  },
-  cleared: {
-    label: 'Cleared',
-    color: primitives.semantic.green500,
-    bg: primitives.semantic.green50,
-    border: primitives.semantic.green200,
-    glyph: 'Check',
-    statuses: ['REPAIR_COMPLETED', 'PDI_APPROVED', 'DELIVERY_READY'],
-  },
-  closed: {
-    label: 'Closed',
-    color: primitives.neutrals.n400,
-    bg: primitives.neutrals.n50,
-    border: primitives.neutrals.n200,
-    glyph: 'Archive',
-    statuses: ['DELIVERED'],
-  },
+export const type = {
+  display: { size: 32, lh: 38, weight: '600' },
+  h1:      { size: 24, lh: 32, weight: '600' },
+  h2:      { size: 19, lh: 26, weight: '600' },
+  h3:      { size: 16, lh: 24, weight: '600' },
+  bodyLg:  { size: 16, lh: 24, weight: '400' },
+  body:    { size: 14, lh: 22, weight: '400' },
+  bodySm:  { size: 13, lh: 20, weight: '400' },
+  label:   { size: 13, lh: 18, weight: '500' },
+  caption: { size: 12, lh: 18, weight: '400' },
+  micro:   { size: 11, lh: 16, weight: '500' },
+  mono:    { size: 13, lh: 20, weight: '400' },
+  monoLg:  { size: 15, lh: 22, weight: '500' },
 } as const;
 
-export const severity = {
-  CRITICAL: {
-    label: 'Critical',
-    color: primitives.severity.critical.color,
-    bg: primitives.severity.critical.bg,
-    border: primitives.severity.critical.border,
-    glyph: 'OctagonAlert',
-    rule: 'Photo mandatory · fails the PDI',
-  },
-  MAJOR: {
-    label: 'Major',
-    color: primitives.severity.major.color,
-    bg: primitives.severity.major.bg,
-    border: primitives.severity.major.border,
-    glyph: 'TriangleAlert',
-    rule: 'Photo mandatory · fails the PDI',
-  },
-  MINOR: {
-    label: 'Minor',
-    color: primitives.severity.minor.color,
-    bg: primitives.severity.minor.bg,
-    border: primitives.severity.minor.border,
-    glyph: 'CircleAlert',
-    rule: 'Photo optional · does not block',
-  },
-  OBSERVATION: {
-    label: 'Observation',
-    color: primitives.severity.observation.color,
-    bg: primitives.severity.observation.bg,
-    border: primitives.severity.observation.border,
-    glyph: 'Eye',
-    rule: 'Photo optional · does not block',
-  },
-} as const;
-
-export const typography = {
-  fonts: {
-    sans: "'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    mono: "'IBM Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace",
-    deva: "'IBM Plex Sans Devanagari', 'IBM Plex Sans', sans-serif",
-  },
-  scale: {
-    tDisplay: { size: '32px', lineHeight: '38px', weight: 600, tracking: '-0.02em' },
-    tH1:      { size: '24px', lineHeight: '32px', weight: 600, tracking: '-0.015em' },
-    tH2:      { size: '19px', lineHeight: '26px', weight: 600, tracking: '-0.01em' },
-    tH3:      { size: '16px', lineHeight: '24px', weight: 600, tracking: '0' },
-    tBodyLg:  { size: '16px', lineHeight: '24px', weight: 400, tracking: '0' },
-    tBody:    { size: '14px', lineHeight: '22px', weight: 400, tracking: '0' },
-    tBodySm:  { size: '13px', lineHeight: '20px', weight: 400, tracking: '0' },
-    tLabel:   { size: '13px', lineHeight: '18px', weight: 500, tracking: '0' },
-    tCaption: { size: '12px', lineHeight: '18px', weight: 400, tracking: '0' },
-    tMicro:   { size: '11px', lineHeight: '16px', weight: 500, tracking: '0.01em' },
-    tMono:    { size: '13px', lineHeight: '20px', weight: 400, tracking: '0' },
-    tMonoLg:  { size: '15px', lineHeight: '22px', weight: 500, tracking: '0' },
-  },
-  weights: {
-    normal: 400,
-    medium: 500,
-    semibold: 600,
-  },
-} as const;
-
-export const type = typography;
-
-export const spacing = {
-  0:   '0px',
-  1:   '4px',
-  1.5: '6px',
-  2:   '8px',
-  3:   '12px',
-  4:   '16px',
-  5:   '20px',
-  6:   '24px',
-  8:   '32px',
-  10:  '40px',
-  12:  '48px',
-  16:  '64px',
-} as const;
-
-export const space = spacing;
-
-export const radii = {
-  xs:   '3px',
-  sm:   '6px',
-  md:   '10px',
-  full: '999px',
-  // Aliases
-  chip:    '3px',
-  default: '6px',
-  panel:   '10px',
-} as const;
-
-export const radius = radii;
-
-export const shadows = {
-  none:    'none',
-  popover: '0 4px 12px -2px rgba(18,26,35,.10), 0 0 0 1px rgba(18,26,35,.05)',
-  modal:   '0 16px 40px -8px rgba(18,26,35,.18), 0 0 0 1px rgba(18,26,35,.06)',
-  sticky:  '0 -2px 8px -2px rgba(18,26,35,.08)',
-  pop:     '0 16px 40px -8px rgba(18,26,35,.18), 0 0 0 1px rgba(18,26,35,.06)',
-} as const;
-
-export const shadow = shadows;
-
-export const zIndex = {
-  base:     0,
-  raised:   10,
-  sticky:   100,
-  dropdown: 200,
-  overlay:  300,
-  modal:    400,
-  toast:    500,
+export const font = {
+  sans: 'IBMPlexSans-Regular',
+  sansMedium: 'IBMPlexSans-Medium',
+  sansSemiBold: 'IBMPlexSans-SemiBold',
+  mono: 'IBMPlexMono-Regular',
 } as const;
 
 export const motion = {
-  duration: {
-    micro: '120ms',
-    enter: '180ms',
-    exit:  '140ms',
-    sheet: '240ms',
-  },
-  easing: {
-    out:  'cubic-bezier(0.2, 0.8, 0.2, 1)',
-    in:   'cubic-bezier(0.4, 0, 1, 1)',
-    move: 'cubic-bezier(0.4, 0, 0.2, 1)',
-  },
+  micro: 120, enter: 180, exit: 140, sheet: 240,
+  easeOut: [0.2, 0.8, 0.2, 1],
+  easeIn: [0.4, 0, 1, 1],
+  easeMove: [0.4, 0, 0.2, 1],
 } as const;
 
-export const focus = {
-  ring: '0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-border-focus)',
+export const size = {
+  touchMin: 44,
+  touchMinYard: 52,
+  controlSm: 28, controlMd: 36, controlLg: 44, controlXl: 52,
+  rowH: 44, rowHDense: 36,
+  rail: 3, railYard: 5,
+  photoThumb: 64, photoThumbYard: 88,
 } as const;
 
-export const yardMode = {
-  minTouchTarget: 52,
-  controlLg: 52,
-  rowHeight: 56,
-  railWidth: 5,
-  thumbnailSize: 88,
-  borderColor: primitives.neutrals.n300,
-  borderSubtleColor: primitives.neutrals.n200,
-  textSecondaryColor: primitives.neutrals.n700,
-  textTertiaryColor: primitives.neutrals.n600,
+/* ------------------------------------------------------------------ */
+/* Domain maps — the single place a domain value becomes a visual      */
+/* ------------------------------------------------------------------ */
+
+export type StatusFamily = 'intake' | 'active' | 'waiting' | 'blocked' | 'cleared' | 'closed';
+
+export const statusFamily = {
+  intake:  { fg: '#4A5766', bg: '#E9EDF1', bd: '#B9C4CF', icon: 'inbox' },
+  active:  { fg: '#15558D', bg: '#EAF1F9', bd: '#A9C7E6', icon: 'play' },
+  waiting: { fg: '#8A5A00', bg: '#FDF4E3', bd: '#F0CE8A', icon: 'clock' },
+  blocked: { fg: '#B3261E', bg: '#FDECEB', bd: '#F2B5B0', icon: 'octagon-alert' },
+  cleared: { fg: '#0F7A46', bg: '#E8F6EF', bd: '#A5DCC1', icon: 'check' },
+  closed:  { fg: '#8A97A6', bg: '#F4F6F8', bd: '#D7DEE5', icon: 'archive' },
 } as const;
 
-export const statusRail = {
-  width: '3px',
-  yardWidth: '5px',
-  colors: {
-    passed:     primitives.semantic.green500,
-    inProgress: primitives.semantic.blue500,
-    waiting:    primitives.semantic.amber500,
-    failed:     primitives.semantic.red500,
-    pending:    primitives.neutrals.n300,
-  },
-} as const;
+export type VehicleStatus =
+  | 'RECEIVED' | 'PDI_PENDING' | 'PDI_IN_PROGRESS' | 'FAILED'
+  | 'REPAIR_PENDING' | 'REPAIR_IN_PROGRESS' | 'REPAIR_COMPLETED'
+  | 'REINSPECTION' | 'QA_PENDING' | 'QA_REJECTED' | 'PDI_APPROVED'
+  | 'DELIVERY_READY' | 'DELIVERED';
 
-export const charts = {
-  palette: [
-    primitives.navy.b500,        // #1A3A6B
-    primitives.semantic.teal500,  // #2F6E75
-    primitives.semantic.amber600, // #C2670B
-    primitives.neutrals.n500,     // #667487
-  ],
-  series1: primitives.navy.b500,
-  series2: primitives.semantic.teal500,
-  series3: primitives.semantic.amber600,
-  series4: primitives.neutrals.n500,
-  grid: primitives.neutrals.n100,
-} as const;
+/** Status → family + the exact label shown to users. Labels are sentence case. */
+export const vehicleStatus: Record<VehicleStatus, { family: StatusFamily; label: string }> = {
+  RECEIVED:            { family: 'intake',  label: 'Received' },
+  PDI_PENDING:         { family: 'intake',  label: 'PDI pending' },
+  PDI_IN_PROGRESS:     { family: 'active',  label: 'Inspection in progress' },
+  FAILED:              { family: 'blocked', label: 'Failed' },
+  REPAIR_PENDING:      { family: 'waiting', label: 'Repair pending' },
+  REPAIR_IN_PROGRESS:  { family: 'active',  label: 'Repair in progress' },
+  REPAIR_COMPLETED:    { family: 'cleared', label: 'Repair completed' },
+  REINSPECTION:        { family: 'active',  label: 'Reinspection' },
+  QA_PENDING:          { family: 'waiting', label: 'QA pending' },
+  QA_REJECTED:         { family: 'blocked', label: 'QA rejected' },
+  PDI_APPROVED:        { family: 'cleared', label: 'Approved' },
+  DELIVERY_READY:      { family: 'cleared', label: 'Ready for delivery' },
+  DELIVERED:           { family: 'closed',  label: 'Delivered' },
+};
 
-export const icons = {
-  strokeWidth: 1.5,
-  sizes: {
-    table: 16,
-    default: 20,
-    mobile: 24,
-    yard: 28,
-  },
-} as const;
+export type Severity = 'CRITICAL' | 'MAJOR' | 'MINOR' | 'OBSERVATION';
 
-export type Primitives = typeof primitives;
-export type ColorToken = typeof colors;
-export type TypographyToken = typeof typography;
-export type SpacingToken = typeof spacing;
-export type RadiiToken = typeof radii;
-export type ShadowsToken = typeof shadows;
-export type StatusFamily = typeof statusFamily;
-export type Severity = typeof severity;
-export type MotionToken = typeof motion;
-export type ChartsToken = typeof charts;
-export type IconsToken = typeof icons;
+export const severity: Record<Severity, {
+  fg: string; bg: string; bd: string; icon: string; label: string;
+  blocksDelivery: boolean; photoRequired: boolean;
+}> = {
+  CRITICAL:    { fg: '#B3261E', bg: '#FDECEB', bd: '#F2B5B0', icon: 'octagon-alert',  label: 'Critical',    blocksDelivery: true,  photoRequired: true },
+  MAJOR:       { fg: '#C2670B', bg: '#FDF1E4', bd: '#F2CBA0', icon: 'triangle-alert', label: 'Major',       blocksDelivery: true,  photoRequired: true },
+  MINOR:       { fg: '#2F6E75', bg: '#E8F3F4', bd: '#A8D2D6', icon: 'circle-alert',   label: 'Minor',       blocksDelivery: false, photoRequired: false },
+  OBSERVATION: { fg: '#667487', bg: '#F1F3F6', bd: '#CBD3DC', icon: 'eye',            label: 'Observation', blocksDelivery: false, photoRequired: false },
+};
+
+/** Severity display order — always CRITICAL first. Never sort alphabetically. */
+export const severityOrder: Severity[] = ['CRITICAL', 'MAJOR', 'MINOR', 'OBSERVATION'];
+
+// Compatibility aliases
+export const colors = color;
+export const spaceScale = space;
+export const spacing = space;
+export const radii = radius;
+export const typography = type;
