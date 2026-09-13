@@ -23,6 +23,7 @@ export const primitives = {
   navy: {
     b50:  '#EDF2FA',
     b100: '#D6E1F2',
+    b200: '#A9BFE0',
     b300: '#6E8CBF',
     b400: '#3C63A3',
     b500: '#1A3A6B',
@@ -51,27 +52,40 @@ export const primitives = {
 
     teal500:  '#2F6E75',
   },
+  severity: {
+    critical:    { color: '#B3261E', bg: '#FDECEB', border: '#F2B5B0' },
+    major:       { color: '#C2670B', bg: '#FDF1E4', border: '#F2CBA0' },
+    minor:       { color: '#2F6E75', bg: '#E8F3F4', border: '#A8D2D6' },
+    observation: { color: '#667487', bg: '#F1F3F6', border: '#CBD3DC' },
+  },
 } as const;
 
 export const colors = {
   // Surfaces & Backgrounds
-  canvas:        primitives.neutrals.n25,
-  surface:       primitives.neutrals.n0,
-  surfaceHover:  primitives.neutrals.n50,
-  surfaceActive: primitives.neutrals.n100,
+  canvas:          primitives.neutrals.n25,
+  surface:         primitives.neutrals.n0,
+  surfaceSunken:   primitives.neutrals.n50,
+  surfaceHover:    primitives.neutrals.n50,
+  surfaceActive:   primitives.neutrals.n100,
+  surfaceSelected: primitives.navy.b50,
+  surfaceInverse:  primitives.navy.b900,
+  backdrop:        'rgba(18, 26, 35, 0.45)',
 
   // Borders
-  lineSubtle:    primitives.neutrals.n100,
-  line:          primitives.neutrals.n200,
-  lineStrong:    primitives.neutrals.n300,
+  lineSubtle: primitives.neutrals.n100,
+  line:       primitives.neutrals.n200,
+  lineStrong: primitives.neutrals.n300,
+  lineFocus:  primitives.navy.b400,
 
   // Inks / Text
-  ink:           primitives.neutrals.n900,
-  inkHeading:    primitives.neutrals.n800,
-  inkBody:       primitives.neutrals.n700,
-  ink2:          primitives.neutrals.n600,
-  ink3:          primitives.neutrals.n500,
-  inkDisabled:   primitives.neutrals.n400,
+  ink:         primitives.neutrals.n900,
+  inkHeading:  primitives.neutrals.n800,
+  inkBody:     primitives.neutrals.n700,
+  ink2:        primitives.neutrals.n600,
+  ink3:        primitives.neutrals.n500,
+  inkDisabled: primitives.neutrals.n400,
+  inkInverse:  primitives.neutrals.n0,
+  inkLink:     primitives.navy.b500,
 
   // Action / Navy
   accent: {
@@ -117,36 +131,48 @@ export const statusFamily = {
   intake: {
     label: 'Intake',
     color: primitives.neutrals.n600,
+    bg: primitives.neutrals.n100,
+    border: primitives.neutrals.n300,
     glyph: 'Inbox',
     statuses: ['RECEIVED', 'PDI_PENDING'],
   },
   inProgress: {
     label: 'In progress',
     color: primitives.semantic.blue500,
+    bg: primitives.semantic.blue50,
+    border: primitives.semantic.blue200,
     glyph: 'Loader',
     statuses: ['PDI_IN_PROGRESS', 'REPAIR_IN_PROGRESS', 'REINSPECTION'],
   },
   waiting: {
     label: 'Waiting',
     color: primitives.semantic.amber500,
+    bg: primitives.semantic.amber50,
+    border: primitives.semantic.amber200,
     glyph: 'Clock',
     statuses: ['REPAIR_PENDING', 'QA_PENDING'],
   },
   blocked: {
     label: 'Blocked',
     color: primitives.semantic.red500,
+    bg: primitives.semantic.red50,
+    border: primitives.semantic.red200,
     glyph: 'OctagonAlert',
     statuses: ['FAILED', 'QA_REJECTED'],
   },
   cleared: {
     label: 'Cleared',
     color: primitives.semantic.green500,
+    bg: primitives.semantic.green50,
+    border: primitives.semantic.green200,
     glyph: 'Check',
     statuses: ['REPAIR_COMPLETED', 'PDI_APPROVED', 'DELIVERY_READY'],
   },
   closed: {
     label: 'Closed',
     color: primitives.neutrals.n400,
+    bg: primitives.neutrals.n50,
+    border: primitives.neutrals.n200,
     glyph: 'Archive',
     statuses: ['DELIVERED'],
   },
@@ -155,25 +181,33 @@ export const statusFamily = {
 export const severity = {
   CRITICAL: {
     label: 'Critical',
-    color: primitives.semantic.red500,
+    color: primitives.severity.critical.color,
+    bg: primitives.severity.critical.bg,
+    border: primitives.severity.critical.border,
     glyph: 'OctagonAlert',
     rule: 'Photo mandatory · fails the PDI',
   },
   MAJOR: {
     label: 'Major',
-    color: primitives.semantic.amber600,
+    color: primitives.severity.major.color,
+    bg: primitives.severity.major.bg,
+    border: primitives.severity.major.border,
     glyph: 'TriangleAlert',
     rule: 'Photo mandatory · fails the PDI',
   },
   MINOR: {
     label: 'Minor',
-    color: primitives.semantic.teal500,
+    color: primitives.severity.minor.color,
+    bg: primitives.severity.minor.bg,
+    border: primitives.severity.minor.border,
     glyph: 'CircleAlert',
     rule: 'Photo optional · does not block',
   },
   OBSERVATION: {
     label: 'Observation',
-    color: primitives.neutrals.n500,
+    color: primitives.severity.observation.color,
+    bg: primitives.severity.observation.bg,
+    border: primitives.severity.observation.border,
     glyph: 'Eye',
     rule: 'Photo optional · does not block',
   },
@@ -181,23 +215,23 @@ export const severity = {
 
 export const typography = {
   fonts: {
-    sans: "'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif",
+    sans: "'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     mono: "'IBM Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace",
     deva: "'IBM Plex Sans Devanagari', 'IBM Plex Sans', sans-serif",
   },
   scale: {
-    tDisplay: { size: '2rem', lineHeight: '2.375rem', weight: 600, tracking: '-0.02em' },   // 32/38
-    tH1:      { size: '1.5rem', lineHeight: '2rem', weight: 600, tracking: '-0.015em' },      // 24/32
-    tH2:      { size: '1.1875rem', lineHeight: '1.625rem', weight: 600, tracking: '-0.01em' }, // 19/26
-    tH3:      { size: '1rem', lineHeight: '1.5rem', weight: 600, tracking: '0' },             // 16/24
-    tBodyLg:  { size: '1rem', lineHeight: '1.5rem', weight: 400, tracking: '0' },             // 16/24
-    tBody:    { size: '0.875rem', lineHeight: '1.375rem', weight: 400, tracking: '0' },      // 14/22
-    tBodySm:  { size: '0.8125rem', lineHeight: '1.25rem', weight: 400, tracking: '0' },      // 13/20
-    tLabel:   { size: '0.8125rem', lineHeight: '1.125rem', weight: 500, tracking: '0' },     // 13/18
-    tCaption: { size: '0.75rem', lineHeight: '1.125rem', weight: 400, tracking: '0' },        // 12/18
-    tMicro:   { size: '0.6875rem', lineHeight: '1rem', weight: 500, tracking: '0.01em' },     // 11/16
-    tMono:    { size: '0.8125rem', lineHeight: '1.25rem', weight: 400, tracking: '0' },      // 13/20
-    tMonoLg:  { size: '0.9375rem', lineHeight: '1.375rem', weight: 500, tracking: '0' },     // 15/22
+    tDisplay: { size: '32px', lineHeight: '38px', weight: 600, tracking: '-0.02em' },
+    tH1:      { size: '24px', lineHeight: '32px', weight: 600, tracking: '-0.015em' },
+    tH2:      { size: '19px', lineHeight: '26px', weight: 600, tracking: '-0.01em' },
+    tH3:      { size: '16px', lineHeight: '24px', weight: 600, tracking: '0' },
+    tBodyLg:  { size: '16px', lineHeight: '24px', weight: 400, tracking: '0' },
+    tBody:    { size: '14px', lineHeight: '22px', weight: 400, tracking: '0' },
+    tBodySm:  { size: '13px', lineHeight: '20px', weight: 400, tracking: '0' },
+    tLabel:   { size: '13px', lineHeight: '18px', weight: 500, tracking: '0' },
+    tCaption: { size: '12px', lineHeight: '18px', weight: 400, tracking: '0' },
+    tMicro:   { size: '11px', lineHeight: '16px', weight: 500, tracking: '0.01em' },
+    tMono:    { size: '13px', lineHeight: '20px', weight: 400, tracking: '0' },
+    tMonoLg:  { size: '15px', lineHeight: '22px', weight: 500, tracking: '0' },
   },
   weights: {
     normal: 400,
@@ -209,17 +243,18 @@ export const typography = {
 export const type = typography;
 
 export const spacing = {
-  1:   '0.25rem',  // 4px
-  1.5: '0.375rem', // 6px (label to control)
-  2:   '0.5rem',   // 8px
-  3:   '0.75rem',  // 12px
-  4:   '1rem',     // 16px
-  5:   '1.25rem',  // 20px
-  6:   '1.5rem',   // 24px
-  8:   '2rem',     // 32px
-  10:  '2.5rem',   // 40px
-  12:  '3rem',     // 48px
-  16:  '4rem',     // 64px
+  0:   '0px',
+  1:   '4px',
+  1.5: '6px',
+  2:   '8px',
+  3:   '12px',
+  4:   '16px',
+  5:   '20px',
+  6:   '24px',
+  8:   '32px',
+  10:  '40px',
+  12:  '48px',
+  16:  '64px',
 } as const;
 
 export const space = spacing;
@@ -272,14 +307,19 @@ export const motion = {
 } as const;
 
 export const focus = {
-  ring: '0 0 0 2px var(--color-surface), 0 0 0 4px var(--p-b-400)',
+  ring: '0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-border-focus)',
 } as const;
 
 export const yardMode = {
   minTouchTarget: 52,
+  controlLg: 52,
+  rowHeight: 56,
   railWidth: 5,
   thumbnailSize: 88,
   borderColor: primitives.neutrals.n300,
+  borderSubtleColor: primitives.neutrals.n200,
+  textSecondaryColor: primitives.neutrals.n700,
+  textTertiaryColor: primitives.neutrals.n600,
 } as const;
 
 export const statusRail = {
@@ -329,4 +369,3 @@ export type Severity = typeof severity;
 export type MotionToken = typeof motion;
 export type ChartsToken = typeof charts;
 export type IconsToken = typeof icons;
-
