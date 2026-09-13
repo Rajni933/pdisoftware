@@ -35,6 +35,7 @@ If the answer to either is no, it does not ship.
 | Before opening a PR | `references/07-review-gate.md` |
 | Copy-paste tokens | `assets/tokens.css`, `assets/tokens.ts` |
 | See it rendered | `assets/preview.html` (open in browser) |
+| Login layouts (Brief 01) | `assets/login-layouts.html` (open in browser) |
 
 ---
 
