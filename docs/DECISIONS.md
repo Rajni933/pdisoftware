@@ -1,4 +1,4 @@
-﻿# ARCHITECTURE DECISION RECORDS
+# ARCHITECTURE DECISION RECORDS
 ## Autoprime Tata PDI Management Platform — Dhoot Group
 
 **Version:** 1.0.0
@@ -163,6 +163,39 @@ JWT verification uses Supabase JWKS endpoint exclusively. No custom cryptographi
 
 ### Rationale
 Custom crypto implementations are high-risk. Supabase provides battle-tested JWT infrastructure.
+
+---
+
+## ADR-009: Login Screen Translucent Surface & Background Gradient Exception
+
+**Date:** 2026-09-13
+**Status:** Accepted
+**Decider:** Principal Design & Engineering Team
+
+### Context
+The Autoprime Design System enforces two strict architectural rules across all product surfaces:
+1. **Rule R1 & Foundations:** Content surfaces use a 1px border and zero drop shadow; backgrounds are calm, neutral, flat surfaces (`--color-bg`, `--color-surface`). Gradients are banned in product UI.
+2. **Glassmorphism & Translucency:** Blurred translucent card surfaces are strictly prohibited in operational consoles to prevent GPU lag and variable text contrast.
+
+However, the sign-in screen presents the authoritative Dhoot Group corporate brand reveal asset (`brand/dhoot-logo-reveal.mp4`), which has an intrinsic light-grey radial background (`#EFEFEF` at center, `#DCDCDC` at corners). Embedding this video onto flat white or dark navy creates an unsightly, unaligned bounding box. Furthermore, a split-screen desktop layout presenting the company's brand identity requires a distinctive, premium posture.
+
+### Decision
+Allow a deliberate, strictly bounded exception to the design system for the `/signin` route and its sub-routes (`/signin/verify`):
+1. **Scoped Auth Gradients:**
+   - `--auth-stage`: `radial-gradient(circle at 50% 45%, #EFEFEF 0%, #DCDCDC 100%)` matches the brand video background exactly, eliminating visible video borders.
+   - `--auth-field`: `linear-gradient(160deg, #1F4B8F 0%, #1A3A6B 55%, #0F2445 100%)` provides a rich, calm static navy backdrop for the login form card.
+2. **Translucent Glass Surface:**
+   - The desktop/tablet login card may use `background: rgba(255, 255, 255, 0.08)`, `border: 1px solid rgba(255, 255, 255, 0.16)`, `backdrop-filter: blur(16px) saturate(120%)`, and a soft depth shadow `0 24px 60px -20px rgba(10, 25, 48, 0.55)`.
+   - The glass card sits exclusively over the **static** navy gradient `--auth-field`, never over moving video, ensuring permanent, verifiable WCAG AA/AAA text contrast.
+3. **Boundary Enforced:**
+   - Under no circumstances shall this translucent glass or gradient treatment be carried into any operational screen (Dashboard, Inspection, PDI Session, QA Review, Vehicles).
+   - On mobile phones (< 768px), the glass card is eliminated in favor of a plain surface to prevent GPU compositing jank on field devices.
+
+### Rationale
+- The sign-in screen is the sole location where company branding is introduced.
+- It carries no operational stockyard data or vehicle inspection lists.
+- It is viewed once per work shift.
+- The video's edges are eliminated entirely, giving an integrated rather than embedded appearance.
 
 ---
 

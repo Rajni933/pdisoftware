@@ -43,3 +43,4 @@ export * from './components/PasswordField';
 export * from './components/OtpInput';
 export * from './components/Countdown';
 export * from './components/AuthShell';
+export * from './components/BrandVideo';

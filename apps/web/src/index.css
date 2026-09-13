@@ -63,3 +63,27 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* --------------------------------------------------------------------------
+   ADR-009: Scoped Auth Glass Card Form Styling (Login Screen only)
+   -------------------------------------------------------------------------- */
+.auth-card-content label {
+  color: rgba(255, 255, 255, 0.78) !important;
+}
+.auth-card-content input {
+  background-color: var(--auth-input-bg, #FFFFFF) !important;
+  color: var(--color-text-primary) !important;
+  border-width: 0 !important;
+}
+.auth-card-content input:focus {
+  box-shadow: var(--shadow-auth-focus) !important;
+}
+.auth-card-content button[type="submit"] {
+  background-color: var(--auth-btn-bg, #0F2445) !important;
+  color: #FFFFFF !important;
+}
+.auth-card-content a,
+.auth-card-content button.show-pwd-btn {
+  color: var(--auth-link, #9FC0F0) !important;
+}
+
