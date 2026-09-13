@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autoprime PDI — Login with brand video</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --p-n-25:#FBFCFD;--p-n-50:#F4F6F8;--p-n-100:#E9EDF1;--p-n-200:#D7DEE5;--p-n-300:#B9C4CF;
+  --p-n-500:#667487;--p-n-600:#4A5766;--p-n-900:#121A23;
+  --color-bg:var(--p-n-25);--color-surface:#FFFFFF;--color-surface-sunken:var(--p-n-50);
+  --color-text-primary:var(--p-n-900);--color-text-secondary:var(--p-n-600);--color-text-tertiary:var(--p-n-500);
+  --color-border-subtle:var(--p-n-100);--color-border:var(--p-n-200);--color-border-strong:var(--p-n-300);
+  --color-action:#1A3A6B;--color-action-hover:#15305A;
+  --color-danger:#B3261E;--color-danger-soft:#FDECEB;--color-danger-border:#F2B5B0;
+  --color-warning:#8A5A00;--color-warning-soft:#FDF4E3;--color-warning-border:#F0CE8A;
+  --font-sans:'IBM Plex Sans',-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+  --radius-xs:3px;--radius-sm:6px;--radius-md:10px;
+  /* ADR-009 auth-only tokens */
+  --auth-stage:radial-gradient(circle at 50% 45%,#EFEFEF 0%,#DCDCDC 100%);
+  --auth-field:linear-gradient(160deg,#1F4B8F 0%,#1A3A6B 55%,#0F2445 100%);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --color-bg:#0C1218;--color-surface:#121A23;--color-surface-sunken:#18222D;
+  --color-text-primary:#EAEEF2;--color-text-secondary:#A7B3C0;--color-text-tertiary:#8A97A6;
+  --color-border-subtle:#1E2A36;--color-border:#2A3846;--color-border-strong:#3B4A5A;
+  --color-action:#3C63A3;--color-action-hover:#4A74B8;
+  --color-danger:#EE7B72;--color-danger-soft:#2B1413;--color-danger-border:#6E2A26;
+  --color-warning:#E0A44A;--color-warning-soft:#2A2010;--color-warning-border:#6B4E1C;
+}}
+:root[data-theme="dark"]{
+  --color-bg:#0C1218;--color-surface:#121A23;--color-surface-sunken:#18222D;
+  --color-text-primary:#EAEEF2;--color-text-secondary:#A7B3C0;--color-text-tertiary:#8A97A6;
+  --color-border-subtle:#1E2A36;--color-border:#2A3846;--color-border-strong:#3B4A5A;
+  --color-action:#3C63A3;--color-action-hover:#4A74B8;
+  --color-danger:#EE7B72;--color-danger-soft:#2B1413;--color-danger-border:#6E2A26;
+  --color-warning:#E0A44A;--color-warning-soft:#2A2010;--color-warning-border:#6B4E1C;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--color-bg);color:var(--color-text-primary);
+  font-family:var(--font-sans);font-size:14px;line-height:22px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1100px;margin:0 auto;padding:40px 20px 96px}
+h1{font-size:28px;line-height:36px;font-weight:600;letter-spacing:-.02em;margin:0 0 6px}
+h2{font-size:19px;line-height:26px;font-weight:600;letter-spacing:-.01em;margin:0 0 4px}
+h3{font-size:13px;font-weight:600;margin:0 0 10px;color:var(--color-text-secondary)}
+p.sub{color:var(--color-text-secondary);margin:0;max-width:72ch}
+header.page{border-bottom:1px solid var(--color-border);padding-bottom:24px}
+section{margin-top:48px}section>header{margin-bottom:18px}
+.note{font-size:12px;line-height:18px;color:var(--color-text-tertiary);margin:12px 0 0;max-width:74ch}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.specs{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}
+.spec{font-family:var(--font-mono);font-size:11px;line-height:16px;padding:3px 8px;border-radius:var(--radius-xs);
+  border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-text-secondary)}
+.cap{margin-top:10px;font-size:12px;color:var(--color-text-tertiary);font-family:var(--font-mono)}
+.frame{transform-origin:top left;border:1px solid var(--color-border-strong);border-radius:var(--radius-md);overflow:hidden}
+.stage{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start}
+.card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-sm)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+
+/* ---------- auth surfaces ---------- */
+.brandline{font-size:13px;line-height:19px}
+.glass{border-radius:var(--radius-md);background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(16px) saturate(120%);
+  -webkit-backdrop-filter:blur(16px) saturate(120%);
+  box-shadow:0 24px 60px -20px rgba(10,25,48,.55);padding:32px;color:#fff}
+.glass .ttl{font-size:19px;font-weight:600;line-height:26px}
+.glass .sup{font-size:12px;line-height:18px;color:rgba(255,255,255,.72)}
+.gf{display:flex;flex-direction:column;gap:6px}
+.gf label{font-size:13px;line-height:18px;font-weight:500;color:rgba(255,255,255,.78)}
+.gctl{display:flex;align-items:center;gap:8px;background:#fff;border-radius:var(--radius-sm);padding:0 12px}
+.gctl input{border:0;background:transparent;outline:none;font:inherit;color:var(--p-n-900);width:100%;
+  font-family:var(--font-mono);padding:0}
+.gctl .show{font-family:var(--font-sans);font-size:13px;font-weight:500;color:var(--color-action);
+  background:none;border:0;cursor:pointer;padding:0;white-space:nowrap}
+.gctl.focus{box-shadow:0 0 0 2px rgba(255,255,255,.9)}
+.gbtn{display:flex;align-items:center;justify-content:center;width:100%;border:0;border-radius:var(--radius-sm);
+  background:#0F2445;color:#fff;font:inherit;font-weight:500;cursor:pointer}
+.gbtn:hover{background:#0A1930}
+.glink{color:#9FC0F0;font-size:13px;font-weight:500;text-decoration:none}
+.gmeta{font-family:var(--font-mono);font-size:11px;line-height:16px;color:rgba(255,255,255,.6)}
+.envchip{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:var(--radius-xs);
+  font-size:11px;font-weight:500;color:#F0CE8A;background:rgba(240,206,138,.14);border:1px solid rgba(240,206,138,.35)}
+.rowgap{display:flex;flex-direction:column;gap:16px}
+
+/* laptop */
+.lp{width:1440px;height:900px;display:grid;grid-template-columns:52% 48%}
+.lp .left{background:var(--auth-stage);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36px;padding:48px}
+.lp .vid{width:560px;aspect-ratio:16/9;background:var(--auth-stage);display:grid;place-items:center;overflow:hidden}
+.lp .vid img{width:100%;height:100%;object-fit:contain;display:block}
+.lp .leftmeta{text-align:center;color:#4A5766}
+.lp .right{background:var(--auth-field);display:grid;place-items:center;padding:48px}
+.lp .glass{width:400px}
+.lp .gctl{height:36px;font-size:14px}
+.lp .gbtn{height:36px;font-size:14px}
+
+/* tablet stacked */
+.tb{width:834px;height:1112px;display:grid;grid-template-rows:38% 62%}
+.tb .band{background:var(--auth-stage);display:grid;place-items:center;overflow:hidden}
+.tb .band img{width:82%;max-width:620px;object-fit:contain;display:block}
+.tb .lower{background:var(--auth-field);display:grid;place-items:center;padding:40px;align-content:center;gap:14px}
+.tb .glass{width:420px}
+.tb .gctl{height:48px;font-size:15px}
+.tb .gbtn{height:48px;font-size:15px}
+
+/* phone */
+.ph{width:390px;height:760px;display:flex;flex-direction:column;padding:44px 20px 28px;
+  background:linear-gradient(180deg,#EFEFEF 0%,#F6F7F8 26%,#FFFFFF 46%,#FFFFFF 100%)}
+.ph .logo{width:150px;display:block;margin-bottom:6px}
+.ph .spacer{flex:1;min-height:32px}
+.ph .f{display:flex;flex-direction:column;gap:6px}
+.ph .f label{font-size:14px;font-weight:500;color:var(--p-n-600)}
+.ph .ctl{display:flex;align-items:center;gap:8px;height:52px;background:#fff;border:1px solid var(--p-n-200);
+  border-radius:var(--radius-sm);padding:0 14px;font-size:16px}
+.ph .ctl input{border:0;outline:none;background:transparent;font:inherit;font-family:var(--font-mono);
+  width:100%;color:var(--p-n-900);padding:0}
+.ph .ctl .show{font-family:var(--font-sans);font-size:14px;font-weight:500;color:#1A3A6B;background:none;border:0}
+.ph .btn{display:flex;align-items:center;justify-content:center;gap:8px;height:52px;width:100%;border:1px solid transparent;
+  border-radius:var(--radius-sm);background:#1A3A6B;color:#fff;font:inherit;font-size:16px;font-weight:500}
+.ph .btn--sec{background:#fff;color:var(--p-n-900);border-color:var(--p-n-200)}
+.ph .btn svg{width:18px;height:18px}
+.ph .meta{font-family:var(--font-mono);font-size:11px;color:#667487;text-align:center}
+.ph .link{color:#1A3A6B;font-size:14px;font-weight:500;text-decoration:none}
+
+.do{display:grid;gap:10px}
+.do div{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:20px}
+.do svg{width:15px;height:15px;flex:none;margin-top:3px}
+.yes{color:#0F7A46}.no{color:var(--color-danger)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--color-border-subtle)}
+th{font-size:13px;font-weight:500;color:var(--color-text-secondary)}
+td.n{font-family:var(--font-mono);white-space:nowrap}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<g id="i-check"><path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g id="i-x"><path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></g>
+<g id="i-finger"><path d="M12 4a6 6 0 0 0-6 6v3a9 9 0 0 1-.6 3.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12 8a2.5 2.5 0 0 0-2.5 2.5V13a12 12 0 0 1-1 4.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M14.5 10.5V13a26 26 0 0 1-.6 5.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M18 10.5V13c0 2-.2 4-.7 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M7.5 5.7A7.9 7.9 0 0 1 16.8 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></g>
+</defs></svg>
+
+<div class="wrap">
+<header class="page">
+  <div style="margin-bottom:12px"><a class="glink" href="preview.html" style="font-weight:600">&larr; Back to Design System Living Showcase</a></div>
+  <h1>Login with the Dhoot Group brand video</h1>
+  <p class="sub">The split you asked for, with the video on the left — adjusted for what the video
+  actually is: a ten-second logo reveal on a <span class="mono">#EFEFEF → #DCDCDC</span> light grey
+  radial, ending on a still lockup. The left panel carries that same grey so the video has no visible
+  edge. The glass card sits on a static navy gradient, never over the moving video.</p>
+</header>
+
+<section>
+  <header><h2>Laptop · 1440 px</h2>
+  <p class="sub">Video left at 52%, glass card right at 48%. The video plays once and holds its last
+  frame — it does not loop.</p></header>
+  <div class="specs">
+    <span class="spec">video 560px max</span><span class="spec">card 400px</span>
+    <span class="spec">fields 36px</span><span class="spec">no loop</span><span class="spec">306 KB mp4</span>
+  </div>
+  <div class="stage"><div>
+    <div style="width:864px;height:540px">
+      <div class="frame lp" style="transform:scale(.6)">
+        <div class="left">
+          <div class="vid"><img src="../brand/dhoot-logo-poster.webp" alt="Dhoot Group"></div>
+          <div class="leftmeta">
+            <div class="brandline" style="font-weight:500">Autoprime Tata · Pre-delivery inspection</div>
+            <div class="brandline" style="color:#667487">Jodhpur · Pali · Barmer</div>
+          </div>
+        </div>
+        <div class="right">
+          <div>
+            <div class="glass">
+              <div style="margin-bottom:20px">
+                <div class="sup">Autoprime Tata</div>
+                <div class="ttl">Sign in</div>
+              </div>
+              <div class="rowgap">
+                <div class="gf"><label>Employee ID</label>
+                  <div class="gctl focus"><input value="100482" readonly></div></div>
+                <div class="gf"><label>Password</label>
+                  <div class="gctl"><input type="password" value="pdi123456" readonly><button class="show">Show</button></div></div>
+                <div><a class="glink" href="#">Forgot password?</a></div>
+                <button class="gbtn">Sign in</button>
+              </div>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:10px;align-items:center;justify-content:center">
+              <span class="envchip">Staging</span><span class="gmeta">v1.0.3 (412) · Support 1800 000 000</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">1440 × 900 · employee ID focused</div>
+  </div></div>
+  <p class="note">The left panel background is sampled from the video itself, so the 16:9 rectangle
+  disappears into the page. If you can see where the video starts and stops, the gradient is wrong —
+  that seam is the difference between a brand video and an embedded clip.</p>
+</section>
+
+<section>
+  <header><h2>Tablet · 834 px</h2>
+  <p class="sub">Stacked, not split. A side-by-side at this width leaves a cramped video and a 360 px
+  form. The band collapses when the keyboard opens.</p></header>
+  <div class="specs"><span class="spec">band 38% height</span><span class="spec">card 420px</span>
+    <span class="spec">fields 48px</span><span class="spec">hard edge, no blend</span></div>
+  <div class="stage"><div>
+    <div style="width:375px;height:500px">
+      <div class="frame tb" style="transform:scale(.45)">
+        <div class="band"><img src="../brand/dhoot-logo-poster.webp" alt="Dhoot Group"></div>
+        <div class="lower">
+          <div class="glass" style="width:420px">
+            <div style="margin-bottom:20px"><div class="sup">Autoprime Tata</div><div class="ttl">Sign in</div></div>
+            <div class="rowgap">
+              <div class="gf"><label>Employee ID</label><div class="gctl"><input value="100482" readonly></div></div>
+              <div class="gf"><label>Password</label><div class="gctl"><input type="password" value="pdi123456" readonly><button class="show">Show</button></div></div>
+              <div><a class="glink" href="#">Forgot password?</a></div>
+              <button class="gbtn">Sign in</button>
+            </div>
+          </div>
+          <div class="gmeta">Basni · v1.0.3 (412)</div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">834 × 1112 portrait</div>
+  </div></div>
+</section>
+
+<section>
+  <header><h2>Phone · 390 px</h2>
+  <p class="sub">No video and no glass. The poster still is 12 KB against 306 KB of video, and a
+  blurred panel over a plain background costs GPU on a mid-range Android for nothing.</p></header>
+  <div class="specs"><span class="spec">poster 12 KB</span><span class="spec">fields 52px</span>
+    <span class="spec">text 16px</span><span class="spec">bottom-weighted</span><span class="spec">no backdrop-filter</span></div>
+  <div class="stage"><div>
+    <div style="width:390px;height:760px">
+      <div class="frame ph">
+        <div>
+          <img class="logo" src="../brand/dhoot-logo-poster.webp" alt="Dhoot Group">
+          <div style="font-size:15px;font-weight:600">Autoprime Tata</div>
+          <div style="font-size:12px;color:#667487">Pre-delivery inspection</div>
+        </div>
+        <div class="spacer"></div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="f"><label>Employee ID</label><div class="ctl"><input value="100482" readonly></div></div>
+          <div class="f"><label>Password</label><div class="ctl"><input type="password" value="pdi123456" readonly><button class="show">Show</button></div></div>
+          <button class="btn">Sign in</button>
+          <button class="btn btn--sec"><svg viewBox="0 0 24 24"><use href="#i-finger"/></svg>Use fingerprint</button>
+          <div style="text-align:center"><a class="link" href="#">Forgot password?</a></div>
+          <div class="meta">Basni · v1.0.3 (412) · Support 1800 000 000</div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">390 × 760 · poster only, no video</div>
+  </div></div>
+</section>
+
+<section>
+  <header><h2>Asset budget</h2>
+  <p class="sub">The original upload re-encoded for the web. Audio stripped — it was being downloaded
+  on every load for a silent logo animation.</p></header>
+  <div class="card" style="padding:4px 12px">
+    <table>
+      <tr><th>File</th><th>Spec</th><th>Size</th><th>Used on</th></tr>
+      <tr><td class="n">is_image_me_Dhoot_Group_Likha.mp4</td><td>1280×720, H.264 + AAC, 10 s</td><td class="n">2.54 MB</td><td>source only</td></tr>
+      <tr><td class="n">dhoot-logo-reveal.mp4</td><td>960×540, no audio, faststart</td><td class="n">306 KB</td><td>≥ 1024 px</td></tr>
+      <tr><td class="n">dhoot-logo-poster.webp</td><td>final frame, 960×540</td><td class="n">12 KB</td><td>everywhere</td></tr>
+      <tr><td class="n">dhoot-logo-poster.jpg</td><td>final frame fallback</td><td class="n">22 KB</td><td>old browsers</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <header><h2>What changed from your reference, and why</h2></header>
+  <div class="grid2">
+    <div class="card" style="padding:24px"><h3>Kept</h3><div class="do">
+      <div><svg class="yes" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>The split, with brand content on the left and the form on the right.</span></div>
+      <div><svg class="yes" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>The translucent card, the blue, the rounded corners, the soft depth.</span></div>
+      <div><svg class="yes" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>White inputs sitting on the glass, dark committed Sign in button.</span></div>
+      <div><svg class="yes" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Forgot password as a quiet link under the password field.</span></div>
+    </div></div>
+    <div class="card" style="padding:24px"><h3>Changed</h3><div class="do">
+      <div><svg class="no" viewBox="0 0 24 24"><use href="#i-x"/></svg><span>Glass no longer sits over the video — contrast would pass on one frame and fail on the next.</span></div>
+      <div><svg class="no" viewBox="0 0 24 24"><use href="#i-x"/></svg><span>Google, GitHub and Facebook buttons removed — this system has no social sign-in.</span></div>
+      <div><svg class="no" viewBox="0 0 24 24"><use href="#i-x"/></svg><span>"Register for free" removed — administrators create accounts, there is no self-signup.</span></div>
+      <div><svg class="no" viewBox="0 0 24 24"><use href="#i-x"/></svg><span>Email field became Employee ID, in mono, matching how staff actually sign in.</span></div>
+      <div><svg class="no" viewBox="0 0 24 24"><use href="#i-x"/></svg><span>Decorative floating blobs dropped — the video is the only movement on the page.</span></div>
+    </div></div>
+  </div>
+  <p class="note">This screen is a documented exception to the design system's no-glass and no-gradient
+  rules, scoped to <span class="mono">/signin</span> only and recorded as ADR-009. It carries no
+  operational data and is seen once a shift. It does not travel to any other screen.</p>
+</section>
+
+</div>
+</body>
+</html>

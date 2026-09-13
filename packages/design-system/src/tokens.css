@@ -409,5 +409,6 @@ svg.lucide {
   --shadow-auth-focus: 0 0 0 2px rgba(255, 255, 255, 0.9);
   --auth-btn-bg: #0F2445;
   --auth-link: #9FC0F0;
+  --auth-mobile-bg: linear-gradient(180deg, #EFEFEF 0%, #F6F7F8 26%, #FFFFFF 46%, #FFFFFF 100%);
 }
 

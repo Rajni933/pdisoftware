@@ -93,7 +93,7 @@ export const AuthShell: React.FC<AuthShellProps> = ({
         >
           <div className="w-full max-w-[560px] flex flex-col items-center justify-center">
             <BrandVideo
-              captionProduct={title}
+              captionProduct={subtitle ? `${title} · ${subtitle}` : title}
               captionBranches={captionBranches}
             />
           </div>
@@ -116,12 +116,12 @@ export const AuthShell: React.FC<AuthShellProps> = ({
               boxShadow: 'var(--shadow-auth-card)',
             }}
           >
-            {/* Header inside glass card */}
+            {/* Header inside glass card per Brief 02 mockup (.sup + .ttl) */}
             <div className="mb-[var(--space-5,20px)] text-left">
-              <div className="text-[var(--t-caption-size,0.75rem)] font-[var(--fw-semibold,600)] tracking-wider uppercase text-white/75 mb-[var(--space-1,4px)]">
+              <div className="text-[12px] leading-[18px] text-white/70 mb-[2px]">
                 {title}
               </div>
-              <h1 className="text-[var(--t-h2-size,1.1875rem)] leading-[var(--t-h2-lh,26px)] font-[var(--fw-semibold,600)] text-white m-0">
+              <h1 className="text-[19px] leading-[26px] font-[var(--fw-semibold,600)] text-white m-0">
                 Sign in
               </h1>
             </div>
@@ -162,7 +162,7 @@ export const AuthShell: React.FC<AuthShellProps> = ({
           <div className="w-full max-w-[480px]">
             <BrandVideo
               paused={isKeyboardOpen}
-              captionProduct={title}
+              captionProduct={subtitle ? `${title} · ${subtitle}` : title}
               captionBranches={captionBranches}
             />
           </div>
@@ -185,10 +185,10 @@ export const AuthShell: React.FC<AuthShellProps> = ({
             }}
           >
             <div className="mb-[var(--space-5,20px)] text-left">
-              <div className="text-[var(--t-caption-size,0.75rem)] font-[var(--fw-semibold,600)] tracking-wider uppercase text-white/75 mb-[var(--space-1,4px)]">
+              <div className="text-[12px] leading-[18px] text-white/70 mb-[2px]">
                 {title}
               </div>
-              <h1 className="text-[var(--t-h2-size,1.1875rem)] leading-[var(--t-h2-lh,26px)] font-[var(--fw-semibold,600)] text-white m-0">
+              <h1 className="text-[19px] leading-[26px] font-[var(--fw-semibold,600)] text-white m-0">
                 Sign in
               </h1>
             </div>
@@ -210,14 +210,19 @@ export const AuthShell: React.FC<AuthShellProps> = ({
   // SURFACE 3: Phone (< 768 px) — Plain Surface, Zero Glass Card, Bottom-Weighted
   // --------------------------------------------------------------------------
   return (
-    <div className="min-h-screen w-full bg-[var(--color-surface)] flex flex-col justify-between p-[var(--space-5,20px)] pt-[40px]">
+    <div
+      className="min-h-screen w-full flex flex-col justify-between p-[var(--space-5,20px)] pt-[44px] pb-[28px]"
+      style={{
+        background: 'var(--auth-mobile-bg)',
+      }}
+    >
       {/* Static Brand Poster Header (No video on mobile phone per brief) */}
       <header
         className={`transition-all duration-[var(--dur-enter)] ease-[var(--ease-out)] overflow-hidden ${
           isKeyboardOpen ? 'max-h-0 opacity-0 mb-0' : 'max-h-[160px] opacity-100 mb-[var(--space-6,24px)]'
         }`}
       >
-        <div className="w-[140px] aspect-[16/9] mb-[var(--space-2,8px)]">
+        <div className="w-[150px] aspect-[16/9] mb-[var(--space-2,6px)]">
           <img
             src="/brand/dhoot-logo-poster.webp"
             alt="Dhoot Group"
@@ -225,10 +230,10 @@ export const AuthShell: React.FC<AuthShellProps> = ({
             loading="eager"
           />
         </div>
-        <h1 className="text-[var(--t-h2-size,1.1875rem)] leading-[var(--t-h2-lh,26px)] font-[var(--fw-semibold,600)] text-[var(--color-text-primary)] m-0">
+        <h1 className="text-[15px] leading-[22px] font-[var(--fw-semibold,600)] text-[var(--color-text-primary)] m-0">
           {title}
         </h1>
-        <p className="text-[var(--t-caption-size,0.75rem)] leading-[var(--t-caption-lh,18px)] text-[var(--color-text-secondary)] m-0 mt-[2px]">
+        <p className="text-[12px] leading-[18px] text-[var(--color-text-secondary)] m-0 mt-[2px]">
           {subtitle}
         </p>
       </header>

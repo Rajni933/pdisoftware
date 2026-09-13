@@ -540,6 +540,16 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           </p>
         )}
 
+        <div className="flex items-center justify-start mt-[var(--space-2,8px)] mb-[var(--space-3,12px)]">
+          <button
+            type="button"
+            onClick={() => setShowForgotModal(true)}
+            className="text-[13px] font-[var(--fw-medium,500)] text-[var(--color-action)] hover:underline bg-transparent border-0 cursor-pointer p-0 auth-forgot-link"
+          >
+            Forgot password?
+          </button>
+        </div>
+
         <Button
           type="submit"
           variant="primary"
@@ -547,7 +557,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           isLoading={loading}
           loadingText="Signing in…"
           disabled={loading || !employeeId.trim() || !password || isOffline}
-          className="w-full mt-[var(--space-2,8px)]"
+          className="w-full mt-[var(--space-1,4px)]"
         >
           Sign in
         </Button>
@@ -564,16 +574,6 @@ export const SignInForm: React.FC<SignInFormProps> = ({
             <span>Use fingerprint</span>
           </Button>
         )}
-
-        <div className="text-center mt-[var(--space-4,16px)]">
-          <button
-            type="button"
-            onClick={() => setShowForgotModal(true)}
-            className="text-[var(--t-caption-size,0.75rem)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:underline bg-transparent border-0 cursor-pointer p-0"
-          >
-            Forgot password?
-          </button>
-        </div>
 
         {/* Demo Quick-Fill Helper for Testing and Local Review */}
         <div className="mt-[var(--space-5,20px)] pt-[var(--space-3,12px)] border-t border-[var(--color-border-subtle)]">

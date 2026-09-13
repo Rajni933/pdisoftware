@@ -73,17 +73,31 @@
 .auth-card-content input {
   background-color: var(--auth-input-bg, #FFFFFF) !important;
   color: var(--color-text-primary) !important;
-  border-width: 0 !important;
+  border-radius: var(--radius-sm) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
 }
 .auth-card-content input:focus {
   box-shadow: var(--shadow-auth-focus) !important;
+  border-color: rgba(255, 255, 255, 0.9) !important;
 }
 .auth-card-content button[type="submit"] {
   background-color: var(--auth-btn-bg, #0F2445) !important;
   color: #FFFFFF !important;
+  font-weight: 500 !important;
+  border-radius: var(--radius-sm) !important;
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+.auth-card-content button[type="submit"]:hover {
+  background-color: #0A1930 !important;
 }
 .auth-card-content a,
-.auth-card-content button.show-pwd-btn {
+.auth-card-content .auth-forgot-link {
   color: var(--auth-link, #9FC0F0) !important;
+}
+.auth-card-content button[aria-label*="password"],
+.auth-card-content button[aria-label*="Password"] {
+  color: var(--color-action, #1A3A6B) !important;
+  font-weight: 500 !important;
+  background: transparent !important;
 }
 

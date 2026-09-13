@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Autoprime PDI — Login layouts</title>
+<title>Autoprime PDI — Login layouts (Brief 02 / ADR-009)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -11,7 +11,7 @@
 :root{
   --p-n-0:#FFFFFF;--p-n-25:#FBFCFD;--p-n-50:#F4F6F8;--p-n-100:#E9EDF1;--p-n-200:#D7DEE5;
   --p-n-300:#B9C4CF;--p-n-400:#8A97A6;--p-n-500:#667487;--p-n-600:#4A5766;--p-n-900:#121A23;
-  --p-b-400:#3C63A3;--p-b-500:#1A3A6B;--p-b-600:#15305A;
+  --p-b-400:#3C63A3;--p-b-500:#1A3A6B;--p-b-600:#15305A;--p-b-700:#0F2445;
   --color-bg:var(--p-n-25);--color-surface:var(--p-n-0);--color-surface-sunken:var(--p-n-50);
   --color-text-primary:var(--p-n-900);--color-text-secondary:var(--p-n-600);--color-text-tertiary:var(--p-n-500);
   --color-border-subtle:var(--p-n-100);--color-border:var(--p-n-200);--color-border-strong:var(--p-n-300);
@@ -24,6 +24,17 @@
   --radius-xs:3px;--radius-sm:6px;--radius-md:10px;
   --focus-ring:0 0 0 2px var(--color-surface),0 0 0 4px var(--p-b-400);
   --dur-micro:120ms;--ease-out:cubic-bezier(.2,.8,.2,1);
+
+  /* ADR-009: Scoped Auth Route Tokens */
+  --auth-stage: radial-gradient(circle at 50% 45%, #EFEFEF 0%, #DCDCDC 100%);
+  --auth-field: linear-gradient(160deg, #1F4B8F 0%, #1A3A6B 55%, #0F2445 100%);
+  --auth-card-bg: rgba(255, 255, 255, 0.08);
+  --auth-card-border: rgba(255, 255, 255, 0.16);
+  --shadow-auth-card: 0 24px 60px -20px rgba(10, 25, 48, 0.55);
+  --auth-input-bg: #FFFFFF;
+  --shadow-auth-focus: 0 0 0 2px rgba(255, 255, 255, 0.9);
+  --auth-btn-bg: #0F2445;
+  --auth-link: #9FC0F0;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --color-bg:#0C1218;--color-surface:#121A23;--color-surface-sunken:#18222D;
@@ -46,7 +57,7 @@
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;background:var(--color-bg);color:var(--color-text-primary);
   font-family:var(--font-sans);font-size:14px;line-height:22px;-webkit-font-smoothing:antialiased}
-.wrap{max-width:1100px;margin:0 auto;padding:40px 20px 96px}
+.wrap{max-width:1160px;margin:0 auto;padding:40px 20px 96px}
 h1{font-size:28px;line-height:36px;font-weight:600;letter-spacing:-.02em;margin:0 0 6px}
 h2{font-size:19px;line-height:26px;font-weight:600;letter-spacing:-.01em;margin:0 0 4px}
 h3{font-size:13px;font-weight:600;margin:0 0 10px;color:var(--color-text-secondary)}
@@ -68,11 +79,6 @@ section>header{margin-bottom:20px}
 .cap{margin-top:10px;font-size:12px;color:var(--color-text-tertiary);font-family:var(--font-mono)}
 
 /* ---- shared auth form primitives (scaled inside frames) ---- */
-.mark{width:34px;height:34px;border-radius:var(--radius-sm);background:var(--color-action);
-  color:#fff;display:grid;place-items:center;font-weight:600;font-size:15px;flex:none}
-.brand{display:flex;gap:12px;align-items:center}
-.brand .n{font-size:17px;font-weight:600;line-height:22px}
-.brand .t{font-size:12px;line-height:18px;color:var(--color-text-secondary)}
 .f{display:flex;flex-direction:column;gap:6px}
 .f label{font-size:13px;line-height:18px;font-weight:500;color:var(--color-text-secondary)}
 .ctl{display:flex;align-items:center;gap:8px;border:1px solid var(--color-border);
@@ -100,10 +106,34 @@ section>header{margin-bottom:20px}
   border:1px solid var(--color-warning-border)}
 .card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-sm)}
 
+/* ADR-009: Scoped Glass Card Styling for /signin */
+.card-glass{
+  background:var(--auth-card-bg);
+  border:1px solid var(--auth-card-border);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  box-shadow:var(--shadow-auth-card);
+  border-radius:var(--radius-md);
+  color:#FFFFFF;
+}
+.card-glass label{color:rgba(255,255,255,0.80)!important}
+.card-glass .ctl{
+  background:var(--auth-input-bg);
+  border-color:rgba(255,255,255,0.4);
+}
+.card-glass .ctl input{color:#121A23}
+.card-glass .btn-auth{
+  background:var(--auth-btn-bg);
+  color:#FFFFFF;
+}
+.card-glass .btn-auth:hover{background:#08162B}
+.card-glass .link-auth{color:var(--auth-link)}
+.card-glass .meta-auth{color:rgba(255,255,255,0.65)}
+
 /* phone specifics */
-.ph{width:390px;height:760px;display:flex;flex-direction:column;background:var(--color-surface);padding:44px 20px 28px}
-.ph .top{padding-top:8px}
-.ph .spacer{flex:1;min-height:40px}
+.ph{width:390px;height:760px;display:flex;flex-direction:column;background:var(--color-surface);padding:40px 20px 28px}
+.ph .top{padding-top:8px;text-align:center}
+.ph .spacer{flex:1;min-height:30px}
 .ph .f label{font-size:14px}
 .ph .ctl{height:52px;font-size:16px}
 .ph .btn{height:52px;font-size:16px}
@@ -112,24 +142,21 @@ section>header{margin-bottom:20px}
   display:grid;place-items:center;color:var(--color-text-tertiary);font-size:12px;
   margin:0 -20px -28px}
 
-/* tablet */
-.tb{width:834px;height:1112px;display:grid;place-items:center;padding:40px}
-.tb .card{width:420px;padding:32px}
-.tb .ctl{height:48px;font-size:15px}
-.tb .btn{height:48px;font-size:15px}
-.tbl{width:1112px;height:834px;display:grid;place-items:center;padding:40px}
-.tbl .card{width:560px;padding:0;display:grid;grid-template-columns:200px 1fr}
-.tbl .left{padding:32px;border-right:1px solid var(--color-border-subtle);display:flex;flex-direction:column;gap:10px}
-.tbl .right{padding:32px}
-.tbl .ctl{height:48px;font-size:15px}
-.tbl .btn{height:48px;font-size:15px}
+/* tablet specifics */
+.tb-stacked{width:834px;height:1112px;display:flex;flex-direction:column;background:var(--color-surface)}
+.tb-top-stage{height:38%;background:var(--auth-stage);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.tb-bottom-field{flex:1;background:var(--auth-field);display:grid;place-items:center;padding:32px}
+.tb-bottom-field .card-glass{width:420px;padding:32px}
+.tb-bottom-field .ctl{height:48px;font-size:15px}
+.tb-bottom-field .btn{height:48px;font-size:15px}
 
-/* laptop */
-.lp{width:1440px;height:900px;display:grid;place-items:center;padding:40px}
-.lp .inner{width:400px;margin-top:-8%}
-.lp .card{padding:32px}
-.lp .ctl{height:36px;font-size:14px}
-.lp .btn{height:36px;font-size:14px}
+/* laptop / desktop split */
+.lp-split{width:1440px;height:900px;display:grid;grid-template-columns:52% 48%}
+.lp-stage{background:var(--auth-stage);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px}
+.lp-field{background:var(--auth-field);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px}
+.lp-field .card-glass{width:400px;padding:36px}
+.lp-field .ctl{height:40px;font-size:14px}
+.lp-field .btn{height:40px;font-size:14px}
 
 .rowgap{display:flex;flex-direction:column;gap:20px}
 .otp{display:flex;gap:8px}
@@ -161,31 +188,126 @@ section>header{margin-bottom:20px}
 <div class="wrap">
 <header class="page">
   <div style="margin-bottom:12px"><a class="link" href="preview.html" style="font-weight:600">&larr; Back to Design System Living Showcase</a></div>
-  <h1>Login — three surfaces, one form</h1>
-  <p class="sub">Same <span class="mono">SignInForm</span> component, three layout shells. Only the
-  posture changes: a thumb outside in the sun, two hands at a branch desk, and a keyboard at a
-  workstation. Everything is built from the design-system tokens.</p>
+  <h1>Login — Brief 02 with Dhoot Group Brand Video (ADR-009)</h1>
+  <p class="sub">Same <span class="mono">SignInForm</span> state machine across three responsive postures. Features the Dhoot Group brand reveal video on desktop/tablet, high-contrast frosted glass on navy field, and plain high-performance touch UI on mobile.</p>
 </header>
+
+<!-- LAPTOP / DESKTOP -->
+<section>
+  <header>
+    <h2>Surface 1: Laptop & Desktop · 1440 px</h2>
+    <p class="sub">52% stage with Dhoot Group brand reveal video on the left (light-grey radial matched seamlessly to video background), and 48% field with navy gradient and 400 px frosted glass card on the right.</p>
+  </header>
+  <div class="specs">
+    <span class="spec">split 52% / 48%</span><span class="spec">video 16:9 contained</span>
+    <span class="spec">card 400px glass</span><span class="spec">contrast AAA (17.5:1)</span>
+    <span class="spec">ADR-009 strictly bounded</span>
+  </div>
+  <div class="stage">
+    <div class="box">
+      <div style="width:720px;height:450px">
+        <div class="frame lp-split" style="transform:scale(.5)">
+          <div class="lp-stage">
+            <div style="width:100%;max-width:540px;aspect-ratio:16/9;position:relative;display:flex;align-items:center;justify-content:center">
+              <video src="../brand/dhoot-logo-reveal.mp4" poster="../brand/dhoot-logo-poster.webp" muted playsinline autoplay style="width:100%;height:100%;object-fit:contain;border-radius:6px"></video>
+            </div>
+            <div style="margin-top:24px;text-align:center">
+              <div style="font-size:20px;font-weight:600;color:#121A23;letter-spacing:-.01em">Autoprime Tata</div>
+              <div style="font-size:13px;color:#667487;margin-top:4px">Jodhpur · Pali · Barmer</div>
+            </div>
+          </div>
+          <div class="lp-field">
+            <div class="card-glass">
+              <div style="margin-bottom:24px">
+                <div style="font-size:20px;font-weight:600;letter-spacing:-.01em;line-height:26px">Sign in</div>
+                <div style="font-size:13px;color:rgba(255,255,255,0.70);margin-top:4px">Enter your dealership credentials to continue</div>
+              </div>
+              <div class="rowgap">
+                <div class="f"><label>Employee ID</label>
+                  <div class="ctl" style="box-shadow:var(--shadow-auth-focus)"><input value="100482" readonly></div></div>
+                <div class="f"><label>Password</label>
+                  <div class="ctl"><input type="password" value="pdi123456" readonly><button class="show" style="color:var(--auth-btn-bg)">Show</button></div></div>
+                <button class="btn btn-auth">Sign in</button>
+                <div style="text-align:center"><a class="link link-auth" href="#">Forgot password?</a></div>
+              </div>
+              <div style="margin-top:24px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.14);display:flex;gap:10px;align-items:center;justify-content:center">
+                <span class="envchip">Staging</span>
+                <span class="meta meta-auth">v1.0.3 (412) · Support 1800 000 000</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cap">1440 × 900 · 52% brand stage (seamless video) · 48% navy field with glass card</div>
+    </div>
+  </div>
+  <p class="note">The video background (#EFEFEF to #DCDCDC radial) is matched exactly by --auth-stage so the video blends with zero visible borders or letterbox bars.</p>
+</section>
+
+<!-- TABLET -->
+<section>
+  <header>
+    <h2>Surface 2: Tablet · 834 px Portrait</h2>
+    <p class="sub">Stacked bands. Top 38% brand stage with video. Bottom navy field with 420 px glass card. The video gracefully collapses to 0 height when the software keyboard opens.</p>
+  </header>
+  <div class="specs">
+    <span class="spec">stacked 38% / 62%</span><span class="spec">card 420px glass</span>
+    <span class="spec">fields 48px</span><span class="spec">keyboard-aware collapse</span>
+  </div>
+  <div class="stage">
+    <div class="box">
+      <div style="width:350px;height:467px">
+        <div class="frame tb-stacked" style="transform:scale(.42)">
+          <div class="tb-top-stage">
+            <div style="width:100%;max-width:380px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center">
+              <video src="../brand/dhoot-logo-reveal.mp4" poster="../brand/dhoot-logo-poster.webp" muted playsinline style="width:100%;height:100%;object-fit:contain"></video>
+            </div>
+            <div style="margin-top:12px;text-align:center">
+              <div style="font-size:16px;font-weight:600;color:#121A23">Autoprime Tata</div>
+              <div style="font-size:12px;color:#667487">Jodhpur · Pali · Barmer</div>
+            </div>
+          </div>
+          <div class="tb-bottom-field">
+            <div class="card-glass">
+              <div style="margin-bottom:20px">
+                <div style="font-size:18px;font-weight:600">Sign in</div>
+                <div style="font-size:13px;color:rgba(255,255,255,0.70);margin-top:2px">Enter employee ID & password</div>
+              </div>
+              <div class="rowgap">
+                <div class="f"><label>Employee ID</label><div class="ctl"><input value="100482" readonly></div></div>
+                <div class="f"><label>Password</label><div class="ctl"><input type="password" value="pdi123456" readonly><button class="show" style="color:var(--auth-btn-bg)">Show</button></div></div>
+                <button class="btn btn-auth">Sign in</button>
+                <div style="text-align:center"><a class="link link-auth" href="#">Forgot password?</a></div>
+              </div>
+              <div class="meta meta-auth" style="margin-top:16px;text-align:center">Basni · v1.0.3 (412)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cap">834 × 1112 portrait · stacked bands with collapsing video</div>
+    </div>
+  </div>
+</section>
 
 <!-- PHONE -->
 <section>
   <header>
-    <h2>Phone · 390 px</h2>
-    <p class="sub">Bottom-weighted, not centred. Every interactive element sits in the lower 60% of the
-    screen. No card — a border inside a phone screen does nothing.</p>
+    <h2>Surface 3: Phone · 390 px</h2>
+    <p class="sub">No video! Static 140 px WebP poster at the top, bottom-weighted layout within lower 60% thumb reach. Plain surface (no glassmorphism) to prevent GPU compositing lag on budget Android phones in the yard.</p>
   </header>
   <div class="specs">
     <span class="spec">fields 52px</span><span class="spec">text 16px</span>
-    <span class="spec">no card</span><span class="spec">biometric secondary</span>
-    <span class="spec">keyboard-aware</span>
+    <span class="spec">no video</span><span class="spec">no glass</span>
+    <span class="spec">biometric secondary</span><span class="spec">keyboard-aware</span>
   </div>
   <div class="stage">
     <div class="box">
       <div style="width:390px;height:760px">
         <div class="frame ph">
           <div class="top">
-            <div class="brand"><div class="mark">A</div>
-              <div><div class="n">Autoprime</div><div class="t">Pre-delivery inspection</div></div></div>
+            <img src="../brand/dhoot-logo-poster.webp" alt="Dhoot Group" style="width:140px;height:auto;display:inline-block">
+            <div style="font-size:15px;font-weight:600;margin-top:6px;color:var(--color-text-primary)">Autoprime Tata</div>
+            <div style="font-size:12px;color:var(--color-text-secondary)">Jodhpur · Pali · Barmer</div>
           </div>
           <div class="spacer"></div>
           <div class="stackgap">
@@ -200,15 +322,15 @@ section>header{margin-bottom:20px}
           </div>
         </div>
       </div>
-      <div class="cap">390 × 760 · idle</div>
+      <div class="cap">390 × 760 · idle · static poster, zero-glass plain surface</div>
     </div>
 
     <div class="box">
       <div style="width:390px;height:760px">
         <div class="frame ph" style="padding-bottom:0">
           <div class="top" style="opacity:.25">
-            <div class="brand"><div class="mark">A</div>
-              <div><div class="n">Autoprime</div><div class="t">Pre-delivery inspection</div></div></div>
+            <img src="../brand/dhoot-logo-poster.webp" alt="Dhoot Group" style="width:140px;height:auto;display:inline-block">
+            <div style="font-size:15px;font-weight:600;margin-top:6px">Autoprime Tata</div>
           </div>
           <div class="spacer" style="min-height:0"></div>
           <div class="stackgap" style="padding-bottom:16px">
@@ -226,117 +348,15 @@ section>header{margin-bottom:20px}
       <div class="cap">390 × 760 · invalid credentials, keyboard open</div>
     </div>
   </div>
-  <p class="note">16 px input text is not a style choice — anything smaller makes iOS zoom the page on
-  focus, and the engineer loses the button. 52 px height is the glove minimum.</p>
-</section>
-
-<!-- TABLET -->
-<section>
-  <header>
-    <h2>Tablet · 834 portrait and 1112 landscape</h2>
-    <p class="sub">A 420 px card at 40% from the top. In landscape the same card turns into two columns —
-    a tall narrow card in a wide short field reads as broken, and the keyboard eats half the height.</p>
-  </header>
-  <div class="specs">
-    <span class="spec">card 420px / 560px</span><span class="spec">fields 48px</span>
-    <span class="spec">border, no shadow</span><span class="spec">orientation-safe</span>
-  </div>
-  <div class="stage">
-    <div class="box">
-      <div style="width:350px;height:467px">
-        <div class="frame tb" style="transform:scale(.42)">
-          <div class="card">
-            <div class="brand" style="margin-bottom:20px"><div class="mark">A</div>
-              <div><div class="n">Autoprime</div><div class="t">Pre-delivery inspection</div></div></div>
-            <div style="height:1px;background:var(--color-border-subtle);margin-bottom:20px"></div>
-            <div class="rowgap">
-              <div class="f"><label>Employee ID</label><div class="ctl"><input value="100482" readonly></div></div>
-              <div class="f"><label>Password</label><div class="ctl"><input type="password" value="pdi123456" readonly><button class="show">Show</button></div></div>
-              <button class="btn">Sign in</button>
-              <div style="text-align:center"><a class="link" href="#">Forgot password?</a></div>
-            </div>
-          </div>
-          <div class="meta" style="margin-top:14px;text-align:center">Basni · v1.0.3 (412)</div>
-        </div>
-      </div>
-      <div class="cap">834 × 1112 portrait</div>
-    </div>
-
-    <div class="box">
-      <div style="width:467px;height:350px">
-        <div class="frame tbl" style="transform:scale(.42)">
-          <div class="card">
-            <div class="left">
-              <div class="mark">A</div>
-              <div><div class="n" style="font-size:17px;font-weight:600">Autoprime</div>
-                <div class="t">Pre-delivery inspection</div></div>
-              <div style="flex:1"></div>
-              <div class="meta">Basni<br>v1.0.3 (412)<br>Support 1800 000 000</div>
-            </div>
-            <div class="right">
-              <div class="rowgap">
-                <div class="f"><label>Employee ID</label><div class="ctl"><input value="100482" readonly></div></div>
-                <div class="f"><label>Password</label><div class="ctl"><input type="password" value="pdi123456" readonly><button class="show">Show</button></div></div>
-                <button class="btn">Sign in</button>
-                <div><a class="link" href="#">Forgot password?</a></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="cap">1112 × 834 landscape</div>
-    </div>
-  </div>
-</section>
-
-<!-- LAPTOP -->
-<section>
-  <header>
-    <h2>Laptop · 1440 px</h2>
-    <p class="sub">A single 400 px card, keyboard-first. No split-screen hero, no photograph, no
-    illustration — that layout spends half the viewport saying nothing, and it is the one thing every
-    dealership login already looks like.</p>
-  </header>
-  <div class="specs">
-    <span class="spec">card 400px, never wider</span><span class="spec">fields 36px</span>
-    <span class="spec">autofocus employee ID</span><span class="spec">password managers work</span>
-  </div>
-  <div class="stage">
-    <div class="box">
-      <div style="width:720px;height:450px">
-        <div class="frame lp" style="transform:scale(.5)">
-          <div class="inner">
-            <div class="card">
-              <div class="brand" style="margin-bottom:20px"><div class="mark">A</div>
-                <div><div class="n">Autoprime</div><div class="t">Pre-delivery inspection</div></div></div>
-              <div style="height:1px;background:var(--color-border-subtle);margin-bottom:20px"></div>
-              <div class="rowgap">
-                <div class="f"><label>Employee ID</label>
-                  <div class="ctl" style="border-color:var(--p-b-400);box-shadow:var(--focus-ring)"><input value="100482" readonly></div></div>
-                <div class="f"><label>Password</label>
-                  <div class="ctl"><input type="password" value="pdi123456" readonly><button class="show">Show</button></div></div>
-                <button class="btn">Sign in</button>
-                <div style="text-align:center"><a class="link" href="#">Forgot password?</a></div>
-              </div>
-            </div>
-            <div style="margin-top:14px;display:flex;gap:10px;align-items:center;justify-content:center">
-              <span class="envchip">Staging</span>
-              <span class="meta">v1.0.3 (412) · Support 1800 000 000</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="cap">1440 × 900 · employee ID autofocused, staging badge visible</div>
-    </div>
-  </div>
-  <p class="note">The empty space around the card is the design. It is the only screen in the product
-  that is not dense, and the jump into the dashboard behind it is the point.</p>
+  <p class="note">16 px input text prevents iOS auto-zoom on focus. 52 px field height meets the field glove touch target minimum.</p>
 </section>
 
 <!-- SECONDARY SCREENS -->
 <section>
-  <header><h2>The screens that come after</h2>
-  <p class="sub">Same shell, form replaced. Shown at laptop density; all three surfaces use the same components.</p></header>
+  <header>
+    <h2>The screens that come after</h2>
+    <p class="sub">Same shell, form replaced. Shown at laptop density; all surfaces use the same state components.</p>
+  </header>
   <div class="grid2">
     <div class="card" style="padding:24px">
       <h3>Verify — phone OTP</h3>
@@ -389,22 +409,23 @@ section>header{margin-bottom:20px}
   </div>
 </section>
 
+<!-- PRINCIPLES & ADR-009 -->
 <section>
-  <header><h2>What makes this login and not a template</h2></header>
+  <header><h2>Design System Rules & ADR-009 Governance</h2></header>
   <div class="grid2">
     <div class="card" style="padding:24px"><h3>Always</h3><div class="do">
-      <div><svg class="yes" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>One form component, three layout shells — they cannot drift apart later.</span></div>
-      <div><svg class="yes" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Same message and same timing for an unknown ID and a wrong password.</span></div>
-      <div><svg class="yes" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Attempt counter and lockout countdown come from the server, live.</span></div>
-      <div><svg class="yes" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Environment, version and support line under every form.</span></div>
-      <div><svg class="yes" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Real &lt;form&gt;, real autoComplete, Enter submits — password managers must work.</span></div>
+      <div><svg class="yes" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>One form component, three layout shells — state machines cannot drift apart.</span></div>
+      <div><svg class="yes" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>ADR-009: Scoped exception strictly bounded to /signin route.</span></div>
+      <div><svg class="yes" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Seamless video blending: --auth-stage radial matches video background precisely.</span></div>
+      <div><svg class="yes" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>AAA text contrast on glass card (17.5:1 white-on-navy, 7.4:1 labels).</span></div>
+      <div><svg class="yes" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Real &lt;form&gt;, real autoComplete, Enter submits — password managers work.</span></div>
     </div></div>
     <div class="card" style="padding:24px"><h3>Never</h3><div class="do">
-      <div><svg class="no" viewBox="0 0 24 24"><use href="#i-x"/></svg><span>A split-screen hero with a photograph or an illustration.</span></div>
-      <div><svg class="no" viewBox="0 0 24 24"><use href="#i-x"/></svg><span>"Remember me" — device registration already handles persistence.</span></div>
-      <div><svg class="no" viewBox="0 0 24 24"><use href="#i-x"/></svg><span>A self-serve password reset flow. The admin resets passwords.</span></div>
-      <div><svg class="no" viewBox="0 0 24 24"><use href="#i-x"/></svg><span>Naming which field was wrong, or a strength meter on sign-in.</span></div>
-      <div><svg class="no" viewBox="0 0 24 24"><use href="#i-x"/></svg><span>A full-page spinner overlay. The button carries the loading state.</span></div>
+      <div><svg class="no" viewBox="0 0 24 24"><use href="#i-x"/></svg><span>Glassmorphism or gradients leaked into dashboard or inspection screens.</span></div>
+      <div><svg class="no" viewBox="0 0 24 24"><use href="#i-x"/></svg><span>Video auto-looping: plays once, holds final lockup frame cleanly.</span></div>
+      <div><svg class="no" viewBox="0 0 24 24"><use href="#i-x"/></svg><span>Video loading on mobile phones: poster only, saving bandwidth and GPU.</span></div>
+      <div><svg class="no" viewBox="0 0 24 24"><use href="#i-x"/></svg><span>A self-serve password reset flow. Branch admin resets credentials.</span></div>
+      <div><svg class="no" viewBox="0 0 24 24"><use href="#i-x"/></svg><span>Full-page spinner overlay. The button carries the loading state.</span></div>
     </div></div>
   </div>
 </section>

@@ -395,3 +395,20 @@ body {
 svg.lucide {
   stroke-width: 1.5px;
 }
+
+/* --------------------------------------------------------------------------
+   ADR-009: Scoped Auth Route Tokens (Login Screen only)
+   -------------------------------------------------------------------------- */
+:root {
+  --auth-stage: radial-gradient(circle at 50% 45%, #EFEFEF 0%, #DCDCDC 100%);
+  --auth-field: linear-gradient(160deg, #1F4B8F 0%, #1A3A6B 55%, #0F2445 100%);
+  --auth-card-bg: rgba(255, 255, 255, 0.08);
+  --auth-card-border: rgba(255, 255, 255, 0.16);
+  --shadow-auth-card: 0 24px 60px -20px rgba(10, 25, 48, 0.55);
+  --auth-input-bg: #FFFFFF;
+  --shadow-auth-focus: 0 0 0 2px rgba(255, 255, 255, 0.9);
+  --auth-btn-bg: #0F2445;
+  --auth-link: #9FC0F0;
+  --auth-mobile-bg: linear-gradient(180deg, #EFEFEF 0%, #F6F7F8 26%, #FFFFFF 46%, #FFFFFF 100%);
+}
+
