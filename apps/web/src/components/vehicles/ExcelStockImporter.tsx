@@ -616,7 +616,7 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
               <div className="border border-line rounded overflow-hidden">
                 <div className="max-h-48 overflow-x-auto overflow-y-auto">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead className="bg-[#EEF2F8] border-b border-[#C9D6E8] text-[#1A3A6B] font-semibold uppercase tracking-[0.06em] text-[11px] sticky top-0">
+                    <thead className="bg-accent-soft border-b border-accent-line text-accent font-semibold uppercase tracking-[0.06em] text-[11px] sticky top-0">
                       <tr>
                         <th className="py-2 px-3 whitespace-nowrap">Status</th>
                         <th className="py-2 px-3 whitespace-nowrap">VIN No</th>

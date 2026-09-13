@@ -1,0 +1,13 @@
+## UI work — mandatory
+
+Before writing or editing ANY file under apps/web, apps/admin, apps/mobile, packages/ui or
+packages/design-system, read .agent/skills/autoprime-design/SKILL.md in full, plus the reference
+file it points you to for the task at hand.
+
+Hard constraints:
+- No raw hex, px font-size, or ms value in component code. Tokens only.
+- No new component pattern without adding it to references/02-components.md in the same change.
+- Every screen implements the applicable states from references/03-loaders-states.md.
+- Paste the completed checklist from references/07-review-gate.md into the PR description.
+
+If a request conflicts with the skill, say so and ask — do not silently deviate.

@@ -20,6 +20,9 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@autoprime/design-system':
+        specifier: workspace:*
+        version: link:../../packages/design-system
       expo:
         specifier: ~52.0.0
         version: 52.0.49(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@expo/metro-runtime@4.0.1(react-native@0.76.5(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.3.31)(react@18.3.1)))(react-native@0.76.5(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.3.31)(react@18.3.1))(react@18.3.1)
@@ -45,12 +48,18 @@ importers:
 
   apps/web:
     dependencies:
+      '@autoprime/design-system':
+        specifier: workspace:*
+        version: link:../../packages/design-system
       '@autoprime/domain':
         specifier: workspace:*
         version: link:../../packages/domain
       '@autoprime/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@autoprime/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@autoprime/validation':
         specifier: workspace:*
         version: link:../../packages/validation
@@ -124,6 +133,37 @@ importers:
         version: link:../types
 
   packages/types: {}
+
+  packages/ui:
+    dependencies:
+      '@autoprime/design-system':
+        specifier: workspace:*
+        version: link:../design-system
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      lucide-react:
+        specifier: ^0.468.0
+        version: 0.468.0(react@18.3.1)
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+      tailwind-merge:
+        specifier: ^2.5.5
+        version: 2.6.1
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.12
+        version: 18.3.31
+      '@types/react-dom':
+        specifier: ^18.3.1
+        version: 18.3.7(@types/react@18.3.31)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
 
   packages/validation:
     dependencies:
@@ -1309,7 +1349,7 @@ packages:
 
   '@expo/bunyan@4.0.1':
     resolution: {integrity: sha512-+Lla7nYSiHZirgK+U/uYzsLv/X+HaJienbD5AKX1UQZHYfWaP+9uuQluRB4GrEVWF0GZ7vEVp/jzaOT9k/SQlg==}
-    engines: {node: '>=0.10.0'}
+    engines: {'0': node >=0.10.0}
 
   '@expo/cli@0.22.28':
     resolution: {integrity: sha512-lvt72KNitGuixYD2l3SZmRKVu2G4zJpmg5V7WfUBNpmUU5oODBw/6qmiJ6kSLAlfDozscUk+BBGknBBzxUrwrA==}

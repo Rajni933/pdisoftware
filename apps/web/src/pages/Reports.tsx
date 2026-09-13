@@ -5,17 +5,17 @@ import { getBookingsForBrand } from '../data/seedData';
 
 // --- TABLE COMPONENTS ---
 
-const BaseTable = ({ title, headers, rows, renderRow, totalRow, headerColor = 'bg-[#ffe699]' }) => (
-  <div className="border border-blue-500 overflow-hidden mb-6">
-    <div className="bg-[#c2d69b] text-center font-bold text-sm py-1 border-b border-blue-500">
+const BaseTable = ({ title, headers, rows, renderRow, totalRow, headerColor = 'bg-warn-soft' }) => (
+  <div className="border border-accent-line overflow-hidden mb-6">
+    <div className="bg-ok-soft text-ok text-center font-bold text-sm py-1 border-b border-accent-line">
       {title}
     </div>
     <div className="overflow-x-auto">
       <table className="w-full text-center border-collapse whitespace-nowrap">
         <thead>
-          <tr className={`${headerColor} border-b border-blue-500 text-xs`}>
+          <tr className={`${headerColor} border-b border-accent-line text-xs`}>
             {headers.map((h, i) => (
-              <th key={i} className={`py-1 px-2 ${i !== headers.length - 1 ? 'border-r border-blue-500' : ''}`}>{h}</th>
+              <th key={i} className={`py-1 px-2 ${i !== headers.length - 1 ? 'border-r border-accent-line' : ''}`}>{h}</th>
             ))}
           </tr>
         </thead>
@@ -34,24 +34,24 @@ const CmLmLysmTable = ({ title, type, data, total }) => (
     headers={[type, 'LM', 'CM', '%', 'LYSM', 'CM', '%']}
     rows={data}
     renderRow={(row, idx) => (
-      <tr key={idx} className="border-b border-blue-500 bg-white text-xs">
-        <td className="py-1 px-2 border-r border-blue-500">{row.name}</td>
-        <td className="py-1 px-2 border-r border-blue-500">{row.lm}</td>
-        <td className="py-1 px-2 border-r border-blue-500">{row.cm1}</td>
-        <td className="py-1 px-2 border-r border-blue-500">{row.pct1}</td>
-        <td className="py-1 px-2 border-r border-blue-500">{row.lysm}</td>
-        <td className="py-1 px-2 border-r border-blue-500">{row.cm2}</td>
+      <tr key={idx} className="border-b border-accent-line bg-white text-xs">
+        <td className="py-1 px-2 border-r border-accent-line">{row.name}</td>
+        <td className="py-1 px-2 border-r border-accent-line">{row.lm}</td>
+        <td className="py-1 px-2 border-r border-accent-line">{row.cm1}</td>
+        <td className="py-1 px-2 border-r border-accent-line">{row.pct1}</td>
+        <td className="py-1 px-2 border-r border-accent-line">{row.lysm}</td>
+        <td className="py-1 px-2 border-r border-accent-line">{row.cm2}</td>
         <td className="py-1 px-2">{row.pct2}</td>
       </tr>
     )}
     totalRow={
-      <tr className="bg-[#ffe699] font-bold text-xs">
-        <td className="py-1 px-2 border-r border-blue-500">{total.name}</td>
-        <td className="py-1 px-2 border-r border-blue-500">{total.lm}</td>
-        <td className="py-1 px-2 border-r border-blue-500">{total.cm1}</td>
-        <td className="py-1 px-2 border-r border-blue-500">{total.pct1}</td>
-        <td className="py-1 px-2 border-r border-blue-500">{total.lysm}</td>
-        <td className="py-1 px-2 border-r border-blue-500">{total.cm2}</td>
+      <tr className="bg-warn-soft font-bold text-xs">
+        <td className="py-1 px-2 border-r border-accent-line">{total.name}</td>
+        <td className="py-1 px-2 border-r border-accent-line">{total.lm}</td>
+        <td className="py-1 px-2 border-r border-accent-line">{total.cm1}</td>
+        <td className="py-1 px-2 border-r border-accent-line">{total.pct1}</td>
+        <td className="py-1 px-2 border-r border-accent-line">{total.lysm}</td>
+        <td className="py-1 px-2 border-r border-accent-line">{total.cm2}</td>
         <td className="py-1 px-2">{total.pct2}</td>
       </tr>
     }
@@ -64,24 +64,24 @@ const FuelTable = ({ title, rowLabel, data, total, includeAmt = true }) => (
     headers={includeAmt ? [rowLabel, 'CNG', 'CNG AMT', 'Diesel', 'EV', 'Petrol', 'Total'] : [rowLabel, 'CNG', 'Diesel', 'EV', 'Petrol', 'Total']}
     rows={data}
     renderRow={(row, idx) => (
-      <tr key={idx} className="border-b border-blue-500 bg-white text-xs">
-        <td className="py-1 px-2 border-r border-blue-500">{row.name}</td>
-        <td className="py-1 px-2 border-r border-blue-500">{row.cng || ''}</td>
-        {includeAmt && <td className="py-1 px-2 border-r border-blue-500">{row.cngAmt || ''}</td>}
-        <td className="py-1 px-2 border-r border-blue-500">{row.diesel || ''}</td>
-        <td className="py-1 px-2 border-r border-blue-500">{row.ev || ''}</td>
-        <td className="py-1 px-2 border-r border-blue-500">{row.petrol || ''}</td>
-        <td className="py-1 px-2 bg-[#ffe699] font-bold">{row.total || ''}</td>
+      <tr key={idx} className="border-b border-accent-line bg-white text-xs">
+        <td className="py-1 px-2 border-r border-accent-line">{row.name}</td>
+        <td className="py-1 px-2 border-r border-accent-line">{row.cng || ''}</td>
+        {includeAmt && <td className="py-1 px-2 border-r border-accent-line">{row.cngAmt || ''}</td>}
+        <td className="py-1 px-2 border-r border-accent-line">{row.diesel || ''}</td>
+        <td className="py-1 px-2 border-r border-accent-line">{row.ev || ''}</td>
+        <td className="py-1 px-2 border-r border-accent-line">{row.petrol || ''}</td>
+        <td className="py-1 px-2 bg-warn-soft font-bold">{row.total || ''}</td>
       </tr>
     )}
     totalRow={
-      <tr className="bg-[#ffe699] font-bold text-xs border-t-2 border-blue-500">
-        <td className="py-1 px-2 border-r border-blue-500">{total.name}</td>
-        <td className="py-1 px-2 border-r border-blue-500">{total.cng || ''}</td>
-        {includeAmt && <td className="py-1 px-2 border-r border-blue-500">{total.cngAmt || ''}</td>}
-        <td className="py-1 px-2 border-r border-blue-500">{total.diesel || ''}</td>
-        <td className="py-1 px-2 border-r border-blue-500">{total.ev || ''}</td>
-        <td className="py-1 px-2 border-r border-blue-500">{total.petrol || ''}</td>
+      <tr className="bg-warn-soft font-bold text-xs border-t-2 border-accent-line">
+        <td className="py-1 px-2 border-r border-accent-line">{total.name}</td>
+        <td className="py-1 px-2 border-r border-accent-line">{total.cng || ''}</td>
+        {includeAmt && <td className="py-1 px-2 border-r border-accent-line">{total.cngAmt || ''}</td>}
+        <td className="py-1 px-2 border-r border-accent-line">{total.diesel || ''}</td>
+        <td className="py-1 px-2 border-r border-accent-line">{total.ev || ''}</td>
+        <td className="py-1 px-2 border-r border-accent-line">{total.petrol || ''}</td>
         <td className="py-1 px-2">{total.total || ''}</td>
       </tr>
     }
@@ -98,52 +98,52 @@ const EbrTeamTable = ({ title, branchName, groups, isEv = false }) => {
   const grandEb = grandEnq ? Math.round((grandBk/grandEnq)*100)+'%' : '0%';
   const grandBr = grandBk ? Math.round((grandRt/grandBk)*100)+'%' : '0%';
 
-  const topHeaderColor = isEv ? 'bg-[#5b9bd5] text-white' : 'bg-[#ffe699] text-black';
-  const subHeaderColor = isEv ? 'bg-[#9bc2e6]' : 'bg-[#9bc2e6]';
+  const topHeaderColor = isEv ? 'bg-accent text-white' : 'bg-warn-soft text-black';
+  const subHeaderColor = isEv ? 'bg-accent-soft text-accent' : 'bg-accent-soft text-accent';
 
   return (
-    <div className="border border-blue-500 overflow-hidden mb-6">
-      <div className={`${topHeaderColor} text-center font-bold text-sm py-1 border-b border-blue-500`}>
+    <div className="border border-accent-line overflow-hidden mb-6">
+      <div className={`${topHeaderColor} text-center font-bold text-sm py-1 border-b border-accent-line`}>
         {title}
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-center border-collapse whitespace-nowrap">
           <thead>
-            <tr className={`${subHeaderColor} border-b border-blue-500 text-xs font-bold`}>
-              <th className="py-1 px-2 border-r border-blue-500">Team</th>
-              <th className="py-1 px-2 border-r border-blue-500">Enquiries</th>
-              <th className="py-1 px-2 border-r border-blue-500">Bookings</th>
-              <th className="py-1 px-2 border-r border-blue-500">Retail</th>
-              <th className="py-1 px-2 border-r border-blue-500">EB%</th>
+            <tr className={`${subHeaderColor} border-b border-accent-line text-xs font-bold`}>
+              <th className="py-1 px-2 border-r border-accent-line">Team</th>
+              <th className="py-1 px-2 border-r border-accent-line">Enquiries</th>
+              <th className="py-1 px-2 border-r border-accent-line">Bookings</th>
+              <th className="py-1 px-2 border-r border-accent-line">Retail</th>
+              <th className="py-1 px-2 border-r border-accent-line">EB%</th>
               <th className="py-1 px-2">BR%</th>
             </tr>
           </thead>
           <tbody>
-            <tr className="bg-[#ffe699] font-bold text-xs border-b border-blue-500">
-              <td className="py-1 px-2 border-r border-blue-500">{branchName}</td>
-              <td className="py-1 px-2 border-r border-blue-500">{grandEnq}</td>
-              <td className="py-1 px-2 border-r border-blue-500">{grandBk}</td>
-              <td className="py-1 px-2 border-r border-blue-500">{grandRt}</td>
-              <td className="py-1 px-2 border-r border-blue-500">{grandEb}</td>
+            <tr className="bg-warn-soft font-bold text-xs border-b border-accent-line">
+              <td className="py-1 px-2 border-r border-accent-line">{branchName}</td>
+              <td className="py-1 px-2 border-r border-accent-line">{grandEnq}</td>
+              <td className="py-1 px-2 border-r border-accent-line">{grandBk}</td>
+              <td className="py-1 px-2 border-r border-accent-line">{grandRt}</td>
+              <td className="py-1 px-2 border-r border-accent-line">{grandEb}</td>
               <td className="py-1 px-2">{grandBr}</td>
             </tr>
             {groups.map((g, i) => (
               <React.Fragment key={i}>
-                <tr className="bg-gray-100 font-bold text-xs border-b border-blue-500">
-                  <td className="py-1 px-2 border-r border-blue-500 text-left pl-4">{g.leaderName} Total</td>
-                  <td className="py-1 px-2 border-r border-blue-500">{g.enquiries}</td>
-                  <td className="py-1 px-2 border-r border-blue-500">{g.bookings}</td>
-                  <td className="py-1 px-2 border-r border-blue-500">{g.retail}</td>
-                  <td className="py-1 px-2 border-r border-blue-500">{g.enquiries ? Math.round((g.bookings/g.enquiries)*100)+'%' : '0%'}</td>
+                <tr className="bg-gray-100 font-bold text-xs border-b border-accent-line">
+                  <td className="py-1 px-2 border-r border-accent-line text-left pl-4">{g.leaderName} Total</td>
+                  <td className="py-1 px-2 border-r border-accent-line">{g.enquiries}</td>
+                  <td className="py-1 px-2 border-r border-accent-line">{g.bookings}</td>
+                  <td className="py-1 px-2 border-r border-accent-line">{g.retail}</td>
+                  <td className="py-1 px-2 border-r border-accent-line">{g.enquiries ? Math.round((g.bookings/g.enquiries)*100)+'%' : '0%'}</td>
                   <td className="py-1 px-2">{g.bookings ? Math.round((g.retail/g.bookings)*100)+'%' : '0%'}</td>
                 </tr>
                 {g.members.map((m, j) => (
-                  <tr key={j} className="bg-white text-xs border-b border-blue-500 uppercase">
-                    <td className="py-1 px-2 border-r border-blue-500 text-left pl-8">{m.name}</td>
-                    <td className="py-1 px-2 border-r border-blue-500">{m.enquiries}</td>
-                    <td className="py-1 px-2 border-r border-blue-500">{m.bookings}</td>
-                    <td className="py-1 px-2 border-r border-blue-500">{m.retail}</td>
-                    <td className="py-1 px-2 border-r border-blue-500">{m.enquiries ? Math.round((m.bookings/m.enquiries)*100)+'%' : '0%'}</td>
+                  <tr key={j} className="bg-white text-xs border-b border-accent-line uppercase">
+                    <td className="py-1 px-2 border-r border-accent-line text-left pl-8">{m.name}</td>
+                    <td className="py-1 px-2 border-r border-accent-line">{m.enquiries}</td>
+                    <td className="py-1 px-2 border-r border-accent-line">{m.bookings}</td>
+                    <td className="py-1 px-2 border-r border-accent-line">{m.retail}</td>
+                    <td className="py-1 px-2 border-r border-accent-line">{m.enquiries ? Math.round((m.bookings/m.enquiries)*100)+'%' : '0%'}</td>
                     <td className="py-1 px-2">{m.bookings ? Math.round((m.retail/m.bookings)*100)+'%' : '0%'}</td>
                   </tr>
                 ))}
@@ -368,30 +368,30 @@ export const ReportsPage: React.FC = () => {
           <div className="space-y-6">
             
             {/* Simple EBR Outlet Wise */}
-            <div className="border border-blue-500 overflow-hidden mb-6">
-              <div className="bg-[#ffe699] text-center font-bold text-sm py-1 border-b border-blue-500">
+            <div className="border border-accent-line overflow-hidden mb-6">
+              <div className="bg-warn-soft text-center font-bold text-sm py-1 border-b border-accent-line">
                 EBR Report - Outlet Wise (Simple)
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-center border-collapse whitespace-nowrap">
                   <thead>
-                    <tr className="bg-[#9bc2e6] border-b border-blue-500 text-xs font-bold">
-                      <th className="py-1 px-2 border-r border-blue-500">Branch</th>
-                      <th className="py-1 px-2 border-r border-blue-500">Enquiries</th>
-                      <th className="py-1 px-2 border-r border-blue-500">Bookings</th>
-                      <th className="py-1 px-2 border-r border-blue-500">Retail</th>
-                      <th className="py-1 px-2 border-r border-blue-500">EB%</th>
+                    <tr className="bg-accent-soft text-accent border-b border-accent-line text-xs font-bold">
+                      <th className="py-1 px-2 border-r border-accent-line">Branch</th>
+                      <th className="py-1 px-2 border-r border-accent-line">Enquiries</th>
+                      <th className="py-1 px-2 border-r border-accent-line">Bookings</th>
+                      <th className="py-1 px-2 border-r border-accent-line">Retail</th>
+                      <th className="py-1 px-2 border-r border-accent-line">EB%</th>
                       <th className="py-1 px-2">BR%</th>
                     </tr>
                   </thead>
                   <tbody>
                     {stats.branchEbrSummary.map((br, i) => (
-                      <tr key={i} className="bg-white border-b border-blue-500 text-xs font-bold">
-                        <td className="py-1 px-2 border-r border-blue-500 text-left">{br.branch}</td>
-                        <td className="py-1 px-2 border-r border-blue-500">{br.enq}</td>
-                        <td className="py-1 px-2 border-r border-blue-500">{br.bk}</td>
-                        <td className="py-1 px-2 border-r border-blue-500">{br.rt}</td>
-                        <td className="py-1 px-2 border-r border-blue-500">{br.enq ? Math.round((br.bk/br.enq)*100)+'%' : '0%'}</td>
+                      <tr key={i} className="bg-white border-b border-accent-line text-xs font-bold">
+                        <td className="py-1 px-2 border-r border-accent-line text-left">{br.branch}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.enq}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.bk}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.rt}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.enq ? Math.round((br.bk/br.enq)*100)+'%' : '0%'}</td>
                         <td className="py-1 px-2">{br.bk ? Math.round((br.rt/br.bk)*100)+'%' : '0%'}</td>
                       </tr>
                     ))}
@@ -401,57 +401,57 @@ export const ReportsPage: React.FC = () => {
             </div>
 
             {/* EBR PV/EV Detail */}
-            <div className="border border-blue-500 overflow-hidden mb-6">
-              <div className="bg-[#ffe699] text-center font-bold text-sm py-1 border-b border-blue-500">
+            <div className="border border-accent-line overflow-hidden mb-6">
+              <div className="bg-warn-soft text-center font-bold text-sm py-1 border-b border-accent-line">
                 EBR Report - Outlet Wise (PV / EV Split)
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-center border-collapse whitespace-nowrap">
                   <thead>
-                    <tr className="bg-[#9bc2e6] border-b border-blue-500 text-xs font-bold">
-                      <th className="py-1 px-2 border-r border-blue-500" rowSpan={2}>Branch</th>
-                      <th className="py-1 px-2 border-r border-blue-500" colSpan={3}>Enquiries</th>
-                      <th className="py-1 px-2 border-r border-blue-500" colSpan={3}>Bookings</th>
-                      <th className="py-1 px-2 border-r border-blue-500" colSpan={3}>Retail</th>
-                      <th className="py-1 px-2 border-r border-blue-500" colSpan={2}>EB%</th>
+                    <tr className="bg-accent-soft text-accent border-b border-accent-line text-xs font-bold">
+                      <th className="py-1 px-2 border-r border-accent-line" rowSpan={2}>Branch</th>
+                      <th className="py-1 px-2 border-r border-accent-line" colSpan={3}>Enquiries</th>
+                      <th className="py-1 px-2 border-r border-accent-line" colSpan={3}>Bookings</th>
+                      <th className="py-1 px-2 border-r border-accent-line" colSpan={3}>Retail</th>
+                      <th className="py-1 px-2 border-r border-accent-line" colSpan={2}>EB%</th>
                       <th className="py-1 px-2" colSpan={2}>BR%</th>
                     </tr>
-                    <tr className="bg-[#9bc2e6] border-b border-blue-500 text-xs font-bold">
-                      <th className="py-1 px-2 border-r border-blue-500 border-l">PV</th>
-                      <th className="py-1 px-2 border-r border-blue-500">EV</th>
-                      <th className="py-1 px-2 border-r border-blue-500">Total</th>
-                      <th className="py-1 px-2 border-r border-blue-500">PV</th>
-                      <th className="py-1 px-2 border-r border-blue-500">EV</th>
-                      <th className="py-1 px-2 border-r border-blue-500">Total</th>
-                      <th className="py-1 px-2 border-r border-blue-500">PV</th>
-                      <th className="py-1 px-2 border-r border-blue-500">EV</th>
-                      <th className="py-1 px-2 border-r border-blue-500">Total</th>
-                      <th className="py-1 px-2 border-r border-blue-500">PV</th>
-                      <th className="py-1 px-2 border-r border-blue-500">EV</th>
-                      <th className="py-1 px-2 border-r border-blue-500">PV</th>
+                    <tr className="bg-accent-soft text-accent border-b border-accent-line text-xs font-bold">
+                      <th className="py-1 px-2 border-r border-accent-line border-l">PV</th>
+                      <th className="py-1 px-2 border-r border-accent-line">EV</th>
+                      <th className="py-1 px-2 border-r border-accent-line">Total</th>
+                      <th className="py-1 px-2 border-r border-accent-line">PV</th>
+                      <th className="py-1 px-2 border-r border-accent-line">EV</th>
+                      <th className="py-1 px-2 border-r border-accent-line">Total</th>
+                      <th className="py-1 px-2 border-r border-accent-line">PV</th>
+                      <th className="py-1 px-2 border-r border-accent-line">EV</th>
+                      <th className="py-1 px-2 border-r border-accent-line">Total</th>
+                      <th className="py-1 px-2 border-r border-accent-line">PV</th>
+                      <th className="py-1 px-2 border-r border-accent-line">EV</th>
+                      <th className="py-1 px-2 border-r border-accent-line">PV</th>
                       <th className="py-1 px-2">EV</th>
                     </tr>
                   </thead>
                   <tbody>
                     {stats.branchEbrSummary.map((br, i) => (
-                      <tr key={i} className="bg-white border-b border-blue-500 text-xs font-bold">
-                        <td className="py-1 px-2 border-r border-blue-500 text-left">{br.branch}</td>
-                        <td className="py-1 px-2 border-r border-blue-500">{br.pvEnq}</td>
-                        <td className="py-1 px-2 border-r border-blue-500">{br.evEnq}</td>
-                        <td className="py-1 px-2 border-r border-blue-500">{br.enq}</td>
+                      <tr key={i} className="bg-white border-b border-accent-line text-xs font-bold">
+                        <td className="py-1 px-2 border-r border-accent-line text-left">{br.branch}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.pvEnq}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.evEnq}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.enq}</td>
                         
-                        <td className="py-1 px-2 border-r border-blue-500">{br.pvBk}</td>
-                        <td className="py-1 px-2 border-r border-blue-500">{br.evBk}</td>
-                        <td className="py-1 px-2 border-r border-blue-500">{br.bk}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.pvBk}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.evBk}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.bk}</td>
                         
-                        <td className="py-1 px-2 border-r border-blue-500">{br.pvRt}</td>
-                        <td className="py-1 px-2 border-r border-blue-500">{br.evRt}</td>
-                        <td className="py-1 px-2 border-r border-blue-500">{br.rt}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.pvRt}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.evRt}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.rt}</td>
 
-                        <td className="py-1 px-2 border-r border-blue-500">{br.pvEnq ? Math.round((br.pvBk/br.pvEnq)*100)+'%' : '0%'}</td>
-                        <td className="py-1 px-2 border-r border-blue-500">{br.evEnq ? Math.round((br.evBk/br.evEnq)*100)+'%' : '0%'}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.pvEnq ? Math.round((br.pvBk/br.pvEnq)*100)+'%' : '0%'}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.evEnq ? Math.round((br.evBk/br.evEnq)*100)+'%' : '0%'}</td>
                         
-                        <td className="py-1 px-2 border-r border-blue-500">{br.pvBk ? Math.round((br.pvRt/br.pvBk)*100)+'%' : '0%'}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.pvBk ? Math.round((br.pvRt/br.pvBk)*100)+'%' : '0%'}</td>
                         <td className="py-1 px-2">{br.evBk ? Math.round((br.evRt/br.evBk)*100)+'%' : '0%'}</td>
                       </tr>
                     ))}
@@ -473,39 +473,39 @@ export const ReportsPage: React.FC = () => {
 
         {activeTab === 'ebr_ev' && (
           <div className="space-y-6">
-            <div className="border border-blue-500 overflow-hidden mb-6">
-              <div className="bg-[#5b9bd5] text-white text-center font-bold text-sm py-1 border-b border-blue-500">
+            <div className="border border-accent-line overflow-hidden mb-6">
+              <div className="bg-accent text-white text-center font-bold text-sm py-1 border-b border-accent-line">
                 EV&gt;&gt;EBR Report - Outlet Wise
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-center border-collapse whitespace-nowrap">
                   <thead>
-                    <tr className="bg-[#9bc2e6] border-b border-blue-500 text-xs font-bold">
-                      <th className="py-1 px-2 border-r border-blue-500">Branch</th>
-                      <th className="py-1 px-2 border-r border-blue-500">Enquiries</th>
-                      <th className="py-1 px-2 border-r border-blue-500">Bookings</th>
-                      <th className="py-1 px-2 border-r border-blue-500">Retail</th>
-                      <th className="py-1 px-2 border-r border-blue-500">EB%</th>
+                    <tr className="bg-accent-soft text-accent border-b border-accent-line text-xs font-bold">
+                      <th className="py-1 px-2 border-r border-accent-line">Branch</th>
+                      <th className="py-1 px-2 border-r border-accent-line">Enquiries</th>
+                      <th className="py-1 px-2 border-r border-accent-line">Bookings</th>
+                      <th className="py-1 px-2 border-r border-accent-line">Retail</th>
+                      <th className="py-1 px-2 border-r border-accent-line">EB%</th>
                       <th className="py-1 px-2">BR%</th>
                     </tr>
                   </thead>
                   <tbody>
                     {stats.branchEbrSummary.map((br, i) => (
-                      <tr key={i} className="bg-white border-b border-blue-500 text-xs font-bold">
-                        <td className="py-1 px-2 border-r border-blue-500 text-left">{br.branch}</td>
-                        <td className="py-1 px-2 border-r border-blue-500">{br.evEnq}</td>
-                        <td className="py-1 px-2 border-r border-blue-500">{br.evBk}</td>
-                        <td className="py-1 px-2 border-r border-blue-500">{br.evRt}</td>
-                        <td className="py-1 px-2 border-r border-blue-500">{br.evEnq ? Math.round((br.evBk/br.evEnq)*100)+'%' : '0%'}</td>
+                      <tr key={i} className="bg-white border-b border-accent-line text-xs font-bold">
+                        <td className="py-1 px-2 border-r border-accent-line text-left">{br.branch}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.evEnq}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.evBk}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.evRt}</td>
+                        <td className="py-1 px-2 border-r border-accent-line">{br.evEnq ? Math.round((br.evBk/br.evEnq)*100)+'%' : '0%'}</td>
                         <td className="py-1 px-2">{br.evBk ? Math.round((br.evRt/br.evBk)*100)+'%' : '0%'}</td>
                       </tr>
                     ))}
-                    <tr className="bg-[#ffe699] font-bold text-xs border-t-2 border-blue-500">
-                      <td className="py-1 px-2 border-r border-blue-500">Total</td>
-                      <td className="py-1 px-2 border-r border-blue-500">{stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evEnq, 0)}</td>
-                      <td className="py-1 px-2 border-r border-blue-500">{stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evBk, 0)}</td>
-                      <td className="py-1 px-2 border-r border-blue-500">{stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evRt, 0)}</td>
-                      <td className="py-1 px-2 border-r border-blue-500">
+                    <tr className="bg-warn-soft font-bold text-xs border-t-2 border-accent-line">
+                      <td className="py-1 px-2 border-r border-accent-line">Total</td>
+                      <td className="py-1 px-2 border-r border-accent-line">{stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evEnq, 0)}</td>
+                      <td className="py-1 px-2 border-r border-accent-line">{stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evBk, 0)}</td>
+                      <td className="py-1 px-2 border-r border-accent-line">{stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evRt, 0)}</td>
+                      <td className="py-1 px-2 border-r border-accent-line">
                         {stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evEnq, 0) ? Math.round((stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evBk, 0) / stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evEnq, 0)) * 100) + '%' : '0%'}
                       </td>
                       <td className="py-1 px-2">

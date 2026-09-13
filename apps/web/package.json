@@ -9,8 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@autoprime/design-system": "workspace:*",
     "@autoprime/domain": "workspace:*",
     "@autoprime/types": "workspace:*",
+    "@autoprime/ui": "workspace:*",
     "@autoprime/validation": "workspace:*",
     "@supabase/supabase-js": "^2.46.0",
     "@tanstack/react-query": "^5.62.0",

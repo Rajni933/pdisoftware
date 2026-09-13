@@ -8,7 +8,7 @@ export const AutomotiveBackground: React.FC<{ primaryColor: string }> = () => {
       <div 
         className="hidden md:block absolute inset-0 opacity-[0.25]"
         style={{
-          backgroundImage: 'radial-gradient(#94A3B8 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(var(--line-strong) 1px, transparent 1px)',
           backgroundSize: '32px 32px',
         }}
       />

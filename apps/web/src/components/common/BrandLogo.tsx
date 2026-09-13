@@ -14,7 +14,7 @@ export const DualBrandHeader: React.FC<{ brand: BrandCode; className?: string }>
       />
 
       {/* Sleek Vertical Divider */}
-      <div className="h-10 sm:h-12 w-[1.5px] bg-[#CBD5E1]" />
+      <div className="h-10 sm:h-12 w-[1.5px] bg-line-strong" />
 
       {/* 2. Dealership Brand Logo - Matching Curved / Rounded Edges */}
       <img

@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules
 .pnpm-store
 
@@ -59,3 +59,7 @@ supabase/.temp
 
 # OS
 Thumbs.db
+
+# Tooling Aliases
+.agents
+

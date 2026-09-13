@@ -1,6 +1,8 @@
 /**
  * Autoprime Tata PDI Management Platform
  * Design Tokens — TypeScript Constants & Types
+ * 
+ * Single Source of Truth for frontend applications (Web, Mobile, Admin, UI Primitives).
  */
 
 export const colors = {
@@ -51,6 +53,8 @@ export const colors = {
   brandTata: '#C8102E',
 } as const;
 
+export const color = colors;
+
 export const typography = {
   fonts: {
     sans: '"IBM Plex Sans", system-ui, -apple-system, sans-serif',
@@ -72,6 +76,8 @@ export const typography = {
   },
 } as const;
 
+export const type = typography;
+
 export const spacing = {
   1: '0.125rem', // 2px
   2: '0.25rem',  // 4px
@@ -86,16 +92,76 @@ export const spacing = {
   32: '4rem',    // 64px
 } as const;
 
+export const space = spacing;
+
 export const radii = {
   chip: '4px',
   default: '6px',
   panel: '10px',
 } as const;
 
+export const radius = radii;
+
 export const shadows = {
   none: 'none',
   // Exactly one elevation, reserved only for floating layers (modals, dropdowns, popovers, toasts)
   pop: '0 8px 28px -6px rgba(14,17,22,0.16), 0 2px 6px -2px rgba(14,17,22,0.08)',
+} as const;
+
+export const shadow = shadows;
+
+export const statusFamily = {
+  ok: {
+    label: 'Passed',
+    color: colors.semantic.ok.DEFAULT,
+    background: colors.semantic.ok.soft,
+    border: colors.semantic.ok.line,
+  },
+  inProgress: {
+    label: 'In Progress',
+    color: colors.semantic.warn.DEFAULT,
+    background: colors.semantic.warn.soft,
+    border: colors.semantic.warn.line,
+  },
+  pending: {
+    label: 'Pending',
+    color: colors.ink2,
+    background: colors.canvas,
+    border: colors.lineStrong,
+  },
+  failed: {
+    label: 'Failed',
+    color: colors.semantic.danger.DEFAULT,
+    background: colors.semantic.danger.soft,
+    border: colors.semantic.danger.line,
+  },
+  rejected: {
+    label: 'Rejected',
+    color: colors.semantic.danger.DEFAULT,
+    background: colors.semantic.danger.soft,
+    border: colors.semantic.danger.line,
+  },
+} as const;
+
+export const severity = {
+  minor: {
+    label: 'Minor',
+    color: colors.semantic.warn.DEFAULT,
+    background: colors.semantic.warn.soft,
+    border: colors.semantic.warn.line,
+  },
+  major: {
+    label: 'Major',
+    color: colors.semantic.danger.DEFAULT,
+    background: colors.semantic.danger.soft,
+    border: colors.semantic.danger.line,
+  },
+  critical: {
+    label: 'Critical',
+    color: colors.semantic.danger.DEFAULT,
+    background: colors.semantic.danger.soft,
+    border: colors.semantic.danger.line,
+  },
 } as const;
 
 export const statusRail = {
@@ -128,3 +194,5 @@ export type TypographyToken = typeof typography;
 export type SpacingToken = typeof spacing;
 export type RadiiToken = typeof radii;
 export type ShadowsToken = typeof shadows;
+export type StatusFamily = typeof statusFamily;
+export type Severity = typeof severity;

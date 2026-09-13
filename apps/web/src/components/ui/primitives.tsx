@@ -75,7 +75,7 @@ export const Stat: React.FC<{
   const base = 'panel px-4 py-3.5 block';
 
   return to ? (
-    <Link to={to} className={`${base} transition-colors hover:border-line-strong hover:bg-[#FCFCFD]`}>
+    <Link to={to} className={`${base} transition-colors hover:border-line-strong hover:bg-surface-hover`}>
       {body}
     </Link>
   ) : (
@@ -90,9 +90,9 @@ export type BadgeTone = 'neutral' | 'accent' | 'ok' | 'warn' | 'danger';
 const badgeTones: Record<BadgeTone, string> = {
   neutral: 'bg-canvas text-ink-2 border-line',
   accent: 'bg-accent-soft text-accent border-accent-line',
-  ok: 'bg-[#EDF7F3] text-ok border-[#C6E4DA]',
-  warn: 'bg-[#FCF4E9] text-warn border-[#EBD8BC]',
-  danger: 'bg-[#FBEEF0] text-danger border-[#EFCBD2]',
+  ok: 'bg-ok-soft text-ok border-ok-line',
+  warn: 'bg-warn-soft text-warn border-warn-line',
+  danger: 'bg-danger-soft text-danger border-danger-line',
 };
 
 export const Badge: React.FC<{
