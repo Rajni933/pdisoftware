@@ -68,7 +68,7 @@ export const AuthShell: React.FC<AuthShellProps> = ({
         </span>
       )}
       <span className="font-[var(--font-mono)] tabular-nums">
-        {branchName ? `${branchName} · ` : ''}{version}
+        {!isGlass && branchName ? `${branchName} · ` : ''}{version}
       </span>
       {supportPhone && (
         <>
@@ -85,10 +85,10 @@ export const AuthShell: React.FC<AuthShellProps> = ({
   if (activeVariant === 'split') {
     return (
       <div className="h-screen w-full flex flex-row overflow-hidden">
-        {/* Left Panel (52% width) — --auth-stage (Light Grey Radial) */}
+        {/* Left Panel (52% width) — --auth-stage (Light Grey Radial, No Border) */}
         <section
           aria-label="Brand Presentation"
-          className="w-[52%] h-full flex flex-col items-center justify-center p-[var(--space-8,32px)] select-none border-r border-[var(--color-border-subtle)]"
+          className="w-[52%] h-full flex flex-col items-center justify-center p-[var(--space-8,32px)] select-none"
           style={{ background: 'var(--auth-stage)' }}
         >
           <div className="w-full max-w-[560px] flex flex-col items-center justify-center">
@@ -105,36 +105,38 @@ export const AuthShell: React.FC<AuthShellProps> = ({
           className="w-[48%] h-full flex flex-col items-center justify-center p-[var(--space-8,32px)] overflow-y-auto"
           style={{ background: 'var(--auth-field)' }}
         >
-          {/* Translucent Glass Card (ADR-009) */}
-          <div
-            className="w-full max-w-[400px] rounded-[var(--radius-md)] p-[var(--space-8,32px)]"
-            style={{
-              background: 'var(--auth-card-bg)',
-              border: '1px solid var(--auth-card-border)',
-              backdropFilter: 'blur(16px) saturate(120%)',
-              WebkitBackdropFilter: 'blur(16px) saturate(120%)',
-              boxShadow: 'var(--shadow-auth-card)',
-            }}
-          >
-            {/* Header inside glass card per Brief 02 mockup (.sup + .ttl) */}
-            <div className="mb-[var(--space-5,20px)] text-left">
-              <div className="text-[12px] leading-[18px] text-white/70 mb-[2px]">
-                {title}
+          <div className="w-[400px] flex flex-col items-center">
+            {/* Translucent Glass Card (ADR-009) */}
+            <div
+              className="w-[400px] rounded-[var(--radius-md)] p-[32px]"
+              style={{
+                background: 'var(--auth-card-bg)',
+                border: '1px solid var(--auth-card-border)',
+                backdropFilter: 'blur(16px) saturate(120%)',
+                WebkitBackdropFilter: 'blur(16px) saturate(120%)',
+                boxShadow: 'var(--shadow-auth-card)',
+              }}
+            >
+              {/* Header inside glass card per Brief 02 mockup (.sup + .ttl) */}
+              <div className="mb-[20px] text-left">
+                <div className="text-[12px] leading-[18px] text-white/70 mb-[2px]">
+                  {title}
+                </div>
+                <h1 className="text-[19px] leading-[26px] font-[var(--fw-semibold,600)] text-white m-0">
+                  Sign in
+                </h1>
               </div>
-              <h1 className="text-[19px] leading-[26px] font-[var(--fw-semibold,600)] text-white m-0">
-                Sign in
-              </h1>
+
+              {/* Auth Form / Children */}
+              <div className="auth-card-content text-white">
+                {children}
+              </div>
             </div>
 
-            {/* Auth Form / Children */}
-            <div className="auth-card-content text-white">
-              {children}
+            {/* Subline below card */}
+            <div className="w-[400px]">
+              {renderMetaFooter(true)}
             </div>
-          </div>
-
-          {/* Subline below card */}
-          <div className="w-full max-w-[400px]">
-            {renderMetaFooter(true)}
           </div>
         </section>
       </div>

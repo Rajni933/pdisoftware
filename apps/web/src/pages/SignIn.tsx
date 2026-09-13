@@ -13,7 +13,7 @@ export const SignInPage: React.FC = () => {
       environment="Staging"
       version="v1.0.3 (412)"
       branchName="Basni"
-      supportPhone="1800 209 7979"
+      supportPhone="1800 000 000"
       title="Autoprime Tata"
       subtitle="Pre-delivery inspection"
       captionBranches="Jodhpur · Pali · Barmer"

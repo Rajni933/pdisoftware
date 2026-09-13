@@ -1,4 +1,4 @@
-﻿import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 
 export interface BrandVideoProps {
   src?: string;
@@ -101,16 +101,16 @@ export const BrandVideo: React.FC<BrandVideoProps> = ({
         )}
       </div>
 
-      {/* Two-line minimalist caption below video */}
+      {/* Two-line minimalist caption below video per Brief 02 mockup */}
       {(captionProduct || captionBranches) && (
-        <div className="mt-[var(--space-4,16px)] text-center text-[var(--t-caption-size,0.75rem)] leading-[var(--t-caption-lh,18px)] text-[var(--color-text-secondary)]">
+        <div className="mt-[36px] text-center text-[var(--t-caption-size,0.75rem)] leading-[var(--t-caption-lh,18px)]">
           {captionProduct && (
-            <div className="font-[var(--fw-medium,500)] text-[var(--color-text-primary)]">
+            <div className="font-[var(--fw-medium,500)] text-[13px] leading-[19px] text-[var(--color-text-secondary)]">
               {captionProduct}
             </div>
           )}
           {captionBranches && (
-            <div className="font-[var(--font-mono)] tabular-nums mt-[2px]">
+            <div className="font-[var(--font-mono)] text-[12px] leading-[18px] text-[var(--color-text-tertiary)] tabular-nums mt-[2px]">
               {captionBranches}
             </div>
           )}
