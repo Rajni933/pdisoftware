@@ -30,3 +30,10 @@ export * from './components/Skeleton';
 export * from './components/Spinner';
 export * from './components/ProgressBar';
 export * from './components/EmptyState';
+export * from './components/RingProgress';
+export * from './components/StepLoader';
+export * from './components/PendingDots';
+export * from './components/BlurUpImage';
+export * from './components/BootLoader';
+export * from './components/InlineShimmerCell';
+

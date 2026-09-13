@@ -26,7 +26,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
     <div
       role="status"
       aria-label="Loading"
-      className={`animate-pulse bg-line-strong/40 ${radiusClasses[radius]} ${className}`}
+      className={`skel ${radiusClasses[radius]} ${className}`}
       style={{
         width: typeof width === 'number' ? `${width}px` : width,
         height: typeof height === 'number' ? `${height}px` : height,
