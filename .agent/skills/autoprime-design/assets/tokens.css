@@ -2,129 +2,230 @@
  * Autoprime Tata PDI Management Platform
  * Design Tokens — CSS Custom Properties
  * 
- * Non-negotiable rule: Every visual style must resolve to one of these tokens.
- * Never use raw hex codes, ad-hoc pixel values, or unlisted timing curves.
+ * Three-tier Architecture:
+ * 1. Primitive Tokens (--p-*)
+ * 2. Semantic Tokens (--color-*, --font-*, --space-*, --radius-*, --shadow-*, etc.)
+ * 3. Component Tokens
+ * 
+ * Non-negotiable: Feature code may ONLY reference Semantic tokens.
  */
 
 :root {
-  /* Canvas & Surface Colors */
-  --canvas: #FAFAFA;
-  --surface: #FFFFFF;
-  --surface-hover: #F7F8F9;
-  --surface-active: #F0F2F5;
+  /* ==========================================================================
+     1. PRIMITIVES (Palette Definition — Do NOT use in feature code)
+     ========================================================================== */
 
-  /* Line & Border Colors */
-  --line: #E8EAED;
-  --line-strong: #D7DBE0;
-  --line-subtle: #F1F3F5;
+  /* Neutrals (Cool Slate) */
+  --p-n-0:   #FFFFFF;
+  --p-n-25:  #FBFCFD;
+  --p-n-50:  #F4F6F8;
+  --p-n-100: #E9EDF1;
+  --p-n-200: #D7DEE5;
+  --p-n-300: #B9C4CF;
+  --p-n-400: #8A97A6;
+  --p-n-500: #667487;
+  --p-n-600: #4A5766;
+  --p-n-700: #33404E;
+  --p-n-800: #1F2A36;
+  --p-n-900: #121A23;
 
-  /* Typography / Ink Colors */
-  --ink: #0E1116;           /* Primary text, high emphasis */
-  --ink-2: #4A5159;         /* Secondary text, body copy, icons */
-  --ink-3: #858C95;         /* Muted labels, timestamps, placeholders */
-  --ink-disabled: #B0B7C0;  /* Disabled text and glyphs */
+  /* Navy (Action) */
+  --p-b-50:  #EDF2FA;
+  --p-b-100: #D6E1F2;
+  --p-b-300: #6E8CBF;
+  --p-b-400: #3C63A3;
+  --p-b-500: #1A3A6B;
+  --p-b-600: #15305A;
+  --p-b-700: #0F2445;
+  --p-b-900: #0A1930;
 
-  /* Primary Brand Accent (Deep Operations Blue) */
-  --accent: #1A3A6B;
-  --accent-hover: #254B85;
-  --accent-soft: #EEF2F8;
-  --accent-line: #C9D6E8;
-  --accent-600: #254B85;
-  --accent-400: #5B7CAE;
-  --accent-300: #8AA3C6;
-  --accent-200: #B6C5DA;
+  /* Brand Red (Strictly restricted to logo mark & PDF rule) */
+  --p-brand-red: #C8102E;
 
-  /* Semantic Status Colors (Used with glyph + label) */
-  /* Pass / Approved / Synced */
-  --ok: #0B7355;
-  --ok-soft: #E8F5E9;
-  --ok-line: #A3D9C9;
+  /* Semantic Primitives */
+  --p-green-500: #0F7A46;
+  --p-green-50:  #E8F6EF;
+  --p-green-200: #A5DCC1;
 
-  /* Pending / Warning / In Progress */
-  --warn: #A65A00;
-  --warn-soft: #FFF8E1;
-  --warn-line: #FFE082;
+  --p-amber-500: #8A5A00;
+  --p-amber-50:  #FDF4E3;
+  --p-amber-200: #F0CE8A;
 
-  /* Fail / Critical / Error / Defect */
-  --danger: #B3253C;
-  --danger-soft: #FFEBEE;
-  --danger-line: #FFCDD2;
+  --p-red-500:   #B3261E;
+  --p-red-50:    #FDECEB;
+  --p-red-200:   #F2B5B0;
 
-  /* Tata Brand Red — BANNED from product UI, used strictly in logo lockup */
-  --brand-tata: #C8102E;
+  --p-blue-500:  #15558D;
+  --p-blue-50:   #EAF1F9;
+  --p-blue-200:  #A9C7E6;
+
+  --p-teal-500:  #2F6E75;
+  --p-amber-600: #C2670B;
+
+  /* ==========================================================================
+     2. SEMANTIC TOKENS (Use these in components & application code)
+     ========================================================================== */
+
+  /* Backgrounds & Surfaces */
+  --color-bg-app:         var(--p-n-25);   /* #FBFCFD - Canvas behind panels */
+  --color-surface:        var(--p-n-0);    /* #FFFFFF - Content surfaces, inputs, tables */
+  --color-surface-hover:  var(--p-n-50);   /* #F4F6F8 - Table header, row hover */
+  --color-surface-active: var(--p-n-100);  /* #E9EDF1 - Active/selected item fill */
+
+  /* Borders & Dividers */
+  --color-border-subtle:  var(--p-n-100);  /* #E9EDF1 - Internal dividers, chips */
+  --color-border:         var(--p-n-200);  /* #D7DEE5 - Default component outline */
+  --color-border-strong:  var(--p-n-300);  /* #B9C4CF - Input hover, active dividers */
+
+  /* Typography / Text Colors */
+  --color-text-primary:   var(--p-n-900);  /* #121A23 - Primary text */
+  --color-text-heading:   var(--p-n-800);  /* #1F2A36 - Headings */
+  --color-text-body:      var(--p-n-700);  /* #33404E - Dense table body text */
+  --color-text-secondary: var(--p-n-600);  /* #4A5766 - Secondary text, labels */
+  --color-text-tertiary:  var(--p-n-500);  /* #667487 - Tertiary text, default icons */
+  --color-text-disabled:  var(--p-n-400);  /* #8A97A6 - Disabled text, placeholder */
+
+  /* Interactive Actions (Navy) */
+  --color-action:          var(--p-b-500); /* #1A3A6B - Primary action button */
+  --color-action-hover:    var(--p-b-600); /* #15305A - Primary button hover */
+  --color-action-pressed:  var(--p-b-700); /* #0F2445 - Primary button active */
+  --color-action-disabled: var(--p-b-300); /* #6E8CBF - Disabled action button */
+  --color-action-soft:     var(--p-b-50);  /* #EDF2FA - Active nav pill, selected row */
+  --color-action-border:   var(--p-b-100); /* #D6E1F2 - Active nav outline */
+
+  /* Semantic Feedback States */
+  --color-success:        var(--p-green-500); /* #0F7A46 */
+  --color-success-bg:     var(--p-green-50);  /* #E8F6EF */
+  --color-success-border: var(--p-green-200); /* #A5DCC1 */
+
+  --color-warning:        var(--p-amber-500); /* #8A5A00 */
+  --color-warning-bg:     var(--p-amber-50);  /* #FDF4E3 */
+  --color-warning-border: var(--p-amber-200); /* #F0CE8A */
+
+  --color-danger:         var(--p-red-500);   /* #B3261E */
+  --color-danger-bg:      var(--p-red-50);    /* #FDECEB */
+  --color-danger-border:  var(--p-red-200);   /* #F2B5B0 */
+
+  --color-info:           var(--p-blue-500);  /* #15558D */
+  --color-info-bg:        var(--p-blue-50);   /* #EAF1F9 */
+  --color-info-border:    var(--p-blue-200);  /* #A9C7E6 */
+
+  /* Status Families (Whose move is it?) */
+  --status-family-intake:      var(--p-n-600);    /* slate #4A5766 - RECEIVED, PDI_PENDING */
+  --status-family-in-progress: var(--p-blue-500); /* blue #15558D - PDI_IN_PROGRESS, REPAIR_IN_PROGRESS */
+  --status-family-waiting:     var(--p-amber-500);/* amber #8A5A00 - REPAIR_PENDING, QA_PENDING */
+  --status-family-blocked:     var(--p-red-500);  /* red #B3261E - FAILED, QA_REJECTED */
+  --status-family-cleared:     var(--p-green-500);/* green #0F7A46 - REPAIR_COMPLETED, PDI_APPROVED, DELIVERY_READY */
+  --status-family-closed:      var(--p-n-400);    /* muted #8A97A6 - DELIVERED */
+
+  /* Severity Ramp (Findings) */
+  --severity-critical:    var(--p-red-500);   /* #B3261E - Photo mandatory, fails PDI */
+  --severity-major:       var(--p-amber-600); /* #C2670B - Photo mandatory, fails PDI */
+  --severity-minor:       var(--p-teal-500);  /* #2F6E75 teal - Photo optional, non-blocking */
+  --severity-observation: var(--p-n-500);     /* #667487 - Photo optional, non-blocking */
 
   /* Typography Families */
-  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-sans: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+  --font-deva: 'IBM Plex Sans Devanagari', var(--font-sans);
 
   /* Typography Scale */
-  --text-label: 0.6875rem;   /* 11px */
-  --leading-label: 1rem;     /* 16px */
-  --tracking-label: 0.06em;  /* Eyebrows, uppercase badges */
+  --t-display:  2rem;          /* 32px / line: 38px, weight: 600, tracking: -0.02em */
+  --t-h1:       1.5rem;        /* 24px / line: 32px, weight: 600, tracking: -0.015em */
+  --t-h2:       1.1875rem;     /* 19px / line: 26px, weight: 600, tracking: -0.01em */
+  --t-h3:       1rem;          /* 16px / line: 24px, weight: 600, tracking: 0 */
+  --t-body-lg:  1rem;          /* 16px / line: 24px, weight: 400, tracking: 0 */
+  --t-body:     0.875rem;      /* 14px / line: 22px, weight: 400, tracking: 0 */
+  --t-body-sm:  0.8125rem;     /* 13px / line: 20px, weight: 400, tracking: 0 */
+  --t-label:    0.8125rem;     /* 13px / line: 18px, weight: 500, tracking: 0 */
+  --t-caption:  0.75rem;       /* 12px / line: 18px, weight: 400, tracking: 0 */
+  --t-micro:    0.6875rem;     /* 11px / line: 16px, weight: 500, tracking: 0.01em */
+  --t-mono:     0.8125rem;     /* 13px / line: 20px, weight: 400, tracking: 0 */
+  --t-mono-lg:  0.9375rem;     /* 15px / line: 22px, weight: 500, tracking: 0 */
 
-  --text-xs: 0.75rem;        /* 12px */
-  --leading-xs: 1.125rem;    /* 18px */
+  /* Spacing Scale (4px Base) */
+  --space-1:   0.25rem;  /* 4px */
+  --space-1-5: 0.375rem; /* 6px - Label to control gap */
+  --space-2:   0.5rem;   /* 8px - Icon to label, adjacent buttons */
+  --space-3:   0.75rem;  /* 12px - Related fields in a group */
+  --space-4:   1rem;     /* 16px - Standard card & cell padding */
+  --space-5:   1.25rem;  /* 20px */
+  --space-6:   1.5rem;   /* 24px - Between groups in form */
+  --space-8:   2rem;     /* 32px - Page sections */
+  --space-10:  2.5rem;   /* 40px */
+  --space-12:  3rem;     /* 48px */
+  --space-16:  4rem;     /* 64px */
 
-  --text-sm: 0.8125rem;      /* 13px - Standard Table / Body text */
-  --leading-sm: 1.25rem;     /* 20px */
+  /* Border Radii (Exactly four values) */
+  --radius-xs:   3px;   /* Checkbox, chip, tag, progress track */
+  --radius-sm:   6px;   /* Default — button, input, select, card, table */
+  --radius-md:   10px;  /* Modal, bottom sheet, popover, drawer */
+  --radius-full: 999px; /* Count badges and avatars only */
 
-  --text-base: 0.875rem;     /* 14px - Primary UI labels, form controls */
-  --leading-base: 1.375rem;  /* 22px */
+  /* Borders & Rail */
+  --border-hairline: 1px solid var(--color-border-subtle);
+  --border-default:  1px solid var(--color-border);
+  --border-strong:   1px solid var(--color-border-strong);
+  --rail:            3px; /* Signature status rail width */
 
-  --text-lg: 1.0625rem;      /* 17px - Panel headers, modal titles */
-  --leading-lg: 1.5rem;      /* 24px */
-  --tracking-lg: -0.011em;
+  /* Shadows (Elevations — ONLY for surfaces floating above page plane) */
+  --shadow-none:    none;
+  --shadow-popover: 0 4px 12px -2px rgba(18, 26, 35, 0.10), 0 0 0 1px rgba(18, 26, 35, 0.05);
+  --shadow-modal:   0 16px 40px -8px rgba(18, 26, 35, 0.18), 0 0 0 1px rgba(18, 26, 35, 0.06);
+  --shadow-sticky:  0 -2px 8px -2px rgba(18, 26, 35, 0.08);
 
-  --text-num: 1.625rem;      /* 26px - KPI metrics, large counter */
-  --leading-num: 1.875rem;   /* 30px */
-  --tracking-num: -0.02em;
+  /* Focus Ring */
+  --focus-ring: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--p-b-400);
 
-  /* Font Weights (700+ is strictly banned) */
-  --weight-normal: 400;
-  --weight-medium: 500;
-  --weight-semibold: 600;
+  /* Z-Index Scale */
+  --z-base:     0;
+  --z-raised:   10;
+  --z-sticky:   100;
+  --z-dropdown: 200;
+  --z-overlay:  300;
+  --z-modal:    400;
+  --z-toast:    500;
 
-  /* Spacing Rhythm */
-  --space-1: 0.125rem;   /* 2px */
-  --space-2: 0.25rem;    /* 4px */
-  --space-3: 0.375rem;   /* 6px - Label to control gap */
-  --space-4: 0.5rem;     /* 8px - Compact internal padding */
-  --space-6: 0.75rem;    /* 12px - Related fields gap */
-  --space-8: 1rem;       /* 16px - Component groups gap */
-  --space-10: 1.25rem;   /* 20px */
-  --space-12: 1.5rem;    /* 24px - Section gutter & page padding */
-  --space-16: 2rem;      /* 32px - Major section separation */
-  --space-24: 3rem;      /* 48px */
-  --space-32: 4rem;      /* 64px */
+  /* Motion & Transitions */
+  --dur-micro: 120ms; /* hover, focus, checkbox, chip */
+  --dur-enter: 180ms; /* dropdown, tooltip, toast in */
+  --dur-exit:  140ms; /* anything out (exits always faster) */
+  --dur-sheet: 240ms; /* modal, drawer, bottom sheet */
 
-  /* Border Radii */
-  --radius-chip: 4px;    /* Chips, badges, small buttons, tags */
-  --radius-default: 6px; /* Form inputs, buttons, table cells */
-  --radius-panel: 10px;  /* Modals, panels, cards */
+  --ease-out:  cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in:   cubic-bezier(0.4, 0, 1, 1);
+  --ease-move: cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Elevation & Shadows (Borders separate, shadows elevate) */
-  --shadow-none: none;
-  --shadow-pop: 0 8px 28px -6px rgba(14, 17, 22, 0.16), 0 2px 6px -2px rgba(14, 17, 22, 0.08);
-
-  /* Signature Element: Status Rail */
-  --rail-width: 3px;
-
-  /* Component Dimensions & Touch Targets */
-  --height-table-row: 44px;
-  --height-top-bar: 56px;
-  --width-sidebar: 240px;
-  --width-sidebar-collapsed: 64px;
-
-  --touch-target-min-web: 32px;
-  --touch-target-min-mobile: 44px;
-  --touch-target-min-yard: 52px;
-
-  /* Transitions & Motion */
-  --transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-base: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  /* Backward-Compatibility Aliases */
+  --canvas:      var(--color-bg-app);
+  --surface:     var(--color-surface);
+  --line:        var(--color-border-subtle);
+  --line-strong: var(--color-border);
+  --ink:         var(--color-text-primary);
+  --ink-2:       var(--color-text-secondary);
+  --ink-3:       var(--color-text-tertiary);
+  --accent:      var(--color-action);
+  --ok:          var(--color-success);
+  --warn:        var(--color-warning);
+  --danger:      var(--color-danger);
+  --shadow-pop:  var(--shadow-modal);
+  --rail-width:  var(--rail);
 }
 
-/* Reduced motion accessibility override */
+/* ==========================================================================
+   3. YARD MODE OVERRIDES ([data-mode="yard"])
+   Mobile sunlight, glare & work gloves operational mode.
+   ========================================================================== */
+[data-mode="yard"] {
+  --color-border:        var(--p-n-300);
+  --color-text-secondary:var(--color-text-primary);
+  --rail:                5px;
+  --rail-width:          5px;
+}
+
+/* ==========================================================================
+   4. ACCESSIBILITY OVERRIDES
+   ========================================================================== */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

@@ -2,193 +2,299 @@
  * Autoprime Tata PDI Management Platform
  * Design Tokens — TypeScript Constants & Types
  * 
- * Single Source of Truth for frontend applications (Web, Mobile, Admin, UI Primitives).
+ * 01 — Foundations Single Source of Truth
  */
 
+export const primitives = {
+  neutrals: {
+    n0:   '#FFFFFF',
+    n25:  '#FBFCFD',
+    n50:  '#F4F6F8',
+    n100: '#E9EDF1',
+    n200: '#D7DEE5',
+    n300: '#B9C4CF',
+    n400: '#8A97A6',
+    n500: '#667487',
+    n600: '#4A5766',
+    n700: '#33404E',
+    n800: '#1F2A36',
+    n900: '#121A23',
+  },
+  navy: {
+    b50:  '#EDF2FA',
+    b100: '#D6E1F2',
+    b300: '#6E8CBF',
+    b400: '#3C63A3',
+    b500: '#1A3A6B',
+    b600: '#15305A',
+    b700: '#0F2445',
+    b900: '#0A1930',
+  },
+  brandRed: '#C8102E',
+  semantic: {
+    green500: '#0F7A46',
+    green50:  '#E8F6EF',
+    green200: '#A5DCC1',
+
+    amber500: '#8A5A00',
+    amber50:  '#FDF4E3',
+    amber200: '#F0CE8A',
+    amber600: '#C2670B',
+
+    red500:   '#B3261E',
+    red50:    '#FDECEB',
+    red200:   '#F2B5B0',
+
+    blue500:  '#15558D',
+    blue50:   '#EAF1F9',
+    blue200:  '#A9C7E6',
+
+    teal500:  '#2F6E75',
+  },
+} as const;
+
 export const colors = {
-  canvas: '#FAFAFA',
-  surface: '#FFFFFF',
-  surfaceHover: '#F7F8F9',
-  surfaceActive: '#F0F2F5',
+  // Surfaces & Backgrounds
+  canvas:        primitives.neutrals.n25,
+  surface:       primitives.neutrals.n0,
+  surfaceHover:  primitives.neutrals.n50,
+  surfaceActive: primitives.neutrals.n100,
 
-  line: '#E8EAED',
-  lineStrong: '#D7DBE0',
-  lineSubtle: '#F1F3F5',
+  // Borders
+  lineSubtle:    primitives.neutrals.n100,
+  line:          primitives.neutrals.n200,
+  lineStrong:    primitives.neutrals.n300,
 
-  ink: '#0E1116',
-  ink2: '#4A5159',
-  ink3: '#858C95',
-  inkDisabled: '#B0B7C0',
+  // Inks / Text
+  ink:           primitives.neutrals.n900,
+  inkHeading:    primitives.neutrals.n800,
+  inkBody:       primitives.neutrals.n700,
+  ink2:          primitives.neutrals.n600,
+  ink3:          primitives.neutrals.n500,
+  inkDisabled:   primitives.neutrals.n400,
 
+  // Action / Navy
   accent: {
-    DEFAULT: '#1A3A6B',
-    hover: '#254B85',
-    soft: '#EEF2F8',
-    line: '#C9D6E8',
-    600: '#254B85',
-    400: '#5B7CAE',
-    300: '#8AA3C6',
-    200: '#B6C5DA',
+    DEFAULT:  primitives.navy.b500,
+    hover:    primitives.navy.b600,
+    pressed:  primitives.navy.b700,
+    disabled: primitives.navy.b300,
+    soft:     primitives.navy.b50,
+    line:     primitives.navy.b100,
+    focus:    primitives.navy.b400,
   },
 
+  // Semantic
   semantic: {
     ok: {
-      DEFAULT: '#0B7355',
-      soft: '#E8F5E9',
-      line: '#A3D9C9',
+      DEFAULT: primitives.semantic.green500,
+      soft:    primitives.semantic.green50,
+      line:    primitives.semantic.green200,
     },
     warn: {
-      DEFAULT: '#A65A00',
-      soft: '#FFF8E1',
-      line: '#FFE082',
+      DEFAULT: primitives.semantic.amber500,
+      soft:    primitives.semantic.amber50,
+      line:    primitives.semantic.amber200,
     },
     danger: {
-      DEFAULT: '#B3253C',
-      soft: '#FFEBEE',
-      line: '#FFCDD2',
+      DEFAULT: primitives.semantic.red500,
+      soft:    primitives.semantic.red50,
+      line:    primitives.semantic.red200,
+    },
+    info: {
+      DEFAULT: primitives.semantic.blue500,
+      soft:    primitives.semantic.blue50,
+      line:    primitives.semantic.blue200,
     },
   },
 
-  /** Tata Red — ONLY for brand logo lockup, NEVER in product UI */
-  brandTata: '#C8102E',
+  brandTata: primitives.brandRed,
 } as const;
 
 export const color = colors;
 
+export const statusFamily = {
+  intake: {
+    label: 'Intake',
+    color: primitives.neutrals.n600,
+    glyph: 'Inbox',
+    statuses: ['RECEIVED', 'PDI_PENDING'],
+  },
+  inProgress: {
+    label: 'In progress',
+    color: primitives.semantic.blue500,
+    glyph: 'Loader',
+    statuses: ['PDI_IN_PROGRESS', 'REPAIR_IN_PROGRESS', 'REINSPECTION'],
+  },
+  waiting: {
+    label: 'Waiting',
+    color: primitives.semantic.amber500,
+    glyph: 'Clock',
+    statuses: ['REPAIR_PENDING', 'QA_PENDING'],
+  },
+  blocked: {
+    label: 'Blocked',
+    color: primitives.semantic.red500,
+    glyph: 'OctagonAlert',
+    statuses: ['FAILED', 'QA_REJECTED'],
+  },
+  cleared: {
+    label: 'Cleared',
+    color: primitives.semantic.green500,
+    glyph: 'Check',
+    statuses: ['REPAIR_COMPLETED', 'PDI_APPROVED', 'DELIVERY_READY'],
+  },
+  closed: {
+    label: 'Closed',
+    color: primitives.neutrals.n400,
+    glyph: 'Archive',
+    statuses: ['DELIVERED'],
+  },
+} as const;
+
+export const severity = {
+  CRITICAL: {
+    label: 'Critical',
+    color: primitives.semantic.red500,
+    glyph: 'OctagonAlert',
+    rule: 'Photo mandatory · fails the PDI',
+  },
+  MAJOR: {
+    label: 'Major',
+    color: primitives.semantic.amber600,
+    glyph: 'TriangleAlert',
+    rule: 'Photo mandatory · fails the PDI',
+  },
+  MINOR: {
+    label: 'Minor',
+    color: primitives.semantic.teal500,
+    glyph: 'CircleAlert',
+    rule: 'Photo optional · does not block',
+  },
+  OBSERVATION: {
+    label: 'Observation',
+    color: primitives.neutrals.n500,
+    glyph: 'Eye',
+    rule: 'Photo optional · does not block',
+  },
+} as const;
+
 export const typography = {
   fonts: {
-    sans: '"IBM Plex Sans", system-ui, -apple-system, sans-serif',
-    mono: '"IBM Plex Mono", ui-monospace, monospace',
+    sans: "'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif",
+    mono: "'IBM Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace",
+    deva: "'IBM Plex Sans Devanagari', 'IBM Plex Sans', sans-serif",
   },
-  sizes: {
-    label: { size: '0.6875rem', lineHeight: '1rem', letterSpacing: '0.06em' },   // 11px
-    xs: { size: '0.75rem', lineHeight: '1.125rem' },                               // 12px
-    sm: { size: '0.8125rem', lineHeight: '1.25rem' },                              // 13px
-    base: { size: '0.875rem', lineHeight: '1.375rem' },                            // 14px
-    lg: { size: '1.0625rem', lineHeight: '1.5rem', letterSpacing: '-0.011em' },     // 17px
-    num: { size: '1.625rem', lineHeight: '1.875rem', letterSpacing: '-0.02em' },    // 26px
+  scale: {
+    tDisplay: { size: '2rem', lineHeight: '2.375rem', weight: 600, tracking: '-0.02em' },   // 32/38
+    tH1:      { size: '1.5rem', lineHeight: '2rem', weight: 600, tracking: '-0.015em' },      // 24/32
+    tH2:      { size: '1.1875rem', lineHeight: '1.625rem', weight: 600, tracking: '-0.01em' }, // 19/26
+    tH3:      { size: '1rem', lineHeight: '1.5rem', weight: 600, tracking: '0' },             // 16/24
+    tBodyLg:  { size: '1rem', lineHeight: '1.5rem', weight: 400, tracking: '0' },             // 16/24
+    tBody:    { size: '0.875rem', lineHeight: '1.375rem', weight: 400, tracking: '0' },      // 14/22
+    tBodySm:  { size: '0.8125rem', lineHeight: '1.25rem', weight: 400, tracking: '0' },      // 13/20
+    tLabel:   { size: '0.8125rem', lineHeight: '1.125rem', weight: 500, tracking: '0' },     // 13/18
+    tCaption: { size: '0.75rem', lineHeight: '1.125rem', weight: 400, tracking: '0' },        // 12/18
+    tMicro:   { size: '0.6875rem', lineHeight: '1rem', weight: 500, tracking: '0.01em' },     // 11/16
+    tMono:    { size: '0.8125rem', lineHeight: '1.25rem', weight: 400, tracking: '0' },      // 13/20
+    tMonoLg:  { size: '0.9375rem', lineHeight: '1.375rem', weight: 500, tracking: '0' },     // 15/22
   },
   weights: {
     normal: 400,
     medium: 500,
     semibold: 600,
-    // Note: 700+ is strictly banned in this design system
   },
 } as const;
 
 export const type = typography;
 
 export const spacing = {
-  1: '0.125rem', // 2px
-  2: '0.25rem',  // 4px
-  3: '0.375rem', // 6px (label to control)
-  4: '0.5rem',   // 8px
-  6: '0.75rem',  // 12px (related fields)
-  8: '1rem',     // 16px (groups)
-  10: '1.25rem', // 20px
-  12: '1.5rem',  // 24px (gutters)
-  16: '2rem',    // 32px (major sections)
-  24: '3rem',    // 48px
-  32: '4rem',    // 64px
+  1:   '0.25rem',  // 4px
+  1.5: '0.375rem', // 6px (label to control)
+  2:   '0.5rem',   // 8px
+  3:   '0.75rem',  // 12px
+  4:   '1rem',     // 16px
+  5:   '1.25rem',  // 20px
+  6:   '1.5rem',   // 24px
+  8:   '2rem',     // 32px
+  10:  '2.5rem',   // 40px
+  12:  '3rem',     // 48px
+  16:  '4rem',     // 64px
 } as const;
 
 export const space = spacing;
 
 export const radii = {
-  chip: '4px',
+  xs:   '3px',
+  sm:   '6px',
+  md:   '10px',
+  full: '999px',
+  // Aliases
+  chip:    '3px',
   default: '6px',
-  panel: '10px',
+  panel:   '10px',
 } as const;
 
 export const radius = radii;
 
 export const shadows = {
-  none: 'none',
-  // Exactly one elevation, reserved only for floating layers (modals, dropdowns, popovers, toasts)
-  pop: '0 8px 28px -6px rgba(14,17,22,0.16), 0 2px 6px -2px rgba(14,17,22,0.08)',
+  none:    'none',
+  popover: '0 4px 12px -2px rgba(18,26,35,.10), 0 0 0 1px rgba(18,26,35,.05)',
+  modal:   '0 16px 40px -8px rgba(18,26,35,.18), 0 0 0 1px rgba(18,26,35,.06)',
+  sticky:  '0 -2px 8px -2px rgba(18,26,35,.08)',
+  pop:     '0 16px 40px -8px rgba(18,26,35,.18), 0 0 0 1px rgba(18,26,35,.06)',
 } as const;
 
 export const shadow = shadows;
 
-export const statusFamily = {
-  ok: {
-    label: 'Passed',
-    color: colors.semantic.ok.DEFAULT,
-    background: colors.semantic.ok.soft,
-    border: colors.semantic.ok.line,
+export const zIndex = {
+  base:     0,
+  raised:   10,
+  sticky:   100,
+  dropdown: 200,
+  overlay:  300,
+  modal:    400,
+  toast:    500,
+} as const;
+
+export const motion = {
+  duration: {
+    micro: '120ms',
+    enter: '180ms',
+    exit:  '140ms',
+    sheet: '240ms',
   },
-  inProgress: {
-    label: 'In Progress',
-    color: colors.semantic.warn.DEFAULT,
-    background: colors.semantic.warn.soft,
-    border: colors.semantic.warn.line,
-  },
-  pending: {
-    label: 'Pending',
-    color: colors.ink2,
-    background: colors.canvas,
-    border: colors.lineStrong,
-  },
-  failed: {
-    label: 'Failed',
-    color: colors.semantic.danger.DEFAULT,
-    background: colors.semantic.danger.soft,
-    border: colors.semantic.danger.line,
-  },
-  rejected: {
-    label: 'Rejected',
-    color: colors.semantic.danger.DEFAULT,
-    background: colors.semantic.danger.soft,
-    border: colors.semantic.danger.line,
+  easing: {
+    out:  'cubic-bezier(0.2, 0.8, 0.2, 1)',
+    in:   'cubic-bezier(0.4, 0, 1, 1)',
+    move: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
 } as const;
 
-export const severity = {
-  minor: {
-    label: 'Minor',
-    color: colors.semantic.warn.DEFAULT,
-    background: colors.semantic.warn.soft,
-    border: colors.semantic.warn.line,
-  },
-  major: {
-    label: 'Major',
-    color: colors.semantic.danger.DEFAULT,
-    background: colors.semantic.danger.soft,
-    border: colors.semantic.danger.line,
-  },
-  critical: {
-    label: 'Critical',
-    color: colors.semantic.danger.DEFAULT,
-    background: colors.semantic.danger.soft,
-    border: colors.semantic.danger.line,
-  },
+export const focus = {
+  ring: '0 0 0 2px var(--color-surface), 0 0 0 4px var(--p-b-400)',
+} as const;
+
+export const yardMode = {
+  minTouchTarget: 52,
+  railWidth: 5,
+  thumbnailSize: 88,
+  borderColor: primitives.neutrals.n300,
 } as const;
 
 export const statusRail = {
   width: '3px',
+  yardWidth: '5px',
   colors: {
-    passed: colors.semantic.ok.DEFAULT,
-    inProgress: colors.semantic.warn.DEFAULT,
-    failed: colors.semantic.danger.DEFAULT,
-    pending: colors.lineStrong,
+    passed:     primitives.semantic.green500,
+    inProgress: primitives.semantic.blue500,
+    waiting:    primitives.semantic.amber500,
+    failed:     primitives.semantic.red500,
+    pending:    primitives.neutrals.n300,
   },
 } as const;
 
-export const dimensions = {
-  tableRowHeight: 44,
-  topBarHeight: 56,
-  sidebarWidth: 240,
-  sidebarCollapsedWidth: 64,
-  touchTargetMinWeb: 32,
-  touchTargetMinMobile: 44,
-  touchTargetMinYard: 52,
-} as const;
-
-export const transitions = {
-  fast: '150ms cubic-bezier(0.16, 1, 0.3, 1)',
-  base: '200ms cubic-bezier(0.16, 1, 0.3, 1)',
-} as const;
-
+export type Primitives = typeof primitives;
 export type ColorToken = typeof colors;
 export type TypographyToken = typeof typography;
 export type SpacingToken = typeof spacing;
@@ -196,3 +302,4 @@ export type RadiiToken = typeof radii;
 export type ShadowsToken = typeof shadows;
 export type StatusFamily = typeof statusFamily;
 export type Severity = typeof severity;
+export type MotionToken = typeof motion;

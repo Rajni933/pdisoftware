@@ -1,133 +1,271 @@
-# Autoprime PDI — Design Foundations
+# 01 — Foundations
 
-> **Status:** Locked specification. Do not introduce arbitrary colors, sizes, or font weights.
-
-This document defines the physical foundations of the Autoprime Tata PDI Management Platform interface: color, typography, spacing, border radii, elevation, and motion.
+> **Status:** Locked specification. The single source of truth for design tokens, primitives, semantics, typography, space, elevation, motion, focus, and Yard Mode.
 
 ---
 
-## 1. Color System
+## 1. Token Architecture — Three Layers
 
-The color system is built for an operations console: calm, high-contrast, dense, and unambiguous.
+```
+PRIMITIVE                      SEMANTIC                   COMPONENT
+--p-b-500 (#1A3A6B)    →    --color-action    →    --btn-primary-bg
+(raw color/metric)          (what it means)        (where it's used)
+```
 
-### 1.1 Canvas & Surface
-- `--canvas` (`#FAFAFA`): The background tone of the application window. Provides subtle contrast against pure white cards without feeling dark or dirty.
-- `--surface` (`#FFFFFF`): The background for all content containers (panels, tables, modal bodies, cards).
-- `--surface-hover` (`#F7F8F9`): Interactive hover state for table rows, menu items, and clickable list rows.
-- `--surface-active` (`#F0F2F5`): Active/pressed state for surfaces.
+You may **only ever reference the semantic layer in feature code**. 
+- **Primitives** exist so the palette can be retuned once.
+- **Component tokens** exist only where a component needs a value that no semantic token expresses.
 
-### 1.2 Lines & Borders
-Information separation is achieved primarily through hairlines (1px), never through drop shadows.
-- `--line` (`#E8EAED`): The universal structural divider. Used for table cell borders, card outlines, sidebar dividers, header bottom borders.
-- `--line-strong` (`#D7DBE0`): Input borders, active table row dividers, high-contrast boundaries.
-- `--line-subtle` (`#F1F3F5`): Low-priority internal separators inside dense components.
-
-### 1.3 Ink (Typography Hierarchy)
-- `--ink` (`#0E1116`): High-contrast primary text (headings, primary labels, table data, active values). WCAG AAA compliance against `#FFFFFF`.
-- `--ink-2` (`#4A5159`): Secondary text, descriptive metadata, body text, table secondary columns, inactive navigation items.
-- `--ink-3` (`#858C95`): Muted labels, timestamps, counter hints, form field placeholders, helper text.
-- `--ink-disabled` (`#B0B7C0`): Disabled button labels, inactive checkboxes, unselected tab text.
-
-### 1.4 Primary Accent (Operations Navy)
-- `--accent` (`#1A3A6B`): The core interactive brand tone. Used for primary buttons, active navigation item pills, active checkboxes, focus rings.
-- `--accent-hover` (`#254B85`): Hover state for primary buttons and interactive accents.
-- `--accent-soft` (`#EEF2F8`): Soft tint background for active navigation items, selected row highlights, and info badges.
-- `--accent-line` (`#C9D6E8`): Border for accent containers, badges, and active inputs.
-
-### 1.5 Semantic Status Colors
-Every status is rendered with **glyph + label** (Rule R2).
-- **OK / Pass / Synced:**
-  - `--ok` (`#0B7355`): Deep emerald green. Used for pass status badges, checkmarks, completion indicators.
-  - `--ok-soft` (`#E8F5E9`): Background tint for pass badges.
-  - `--ok-line` (`#A3D9C9`): Border for pass badges.
-- **Warn / Pending / In-Progress:**
-  - `--warn` (`#A65A00`): Amber ochre. Used for in-progress items, inspection pending, warnings.
-  - `--warn-soft` (`#FFF8E1`): Background tint for warning badges.
-  - `--warn-line` (`#FFE082`): Border for warning badges.
-- **Danger / Fail / Defect / Error:**
-  - `--danger` (`#B3253C`): Critical ruby red. Used for failed checkpoints, major defects, destructive action buttons.
-  - `--danger-soft` (`#FFEBEE`): Background tint for failure badges.
-  - `--danger-line` (`#FFCDD2`): Border for failure badges.
-
-### 1.6 The Tata Red Rule
-`#C8102E` (Tata brand red) is reserved **exclusively** for the official Tata brand logo mark in the header lockup. It is **BANNED** from being used as an alert, button, badge, or error color anywhere in the application interface. Brand ≠ Alarm.
-
----
-
-## 2. Typography
-
-Two font families are loaded via Google Fonts / local fallback:
-1. **IBM Plex Sans**: All UI text, table labels, headers, form inputs, buttons.
-2. **IBM Plex Mono**: VINs, chassis numbers, engine numbers, certificate IDs, timestamps, numeric counters (`font-variant-numeric: tabular-nums`).
-
-### 2.1 Scale & Metrics
-
-| Token | Size | Line Height | Letter Spacing | Purpose |
-|---|---|---|---|---|
-| `text-label` | 0.6875rem (11px) | 1rem (16px) | `0.06em` | Eyebrow labels, table headers, uppercase badges |
-| `text-xs` | 0.75rem (12px) | 1.125rem (18px) | `0` | Secondary metadata, helper text, timestamps |
-| `text-sm` | 0.8125rem (13px) | 1.25rem (20px) | `0` | Standard table cell data, body text, form inputs |
-| `text-base` | 0.875rem (14px) | 1.375rem (22px) | `0` | Primary navigation, card titles, button labels |
-| `text-lg` | 1.0625rem (17px) | 1.5rem (24px) | `-0.011em` | Panel titles, modal headers, page headers |
-| `text-num` | 1.625rem (26px) | 1.875rem (30px) | `-0.02em` | KPI metrics, large counter totals |
-
-### 2.2 Weight Constraints
-- **400 (Normal)**: Body copy, table cells, secondary text.
-- **500 (Medium)**: Form labels, table headers, button labels, badge text.
-- **600 (Semibold)**: Page titles, section headings, KPI values.
-- **700+ (Bold/Black) is BANNED**: Bold weights create heavy, shouting visual clutter in dense operational tables.
-
----
-
-## 3. Spacing Rhythm
-
-A strict 4px/8px modular scale is used. No arbitrary pixel margins or paddings:
-
-- `space-1` (2px): Micro offsets, border compensations.
-- `space-2` (4px): Chip padding, compact icon-to-text spacing.
-- `space-3` (6px): Label-to-input gap.
-- `space-4` (8px): Standard component internal padding, compact list item gap.
-- `space-6` (12px): Gap between related form fields, button-to-button gap.
-- `space-8` (16px): Gap between form groups, table cell horizontal padding, mobile page gutter.
-- `space-12` (24px): Desktop page gutters, major container padding.
-- `space-16` (32px): Separation between major logical sections on a page.
-
----
-
-## 4. Border Radii
-
-- `radius-chip` (`4px`): Badges, status chips, segmented controls, small buttons.
-- `radius-default` (`6px`): Standard buttons, form text inputs, select dropdowns.
-- `radius-panel` (`10px`): Main content panels, table wrappers, dialogs, modals.
-- Circular (`rounded-full`) is permitted **only** for user initials avatars or status indicator dots. Banned for buttons or cards.
-
----
-
-## 5. Elevation: The Separation Law
-
-**Borders separate, shadows elevate.**
-- All content containers (panels, tables, cards, stat widgets) have `1px solid var(--line)` and **zero** shadow (`box-shadow: none`).
-- Shadow is reserved **strictly** for surfaces that float on the Z-axis above the document plane:
-  - Dropdown menus
-  - Modals / Dialogs
-  - Popovers / Tooltips
-  - Toast notifications
-  - Mobile Floating Action Bar / Yard Mode quick shutter
-
+### Violation Examples (Rejected in Review)
 ```css
---shadow-pop: 0 8px 28px -6px rgba(14, 17, 22, 0.16), 0 2px 6px -2px rgba(14, 17, 22, 0.08);
+/* ✗ Primitive / raw hex in component */
+.approve-btn { background: #1A3A6B; }
+
+/* ✗ Primitive in feature code */
+.approve-btn { background: var(--p-b-500); }
+
+/* ✓ Semantic token in feature code */
+.approve-btn { background: var(--color-action); }
 ```
 
 ---
 
-## 6. Motion & Transitions
+## 2. Colour
 
-- Transitions are fast and functional:
-  - `--transition-fast`: `150ms cubic-bezier(0.16, 1, 0.3, 1)` for hover, focus, and state flips.
-  - `--transition-base`: `200ms cubic-bezier(0.16, 1, 0.3, 1)` for drawer slide, modal fade.
-- **Prohibited:**
-  - Decorative entrance animations on scroll.
-  - Infinite bouncing or spinning badges (except loading indicators).
-  - Parallax or 3D perspective transforms.
-- **Accessibility:**
-  - All transitions and animations must be neutralized under `@media (prefers-reduced-motion: reduce)`.
+### 2.1 Why This Palette
+- **Navy `#1A3A6B`** is inherited from the Tata dealer identity and is the only place the brand shows up in interactive UI.
+- The **neutral ramp** is cool and slightly blue-shifted (not pure grey) so that navy sits inside the same family instead of floating on top of it. This is what makes the product read as one designed instrument panel rather than a grey template with a blue button dropped in.
+- **Backgrounds are near-white (`#FBFCFD`) rather than grey**: in bright sunlight on a mobile phone, grey backgrounds lose their separation from white cards entirely. Separation is carried by borders, which survive glare; fills do not.
+
+### 2.2 Neutrals (Cool Slate)
+
+| Token | Hex | Use |
+|---|---|---|
+| `--p-n-0` | `#FFFFFF` | Content surfaces, inputs, table body |
+| `--p-n-25` | `#FBFCFD` | App background (behind panels) |
+| `--p-n-50` | `#F4F6F8` | Table header, hover row, disabled fill |
+| `--p-n-100` | `#E9EDF1` | Subtle divider, track, chip background |
+| `--p-n-200` | `#D7DEE5` | Default border |
+| `--p-n-300` | `#B9C4CF` | Strong border, input border on hover |
+| `--p-n-400` | `#8A97A6` | Disabled text, placeholder, closed status |
+| `--p-n-500` | `#667487` | Tertiary text, icon default |
+| `--p-n-600` | `#4A5766` | Secondary text, labels |
+| `--p-n-700` | `#33404E` | Body text on dense tables |
+| `--p-n-800` | `#1F2A36` | Headings |
+| `--p-n-900` | `#121A23` | Primary text |
+
+### 2.3 Navy (Action)
+
+| Token | Hex | Use |
+|---|---|---|
+| `--p-b-50` | `#EDF2FA` | Selected row, active nav background |
+| `--p-b-100` | `#D6E1F2` | Selected border, info fill |
+| `--p-b-300` | `#6E8CBF` | Disabled primary button |
+| `--p-b-400` | `#3C63A3` | Focus ring, link hover |
+| `--p-b-500` | `#1A3A6B` | Primary action, active nav text |
+| `--p-b-600` | `#15305A` | Primary hover |
+| `--p-b-700` | `#0F2445` | Primary pressed |
+| `--p-b-900` | `#0A1930` | Sidebar background (dark shell variant) |
+
+### 2.4 Brand Red — Restricted
+`--p-brand-red: #C8102E`
+- **Permitted in:** Logo lockup, certificate PDF header rule, login screen brand mark.
+- **Forbidden in:** Buttons, alerts, badges, charts, borders, hover states, anything interactive.
+- **Reason:** If the brand colour also means "danger", the eye stops trusting either signal.
+
+### 2.5 Semantic Colors
+
+| Meaning | Text/Icon | Fill | Border |
+|---|---|---|---|
+| **Success** | `#0F7A46` | `#E8F6EF` | `#A5DCC1` |
+| **Warning** | `#8A5A00` | `#FDF4E3` | `#F0CE8A` |
+| **Danger** | `#B3261E` | `#FDECEB` | `#F2B5B0` |
+| **Info** | `#15558D` | `#EAF1F9` | `#A9C7E6` |
+
+*All four pass WCAG 2.1 AA (≥4.5:1) as text on white and on their own light fill.*
+
+---
+
+## 3. Status & Severity — The Domain Palette
+
+### 3.1 Vehicle Status → Five Families
+Thirteen statuses is too many to colour-code individually. They collapse into five families that answer: **"whose move is it?"**. A manager scanning a queue only needs to know who is blocking.
+
+| Family | Colour | Glyph (Lucide) | Statuses |
+|---|---|---|---|
+| **Intake** — nothing owed yet | `--p-n-600` slate (`#4A5766`) | `Inbox` | `RECEIVED`, `PDI_PENDING` |
+| **In progress** — someone is working | `#15558D` blue | `Loader` (static), `Play` | `PDI_IN_PROGRESS`, `REPAIR_IN_PROGRESS`, `REINSPECTION` |
+| **Waiting** — queued on another person | `#8A5A00` amber | `Clock` | `REPAIR_PENDING`, `QA_PENDING` |
+| **Blocked** — action required now | `#B3261E` red | `OctagonAlert` | `FAILED`, `QA_REJECTED` |
+| **Cleared** — moving forward | `#0F7A46` green | `Check` | `REPAIR_COMPLETED`, `PDI_APPROVED`, `DELIVERY_READY` |
+| **Closed** — terminal | `--p-n-400` muted (`#8A97A6`) | `Archive` | `DELIVERED` |
+
+- **The Status Rail** (3px leading edge bar) uses the family colour.
+- **The Status Chip** shows the family glyph plus the exact status label. Family gives the instant read; label gives the precision.
+
+### 3.2 Severity Ramp (Findings)
+Deliberately not a red→yellow→green gradient — severity is a taxonomy, not a temperature.
+
+| Severity | Colour | Glyph | Rule |
+|---|---|---|---|
+| **CRITICAL** | `#B3261E` | `OctagonAlert` | Photo mandatory · fails the PDI |
+| **MAJOR** | `#C2670B` | `TriangleAlert` | Photo mandatory · fails the PDI |
+| **MINOR** | `#2F6E75` teal | `CircleAlert` | Photo optional · does not block |
+| **OBSERVATION** | `--p-n-500` (`#667487`) | `Eye` | Photo optional · does not block |
+
+*Teal for MINOR (instead of a third warm tone) is intentional: it makes "does this block delivery?" a warm vs cool decision, readable at a glance and in greyscale.*
+
+### 3.3 Repair Ticket & Session States
+Reuse the five families above:
+- `OPEN` = Waiting
+- `IN_PROGRESS` = In progress
+- `COMPLETED` = Cleared
+- `VERIFIED` = Cleared (with `ShieldCheck` glyph)
+- `CANCELLED` = Closed
+
+*Do not invent a sixth colour family for any new state. Map it into an existing one.*
+
+---
+
+## 4. Typography
+
+```css
+--font-sans: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif;
+--font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+--font-deva: 'IBM Plex Sans Devanagari', var(--font-sans);
+```
+
+Load weights **400, 500, 600 only**, `font-display: swap`, subset `latin + latin-ext` (+ `devanagari` on the mobile bundle only).
+
+| Token | Size / Line | Weight | Tracking | Use |
+|---|---|---|---|---|
+| `--t-display` | 32 / 38px | 600 | −0.02em | KPI figure, certificate number |
+| `--t-h1` | 24 / 32px | 600 | −0.015em | Page title |
+| `--t-h2` | 19 / 26px | 600 | −0.01em | Section heading |
+| `--t-h3` | 16 / 24px | 600 | 0 | Card / panel heading |
+| `--t-body-lg` | 16 / 24px | 400 | 0 | Mobile primary text, modal body |
+| `--t-body` | 14 / 22px | 400 | 0 | Default body copy |
+| `--t-body-sm` | 13 / 20px | 400 | 0 | Dense tables, table body |
+| `--t-label` | 13 / 18px | 500 | 0 | Form labels, column headers |
+| `--t-caption` | 12 / 18px | 400 | 0 | Helper text, timestamps |
+| `--t-micro` | 11 / 16px | 500 | 0.01em | Chip text, badge counts |
+| `--t-mono` | 13 / 20px | 400 | 0 | VIN, IDs, numbers (tabular-nums) |
+| `--t-mono-lg` | 15 / 22px | 500 | 0 | VIN on detail headers |
+
+### Typography Rules
+1. Maximum measure for prose: **72 characters**. Tables are exempt.
+2. Column headers are `--t-label` in `--color-text-secondary`, **sentence case, not uppercase**.
+3. Never bold a single word inside a sentence for emphasis.
+4. Never use type size alone to create hierarchy where weight or position would do it more quietly.
+5. Numbers in a comparable column are always **mono + tabular (`tabular-nums`), right-aligned**.
+
+---
+
+## 5. Space
+
+4px base scale. Only these values exist:
+`--space-1`: 4px · `--space-2`: 8px · `--space-3`: 12px · `--space-4`: 16px · `--space-5`: 20px · `--space-6`: 24px · `--space-8`: 32px · `--space-10`: 40px · `--space-12`: 48px · `--space-16`: 64px
+
+| Relationship | Gap | Token |
+|---|---|---|
+| Label → its control | 6px | `--space-1-5` (4 + 2) |
+| Two fields in a group | 12px | `--space-3` |
+| Two groups in a form | 24px | `--space-6` |
+| Card padding (web) | 16px header / 16px body | `--space-4` |
+| Card padding (mobile) | 16px | `--space-4` |
+| Page sections | 32px | `--space-8` |
+| Table cell padding | 12px × 16px (dense: 8px × 12px) | `--space-3` × `--space-4` |
+| Icon → its label | 8px | `--space-2` |
+| Adjacent buttons | 8px (12px if one is destructive) | `--space-2` / `--space-3` |
+
+---
+
+## 6. Radius
+
+Four values. A fifth is a review failure.
+
+| Token | Value | Applies to |
+|---|---|---|
+| `--radius-xs` | 3px | Checkbox, chip, tag, progress track |
+| `--radius-sm` | 6px | Default — button, input, select, card, panel, table container |
+| `--radius-md` | 10px | Modal, bottom sheet, popover, drawer |
+| `--radius-full` | 999px | Count badges and avatars only |
+
+**Nesting rule:** An inner element's radius = outer radius − its inset padding, floored at `--radius-xs`.
+
+---
+
+## 7. Border & Elevation
+
+```css
+--border-hairline: 1px solid var(--color-border-subtle); /* #E9EDF1 — inside components */
+--border-default: 1px solid var(--color-border);        /* #D7DEE5 — component outlines */
+--border-strong: 1px solid var(--color-border-strong);   /* #B9C4CF — inputs on hover */
+--rail: 3px;                                            /* status rail width */
+```
+
+Three shadows exist and each is bound to a z-layer. **Nothing that sits in the document flow gets a shadow.**
+
+| Token | Value | Only for |
+|---|---|---|
+| `--shadow-popover` | `0 4px 12px -2px rgba(18,26,35,.10), 0 0 0 1px rgba(18,26,35,.05)` | Dropdown, popover, tooltip, combobox |
+| `--shadow-modal` | `0 16px 40px -8px rgba(18,26,35,.18), 0 0 0 1px rgba(18,26,35,.06)` | Modal, drawer, bottom sheet |
+| `--shadow-sticky` | `0 -2px 8px -2px rgba(18,26,35,.08)` | Sticky mobile action bar (shadow points up) |
+
+**Z-Scale:**
+`base: 0` · `raised: 10` · `sticky: 100` · `dropdown: 200` · `overlay: 300` · `modal: 400` · `toast: 500`.
+
+---
+
+## 8. Motion
+
+```css
+--dur-micro: 120ms; /* hover, focus, checkbox, chip */
+--dur-enter: 180ms; /* dropdown, tooltip, toast in */
+--dur-exit:  140ms; /* anything out — exits are always faster */
+--dur-sheet: 240ms; /* modal, drawer, bottom sheet */
+
+--ease-out:  cubic-bezier(.2, .8, .2, 1);
+--ease-in:   cubic-bezier(.4, 0, 1, 1);
+--ease-move: cubic-bezier(.4, 0, .2, 1); /* position changes */
+```
+
+### Laws of Motion
+1. **Motion must show what changed** — origin, direction, and destination. A menu grows from its trigger, a sheet rises from the bottom edge, a deleted row collapses its own height.
+2. **Distance is small:** 4–8px translate on web, 12px on mobile sheets. Never a 40px slide-up.
+3. **Never animate on scroll.** Never stagger a list on load. Never loop anything beside data.
+4. **Reduced motion law:** Everything inside `@media (prefers-reduced-motion: reduce)` collapses to a 1ms opacity change — including loaders, which become static.
+
+---
+
+## 9. Focus
+
+```css
+--focus-ring: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--p-b-400);
+```
+
+One ring, everywhere, including inside dark surfaces (the inner white ring flips to the surface colour).
+- Never `outline: none` without an immediate replacement.
+- Focus order follows DOM order.
+- Modals trap focus and restore it to the trigger on close.
+
+---
+
+## 10. Dark Mode & Yard Mode
+
+### Dark Mode
+Dark mode is defined but not shipped in v1.0 (ADR-007). Every semantic token has a dark value in `tokens.css` under `[data-theme="dark"]`. Build against semantics and dark mode will cost one line. Do not ship a dark screen until the whole product can flip.
+
+### Yard Mode (Mobile-Only Sunlight/Glove Profile)
+Yard Mode is shipped and is the mobile-only sunlight/glove profile. It is not a theme, it is a density + contrast override on the same tokens:
+```css
+[data-mode="yard"] {
+  /* Text bumps one step on the scale */
+  /* Minimum touch target 52px */
+  /* Borders go from #D7DEE5 to #B9C4CF */
+  /* Status rail: 3px → 5px */
+  /* All secondary text promoted to --color-text-primary */
+  /* Photo thumbnails: 88px (from 64px) */
+}
+```
+Toggle lives in the mobile profile screen and auto-suggests itself when the device reports ambient light above threshold. Details: `references/06-mobile-yard.md`.
