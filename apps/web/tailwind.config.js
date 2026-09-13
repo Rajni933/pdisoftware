@@ -24,6 +24,11 @@ export default {
         ok: '#0B7355',
         warn: '#A65A00',
         danger: '#B3253C',
+        minor: {
+          DEFAULT: '#2F6E75',
+          soft: '#EEF7F8',
+          line: '#B2D8DC',
+        },
       },
       fontFamily: {
         sans: ['"IBM Plex Sans"', 'system-ui', '-apple-system', 'sans-serif'],

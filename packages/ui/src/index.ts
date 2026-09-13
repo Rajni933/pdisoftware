@@ -1,20 +1,31 @@
 /**
  * Autoprime Tata PDI Management Platform
- * UI Primitives Package (@autoprime/ui)
+ * UI Components Package (@autoprime/ui)
  * 
- * 14 Core Primitives built strictly from Design System Tokens.
+ * 02 — Components Specification
+ * Built strictly against Design System Tokens.
  */
 
 export * from './components/Button';
 export * from './components/Chip';
+export * from './components/SeverityTag';
 export * from './components/StatusRail';
 export * from './components/Input';
 export * from './components/Select';
 export * from './components/Table';
 export * from './components/Panel';
+export * from './components/KpiTile';
+export * from './components/Tabs';
 export * from './components/Modal';
+export * from './components/Drawer';
 export * from './components/Toast';
 export * from './components/Banner';
+export * from './components/PhotoTile';
+export * from './components/ChecklistItem';
+export * from './components/Timeline';
+export * from './components/FilterBar';
+export * from './components/Pagination';
+export * from './components/PageHeader';
 export * from './components/Skeleton';
 export * from './components/Spinner';
 export * from './components/ProgressBar';

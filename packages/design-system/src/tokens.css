@@ -110,6 +110,10 @@
   --color-info-bg:        var(--p-blue-50);   /* #EAF1F9 */
   --color-info-border:    var(--p-blue-200);  /* #A9C7E6 */
 
+  --color-minor:          var(--p-teal-500);  /* #2F6E75 */
+  --color-minor-bg:       #EEF7F8;
+  --color-minor-border:   #B2D8DC;
+
   /* Status Families (Whose move is it?) */
   --status-family-intake:      var(--p-n-600);    /* slate #4A5766 - RECEIVED, PDI_PENDING */
   --status-family-in-progress: var(--p-blue-500); /* blue #15558D - PDI_IN_PROGRESS, REPAIR_IN_PROGRESS */
