@@ -1,4 +1,5 @@
 import React from 'react';
+import { OctagonAlert, TriangleAlert, CircleAlert, Eye } from 'lucide-react';
 
 export type SeverityLevel = 'CRITICAL' | 'MAJOR' | 'MINOR' | 'OBSERVATION';
 
@@ -11,45 +12,22 @@ const severityConfig: Record<SeverityLevel, { label: string; icon: React.ReactNo
   CRITICAL: {
     label: 'Critical',
     classes: 'bg-danger-soft text-danger border-danger-line',
-    icon: (
-      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2" />
-        <line x1="12" y1="8" x2="12" y2="12" />
-        <line x1="12" y1="16" x2="12.01" y2="16" />
-      </svg>
-    ),
+    icon: <OctagonAlert className="w-3.5 h-3.5" strokeWidth={1.5} />,
   },
   MAJOR: {
     label: 'Major',
     classes: 'bg-warn-soft text-warn border-warn-line',
-    icon: (
-      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-        <line x1="12" y1="9" x2="12" y2="13" />
-        <line x1="12" y1="17" x2="12.01" y2="17" />
-      </svg>
-    ),
+    icon: <TriangleAlert className="w-3.5 h-3.5" strokeWidth={1.5} />,
   },
   MINOR: {
     label: 'Minor',
     classes: 'bg-minor-soft text-minor border-minor-line',
-    icon: (
-      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" />
-        <line x1="12" y1="8" x2="12" y2="12" />
-        <line x1="12" y1="16" x2="12.01" y2="16" />
-      </svg>
-    ),
+    icon: <CircleAlert className="w-3.5 h-3.5" strokeWidth={1.5} />,
   },
   OBSERVATION: {
     label: 'Observation',
     classes: 'bg-canvas text-ink-3 border-line',
-    icon: (
-      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    ),
+    icon: <Eye className="w-3.5 h-3.5" strokeWidth={1.5} />,
   },
 };
 

@@ -36,4 +36,6 @@ export * from './components/PendingDots';
 export * from './components/BlurUpImage';
 export * from './components/BootLoader';
 export * from './components/InlineShimmerCell';
+export * from './components/VehicleBodyMap';
+
 

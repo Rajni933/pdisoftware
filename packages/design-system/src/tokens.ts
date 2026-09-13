@@ -294,6 +294,30 @@ export const statusRail = {
   },
 } as const;
 
+export const charts = {
+  palette: [
+    primitives.navy.b500,        // #1A3A6B
+    primitives.semantic.teal500,  // #2F6E75
+    primitives.semantic.amber600, // #C2670B
+    primitives.neutrals.n500,     // #667487
+  ],
+  series1: primitives.navy.b500,
+  series2: primitives.semantic.teal500,
+  series3: primitives.semantic.amber600,
+  series4: primitives.neutrals.n500,
+  grid: primitives.neutrals.n100,
+} as const;
+
+export const icons = {
+  strokeWidth: 1.5,
+  sizes: {
+    table: 16,
+    default: 20,
+    mobile: 24,
+    yard: 28,
+  },
+} as const;
+
 export type Primitives = typeof primitives;
 export type ColorToken = typeof colors;
 export type TypographyToken = typeof typography;
@@ -303,3 +327,6 @@ export type ShadowsToken = typeof shadows;
 export type StatusFamily = typeof statusFamily;
 export type Severity = typeof severity;
 export type MotionToken = typeof motion;
+export type ChartsToken = typeof charts;
+export type IconsToken = typeof icons;
+

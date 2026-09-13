@@ -128,6 +128,13 @@
   --severity-minor:       var(--p-teal-500);  /* #2F6E75 teal - Photo optional, non-blocking */
   --severity-observation: var(--p-n-500);     /* #667487 - Photo optional, non-blocking */
 
+  /* Chart Series (04-icons-motion §2) */
+  --color-chart-1: #1A3A6B; /* Navy primary */
+  --color-chart-2: #2F6E75; /* Teal secondary */
+  --color-chart-3: #C2670B; /* Amber tertiary */
+  --color-chart-4: #667487; /* Slate quaternary */
+
+
   /* Typography Families */
   --font-sans: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace;
@@ -269,4 +276,13 @@
     animation: none;
   }
 }
+
+/* ==========================================================================
+   6. GLOBAL ICON STANDARDS (04-icons-motion §1)
+   1.5px stroke width: Instrument standard across Web & Mobile
+   ========================================================================== */
+svg.lucide {
+  stroke-width: 1.5px;
+}
+
 

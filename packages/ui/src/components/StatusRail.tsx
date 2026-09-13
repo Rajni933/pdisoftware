@@ -22,7 +22,7 @@ export const StatusRail: React.FC<StatusRailProps> = ({
   return (
     <span
       aria-hidden="true"
-      className={`absolute inset-y-0 left-0 w-[3px] ${statusColors[status]} ${className}`}
+      className={`absolute inset-y-0 left-0 w-[var(--rail,3px)] transition-colors duration-[240ms] ease-out ${statusColors[status]} ${className}`}
       {...props}
     />
   );
