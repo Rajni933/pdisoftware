@@ -1,0 +1,24 @@
+﻿{
+  "name": "api-worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Autoprime PDI — Cloudflare Worker API",
+  "scripts": {
+    "dev": "wrangler dev --port 8787",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@autoprime/domain": "workspace:*",
+    "@autoprime/types": "workspace:*",
+    "@autoprime/validation": "workspace:*",
+    "@supabase/supabase-js": "^2.46.0",
+    "hono": "^4.6.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241112.0",
+    "typescript": "^5.7.0",
+    "wrangler": "^3.114.0"
+  }
+}
