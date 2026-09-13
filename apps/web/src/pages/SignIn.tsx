@@ -12,10 +12,11 @@ export const SignInPage: React.FC = () => {
     <AuthShell
       environment="Staging"
       version="v1.0.3 (412)"
-      branchName="Basni"
-      supportPhone="1800 209 7979"
-      title="Autoprime"
-      subtitle="Pre-delivery inspection"
+      branchName="Basni Depot (Jodhpur)"
+      supportPhone="1800 209 7979 · Ext. 4022"
+      title="Autoprime PDI"
+      subtitle="Pre-delivery inspection console"
+      orgName="Tata Motors · Dhoot Group"
     >
       <SignInForm sessionExpired={sessionExpired} />
     </AuthShell>

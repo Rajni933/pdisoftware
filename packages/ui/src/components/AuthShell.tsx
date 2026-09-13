@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 
 export interface AuthShellProps {
   children: React.ReactNode;
@@ -9,6 +9,7 @@ export interface AuthShellProps {
   supportPhone?: string;
   title?: string;
   subtitle?: string;
+  orgName?: string;
   isKeyboardOpen?: boolean;
 }
 
@@ -17,10 +18,11 @@ export const AuthShell: React.FC<AuthShellProps> = ({
   surface = 'auto',
   environment = 'Staging',
   version = 'v1.0.3 (412)',
-  branchName = 'Basni',
+  branchName = 'Basni Depot',
   supportPhone = '1800 209 7979',
-  title = 'Autoprime',
+  title = 'Autoprime PDI',
   subtitle = 'Pre-delivery inspection',
+  orgName = 'Tata Motors · Dhoot Group',
   isKeyboardOpen = false,
 }) => {
   const [detectedSurface, setDetectedSurface] = useState<'phone' | 'tablet-portrait' | 'tablet-landscape' | 'laptop'>('laptop');
@@ -47,9 +49,41 @@ export const AuthShell: React.FC<AuthShellProps> = ({
 
   const activeSurface = surface === 'auto' ? detectedSurface : surface;
 
+  // Authoritative Brand Mark & Header
+  const renderBrand = (compact = false) => (
+    <div className="flex items-center gap-[var(--space-3,12px)]">
+      {/* Precision Geometric Monogram */}
+      <div
+        className="w-[36px] h-[36px] rounded-[var(--radius-sm)] bg-[var(--color-action)] text-[var(--color-text-inverse)] flex items-center justify-center shrink-0 border border-[var(--color-border-subtle)]"
+        aria-hidden="true"
+      >
+        <svg className="w-[20px] h-[20px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M12 3.5L4.5 19.5h3.8l1.7-4.2h4l1.7 4.2h3.8L12 3.5z" fill="currentColor" stroke="none" />
+          <path d="M12 9.2l1.4 3.5h-2.8L12 9.2z" fill="var(--color-action)" stroke="none" />
+        </svg>
+      </div>
+
+      <div className="flex flex-col">
+        {orgName && (
+          <span className="text-[var(--t-micro-size,0.6875rem)] leading-[var(--t-micro-lh,16px)] font-[var(--fw-semibold,600)] tracking-[0.06em] uppercase text-[var(--color-text-tertiary)]">
+            {orgName}
+          </span>
+        )}
+        <h1 className="text-[var(--t-h2-size,1.1875rem)] leading-[var(--t-h2-lh,26px)] font-[var(--fw-semibold,600)] text-[var(--color-text-primary)] m-0">
+          {title}
+        </h1>
+        {!compact && subtitle && (
+          <p className="text-[var(--t-caption-size,0.75rem)] leading-[var(--t-caption-lh,18px)] text-[var(--color-text-secondary)] m-0">
+            {subtitle}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+
   // Render Footer metadata
   const renderFooter = (isCenter = true) => (
-    <footer className={`mt-[var(--space-6,24px)] flex flex-wrap items-center gap-[var(--space-2,8px)] text-[var(--t-caption-size,0.75rem)] leading-[var(--t-caption-lh,18px)] text-[var(--color-text-tertiary)] ${isCenter ? 'justify-center text-center' : 'justify-start text-left'}`}>
+    <footer className={`mt-[var(--space-4,16px)] flex flex-wrap items-center gap-[var(--space-2,8px)] text-[var(--t-caption-size,0.75rem)] leading-[var(--t-caption-lh,18px)] text-[var(--color-text-tertiary)] ${isCenter ? 'justify-center text-center' : 'justify-start text-left'}`}>
       {environment && environment.toLowerCase() !== 'production' && (
         <span className="inline-flex items-center px-[var(--space-1-5,6px)] py-[1px] rounded-[var(--radius-xs)] font-[var(--fw-medium,500)] text-[var(--t-micro-size,0.6875rem)] bg-[var(--color-warning-soft)] text-[var(--color-warning)] border border-[var(--color-warning-border)]">
           {environment}
@@ -77,19 +111,7 @@ export const AuthShell: React.FC<AuthShellProps> = ({
             isKeyboardOpen ? 'max-h-0 opacity-0 mb-0' : 'max-h-[120px] opacity-100 mb-[var(--space-6,24px)]'
           }`}
         >
-          <div className="flex items-center gap-[var(--space-3,12px)]">
-            <div className="w-[40px] h-[40px] rounded-[var(--radius-sm)] bg-[var(--color-action)] text-[var(--color-text-inverse)] flex items-center justify-center font-bold text-[18px]">
-              A
-            </div>
-            <div>
-              <h1 className="text-[var(--t-h2-size,1.1875rem)] leading-[var(--t-h2-lh,26px)] font-[var(--fw-semibold,600)] text-[var(--color-text-primary)] m-0">
-                {title}
-              </h1>
-              <p className="text-[var(--t-caption-size,0.75rem)] leading-[var(--t-caption-lh,18px)] text-[var(--color-text-secondary)] m-0">
-                {subtitle}
-              </p>
-            </div>
-          </div>
+          {renderBrand(false)}
         </header>
 
         {/* Flexible gap pushes interactive elements to bottom 60% */}
@@ -108,19 +130,11 @@ export const AuthShell: React.FC<AuthShellProps> = ({
   if (activeSurface === 'tablet-landscape') {
     return (
       <div className="min-h-screen w-full bg-[var(--color-bg)] flex items-center justify-center p-[var(--space-6,24px)]">
-        <div className="w-full max-w-[560px] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] overflow-hidden flex flex-row">
+        <div className="w-full max-w-[560px] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] overflow-hidden flex flex-row relative before:content-[''] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[var(--rail,3px)] before:bg-[var(--color-action)]">
           {/* Left Column (Brand & Support) */}
-          <aside className="w-[220px] shrink-0 p-[var(--space-6,24px)] bg-[var(--color-surface-sunken)] border-r border-[var(--color-border-subtle)] flex flex-col justify-between">
+          <aside className="w-[220px] shrink-0 p-[var(--space-6,24px)] pl-[calc(var(--space-6,24px)+var(--rail,3px))] bg-[var(--color-surface-sunken)] border-r border-[var(--color-border-subtle)] flex flex-col justify-between">
             <div>
-              <div className="w-[40px] h-[40px] rounded-[var(--radius-sm)] bg-[var(--color-action)] text-[var(--color-text-inverse)] flex items-center justify-center font-bold text-[18px] mb-[var(--space-3,12px)]">
-                A
-              </div>
-              <h1 className="text-[var(--t-h2-size,1.1875rem)] leading-[var(--t-h2-lh,26px)] font-[var(--fw-semibold,600)] text-[var(--color-text-primary)] m-0">
-                {title}
-              </h1>
-              <p className="text-[var(--t-caption-size,0.75rem)] leading-[var(--t-caption-lh,18px)] text-[var(--color-text-secondary)] mt-[var(--space-1,4px)] mb-0">
-                {subtitle}
-              </p>
+              {renderBrand(false)}
             </div>
             {renderFooter(false)}
           </aside>
@@ -137,22 +151,10 @@ export const AuthShell: React.FC<AuthShellProps> = ({
   // Surface 2: Tablet Portrait (768–1279 px in portrait)
   if (activeSurface === 'tablet-portrait') {
     return (
-      <div className="min-h-screen w-full bg-[var(--color-bg)] flex flex-col items-center justify-start pt-[12vh] p-[var(--space-6,24px)]">
-        <div className="w-full max-w-[420px] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] p-[var(--space-8,32px)]">
-          <header className="mb-[var(--space-6,24px)] pb-[var(--space-4,16px)] border-b border-[var(--color-border-subtle)]">
-            <div className="flex items-center gap-[var(--space-3,12px)]">
-              <div className="w-[40px] h-[40px] rounded-[var(--radius-sm)] bg-[var(--color-action)] text-[var(--color-text-inverse)] flex items-center justify-center font-bold text-[18px]">
-                A
-              </div>
-              <div>
-                <h1 className="text-[var(--t-h2-size,1.1875rem)] leading-[var(--t-h2-lh,26px)] font-[var(--fw-semibold,600)] text-[var(--color-text-primary)] m-0">
-                  {title}
-                </h1>
-                <p className="text-[var(--t-caption-size,0.75rem)] leading-[var(--t-caption-lh,18px)] text-[var(--color-text-secondary)] m-0">
-                  {subtitle}
-                </p>
-              </div>
-            </div>
+      <div className="min-h-screen w-full bg-[var(--color-bg)] flex flex-col items-center justify-start pt-[10vh] p-[var(--space-6,24px)]">
+        <div className="w-full max-w-[420px] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] p-[var(--space-8,32px)] pl-[calc(var(--space-8,32px)+var(--rail,3px))] relative before:content-[''] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[var(--rail,3px)] before:bg-[var(--color-action)]">
+          <header className="mb-[var(--space-5,20px)] pb-[var(--space-4,16px)] border-b border-[var(--color-border-subtle)]">
+            {renderBrand(false)}
           </header>
           <main>{children}</main>
         </div>
@@ -164,24 +166,12 @@ export const AuthShell: React.FC<AuthShellProps> = ({
   }
 
   // Surface 3: Laptop & Desktop (1280 px and up)
-  // 400px centered card, at 40% from the top, on --color-bg, 32px padding, NO shadow
+  // 400px centered card at 40% from top, hairline border, 3px signature status rail on leading edge, zero shadow
   return (
     <div className="min-h-screen w-full bg-[var(--color-bg)] flex flex-col items-center justify-start pt-[12vh] p-[var(--space-6,24px)]">
-      <div className="w-full max-w-[400px] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] p-[var(--space-8,32px)]">
-        <header className="mb-[var(--space-6,24px)] pb-[var(--space-4,16px)] border-b border-[var(--color-border-subtle)]">
-          <div className="flex items-center gap-[var(--space-3,12px)]">
-            <div className="w-[40px] h-[40px] rounded-[var(--radius-sm)] bg-[var(--color-action)] text-[var(--color-text-inverse)] flex items-center justify-center font-bold text-[18px]">
-              A
-            </div>
-            <div>
-              <h1 className="text-[var(--t-h2-size,1.1875rem)] leading-[var(--t-h2-lh,26px)] font-[var(--fw-semibold,600)] text-[var(--color-text-primary)] m-0">
-                {title}
-              </h1>
-              <p className="text-[var(--t-caption-size,0.75rem)] leading-[var(--t-caption-lh,18px)] text-[var(--color-text-secondary)] m-0">
-                {subtitle}
-              </p>
-            </div>
-          </div>
+      <div className="w-full max-w-[400px] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)] p-[var(--space-8,32px)] pl-[calc(var(--space-8,32px)+var(--rail,3px))] relative before:content-[''] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[var(--rail,3px)] before:bg-[var(--color-action)]">
+        <header className="mb-[var(--space-5,20px)] pb-[var(--space-4,16px)] border-b border-[var(--color-border-subtle)]">
+          {renderBrand(false)}
         </header>
 
         <main>{children}</main>

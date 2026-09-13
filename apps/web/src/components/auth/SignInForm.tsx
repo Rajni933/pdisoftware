@@ -141,7 +141,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
 
       // 3. Fallback demo mock credentials for verification testing
       if (!authUser) {
-        if (cleanUser === '100482' && password === 'Pass1234') {
+        if (cleanUser === '100482' && (password === 'Pass1234' || password === 'Dhootgroup@123')) {
           authUser = {
             id: 'demo-user-100482',
             userCode: '100482',
@@ -154,6 +154,32 @@ export const SignInForm: React.FC<SignInFormProps> = ({
             phone: '9876544821',
           };
           token = `jwt_demo_100482_${Date.now()}`;
+        } else if ((cleanUser === 'QA-MANAGER' || cleanUser === 'QA-01') && (password === 'Pass1234' || password === 'Dhootgroup@123')) {
+          authUser = {
+            id: 'demo-qa-manager',
+            userCode: 'QA-01',
+            employeeId: 'QA-MANAGER',
+            userName: 'Sunil Jani',
+            email: 's.jani@autoprime.in',
+            role: 'QA_MANAGER',
+            organizationId: '11111111-1111-1111-1111-111111111111',
+            brand: 'DHOOT-TATA',
+            phone: '9876544821',
+          };
+          token = `jwt_demo_qa_${Date.now()}`;
+        } else if ((cleanUser === 'ADMIN' || cleanUser === 'ADMIN-01') && (password === 'Pass1234' || password === 'Dhootgroup@123')) {
+          authUser = {
+            id: 'demo-admin-01',
+            userCode: 'ADMIN-01',
+            employeeId: 'ADMIN-01',
+            userName: 'Vikram Dhoot',
+            email: 'v.dhoot@autoprime.in',
+            role: 'BRANCH_MANAGER',
+            organizationId: '11111111-1111-1111-1111-111111111111',
+            brand: 'DHOOT-TATA',
+            phone: '9876544821',
+          };
+          token = `jwt_demo_admin_${Date.now()}`;
         }
       }
 
@@ -547,6 +573,40 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           >
             Forgot password?
           </button>
+        </div>
+
+        {/* Demo Quick-Fill Helper for Testing and Local Review */}
+        <div className="mt-[var(--space-5,20px)] pt-[var(--space-3,12px)] border-t border-[var(--color-border-subtle)]">
+          <div className="flex items-center justify-between text-[var(--t-micro-size,0.6875rem)] text-[var(--color-text-tertiary)] uppercase tracking-wider font-[var(--fw-medium,500)] mb-[var(--space-2,8px)]">
+            <span>Quick test accounts</span>
+            <span className="font-[var(--font-mono)] text-[10px]">Click to fill</span>
+          </div>
+          <div className="grid grid-cols-2 gap-[var(--space-2,8px)]">
+            <button
+              type="button"
+              onClick={() => {
+                setEmployeeId('100482');
+                setPassword('Pass1234');
+                setError(null);
+              }}
+              className="px-[var(--space-2,8px)] py-[var(--space-1-5,6px)] text-[var(--t-caption-size,0.75rem)] font-[var(--font-mono)] rounded-[var(--radius-xs)] bg-[var(--color-surface-sunken)] hover:bg-[var(--color-action-soft)] hover:text-[var(--color-action)] border border-[var(--color-border)] transition-colors cursor-pointer text-[var(--color-text-secondary)] text-left flex flex-col"
+            >
+              <span className="font-[var(--font-sans)] font-[var(--fw-medium,500)] text-[var(--color-text-primary)]">Technician</span>
+              <span className="text-[10px] text-[var(--color-text-tertiary)]">100482 / Pass1234</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEmployeeId('QA-MANAGER');
+                setPassword('Pass1234');
+                setError(null);
+              }}
+              className="px-[var(--space-2,8px)] py-[var(--space-1-5,6px)] text-[var(--t-caption-size,0.75rem)] font-[var(--font-mono)] rounded-[var(--radius-xs)] bg-[var(--color-surface-sunken)] hover:bg-[var(--color-action-soft)] hover:text-[var(--color-action)] border border-[var(--color-border)] transition-colors cursor-pointer text-[var(--color-text-secondary)] text-left flex flex-col"
+            >
+              <span className="font-[var(--font-sans)] font-[var(--fw-medium,500)] text-[var(--color-text-primary)]">QA Lead (2FA)</span>
+              <span className="text-[10px] text-[var(--color-text-tertiary)]">QA-MANAGER / Pass1234</span>
+            </button>
+          </div>
         </div>
       </form>
 
