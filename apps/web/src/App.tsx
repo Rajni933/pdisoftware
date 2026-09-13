@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginPage } from './pages/Login';
+import { SignInPage } from './pages/SignIn';
+import { VerifyOtpPage } from './pages/VerifyOtp';
 import { DashboardPage } from './pages/Dashboard';
 import { YardReceivingPage } from './pages/YardReceiving';
 import { BookingsPage } from './pages/Bookings';
@@ -21,7 +23,7 @@ import { AppShell } from './components/layout/AppShell';
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { token } = useAuth();
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/signin" replace />;
   }
   return <AppShell>{children}</AppShell>;
 };
@@ -31,7 +33,9 @@ export const App: React.FC = () => {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={<Navigate to="/signin" replace />} />
+          <Route path="/signin" element={<SignInPage />} />
+          <Route path="/signin/verify" element={<VerifyOtpPage />} />
           <Route
             path="/dashboard"
             element={

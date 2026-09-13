@@ -69,6 +69,7 @@ function getFiles(dir, extensions, ignoreDirs = ['node_modules', '.git', 'dist',
 const uiFiles = [
   ...getFiles(path.join(rootDir, 'apps/web/src'), ['.tsx', '.css']),
   ...getFiles(path.join(rootDir, 'packages/ui/src'), ['.tsx', '.css']),
+  ...getFiles(path.join(rootDir, 'apps/mobile/src'), ['.tsx', '.ts']),
 ].filter(f => {
   const norm = f.replace(/\\/g, '/');
   // Allow root token definition files and OEM brand config constants

@@ -212,6 +212,13 @@ Use these exact strings in code. Never invent alternative copy.
 | **Photo required** | *"Critical findings need at least one photo."* |
 | **Destructive confirm** | *"Reject this inspection? Vehicle MAT…4521 will return to the engineer. This is permanently recorded."* |
 | **Save success toast** | *"Inspection submitted."* / *"Inspection approved."* / *"Ticket assigned to S. Rathore."* |
+| **Invalid credentials** | *"Employee ID or password is incorrect. 3 attempts left before the account locks."* |
+| **Account locked out** | *"This account is locked. Too many failed sign-in attempts."* + *"Try again in 4:58"* |
+| **Offline sign-in** | *"You're offline. Sign in needs a connection."* |
+| **Forgot password** | *"Ask your branch administrator to reset your password."* |
+| **Device registration** | *"Your administrator can see and remove registered devices. This device will be named {model} unless you change it."* |
+| **App lock expired** | *"Your session expired while the app was locked."* |
+
 
 ### Banned Copy (Instant PR Rejection)
 - ❌ *"Oops!"* / *"Uh oh!"*

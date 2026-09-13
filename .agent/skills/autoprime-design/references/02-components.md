@@ -348,3 +348,54 @@ Nexon XZ+ · Silver · Received 11 Sep                   ← --t-caption, second
 ```
 - **Sticky behavior:** Sticky on scroll, collapsing to a 48px bar with just the VIN, status chip, and primary action.
 - **Breadcrumb:** True interactive navigation — every ancestral segment is clickable.
+
+---
+
+## 21. Text Field (`TextField`)
+
+Surface-aware single-line text input with label above, helper or error text below.
+- **Sizes:** `sm` (36px desktop), `md` (48px tablet), `lg` (52px mobile / Yard Mode).
+- **Label:** `--t-label` (13px, weight 500) in `--color-text-secondary`, 6px above control.
+- **Input:** `--radius-sm` (6px), `--border-default`, `--color-surface` background.
+- **Mono mode:** `--font-mono` tabular figures for numeric employee IDs, chassis, and VINs.
+- **Error state:** `--color-danger` border, inner glow, error message with 14px warning icon.
+
+---
+
+## 22. Password Field (`PasswordField`)
+
+Specialized credential input with toggleable masking and active hardware state inspection.
+- **Show toggle:** Real labelled `<button type="button">` with `aria-label="Show password"` / `aria-label="Hide password"` and text label ("Show" / "Hide").
+- **Caps lock detection:** Evaluates `e.getModifierState('CapsLock')` on keydown/keyup, rendering an inline warning helper *"Caps lock is on"* with warning icon.
+- **Security:** `autoComplete="current-password"`, never reveals plaintext without explicit user intent.
+
+---
+
+## 23. OTP Input (`OtpInput`)
+
+Six individual single-character cells for multi-factor authentication (2FA).
+- **Geometry:** Square cells matching surface field height (36×36px desktop, 48×48px tablet, 52×52px mobile touch).
+- **Typography:** Centered `--font-mono` tabular figures at `--t-h3` or `--t-h2`.
+- **Keyboard & Paste:** Auto-advancing on digit entry, backspace navigation to previous cell, full 6-digit clipboard paste distribution.
+- **Failure:** Turns `--color-danger` border, clears contents, and refocuses cell 1.
+
+---
+
+## 24. Countdown (`Countdown`)
+
+Live countdown timer formatted in `--font-mono` tabular figures.
+- **Format:** `M:SS` (e.g. `0:42`, `4:58`).
+- **Hook & callback:** Fires `onExpire` when hitting 00:00 to trigger state transitions (e.g. lockout release, OTP resend enable).
+
+---
+
+## 25. Authentication Layout Shell (`AuthShell`)
+
+Responsive posture-aware layout shell for authentication and credential entry.
+- **Phone (0–767px):** Bottom-weighted on `--color-surface`. Top brand block (40px mark + wordmark + `--t-caption` secondary subtitle). Flexible gap pushing form down into the lower 60% thumb zone. Collapses brand block on keyboard open. No card, no border, no shadow.
+- **Tablet (768–1279px):**
+  - *Portrait:* 420px card positioned optically at 40% from top, `--border-default`, `--radius-sm`, zero shadow, 32px padding, on `--color-bg`.
+  - *Landscape:* 560px two-column card (200px brand/support left, 320px form right, divided by 1px vertical border `--color-border-subtle`).
+- **Laptop (1280px+):** 400px centered card at 40% from top, on `--color-bg`, 32px padding, `--radius-sm`, `--border-default`, zero shadow. Never split-screen hero!
+- **Universal Auth Footer:** Environment badge when not production (`Staging` chip, `--color-warning` family), version and build string in `--t-caption` mono (e.g. `Basni · v1.0.3 (412)`), and support phone line.
+
