@@ -1,70 +1,97 @@
-# Autoprime PDI — Pre-PR Design Review Gate
+# 07 — Review Gate
 
-> **Mandatory Review:** Before any frontend pull request or component change is merged, every item on this checklist must pass. If any check fails, the pull request does not ship.
-
----
-
-## 1. Non-Negotiable Rules Audit
-
-### Rule R1 — Token Discipline
-- [ ] No raw hex codes (`#123456`) in CSS, JSX, or Tailwind inline classes.
-- [ ] Every color references a token (`var(--accent)`, `text-ink`, `bg-surface`, `border-line`).
-- [ ] No raw pixel values for typography, padding, or margins (`px-[17px]` is banned; use `space-*` scale).
-- [ ] Any new required token was added to `tokens.css` with a rationale comment.
-
-### Rule R2 — Status is Never Colour Alone
-- [ ] Every status badge, table row indicator, and defect pill contains a **glyph/icon + text label**.
-- [ ] **Greyscale Test Passed:** Screenshot converted to black-and-white is 100% decipherable.
-
-### Rule R3 — 13 UI States Implemented
-- [ ] `loading` & `skeleton` states match the physical layout of the loaded data.
-- [ ] `empty` state explains why there is no data and provides a primary recovery action.
-- [ ] `error` state displays an exact error code and a retry/fallback affordance.
-- [ ] `offline` and `syncing` indicators behave correctly when network is toggled off in DevTools.
-
-### Rule R4 — Touch Target Floor
-- [ ] Web desktop clickable targets are at least `32px` tall.
-- [ ] Mobile buttons and tappable rows are at least `44 × 44px`.
-- [ ] Yard Mode inspection controls are at least `52 × 52px`.
-- [ ] Safe spacing between adjacent destructive and confirmation buttons is `>= 12px`.
-
-### Rule R5 — Accessibility (a11y) Floor
-- [ ] Contrast ratio between text and surface meets WCAG 2.1 AA (min 4.5:1 for body, 3:1 for large text).
-- [ ] Every form input has an associated, visible `<label>` element (placeholders are never labels).
-- [ ] All interactive controls have a visible focus ring: `outline: 2px solid var(--accent); outline-offset: 2px;`.
-- [ ] `@media (prefers-reduced-motion: reduce)` disables all transitions and animations.
-
-### Rule R6 — Copy is Design
-- [ ] Sentence case used across all titles, buttons, badges, and headers (no Title Case or ALL CAPS).
-- [ ] Active voice used ("Save inspection", not "Your inspection will be saved").
-- [ ] No apology or blame copy ("Something went wrong" or "Oops!" are strictly prohibited).
-- [ ] Error messages explicitly explain what happened and what to do next.
-
-### Rule R7 — Motion Answers Actions
-- [ ] Motion occurs strictly in response to user actions (opening a modal, expanding an accordion).
-- [ ] Zero scroll-triggered section reveal animations.
-- [ ] No decorative infinite animations next to static data.
-
-### Rule R8 — Consistency Beats Cleverness
-- [ ] Used existing components from `references/02-components.md`.
-- [ ] Zero drop shadows on content cards and panels.
-- [ ] Monospaced tabular numbers (`IBM Plex Mono`) used for all VINs, chassis numbers, dates, and counts.
-- [ ] The 3px Status Rail is applied to the leading edge of vehicle cards and table rows.
+Run this before you call any UI work done. Every line is pass/fail. Report the result in the PR
+description as a checklist. **A single ✗ blocks the merge.**
 
 ---
 
-## 2. PR Description Sign-Off Template
+## A. Tokens & Consistency
 
-Paste this block into the Pull Request description:
+- [ ] Zero raw hex, rgb, px font-size, or ms value in component code
+- [ ] No radius value outside the four defined (`3px`, `6px`, `10px`, `999px`)
+- [ ] No shadow on anything that is not a popover, modal, drawer, toast or sticky bar
+- [ ] No new colour introduced; new states mapped into an existing status family
+- [ ] Spacing values all come from the scale (no `13px`, no `18px`, no `margin: 0 auto` hacks)
+- [ ] Typography uses scale tokens; no ad-hoc `font-size` / `line-height`
+- [ ] All numbers, IDs and VINs are mono + tabular
 
-```markdown
-### Design System Verification
-- [x] R1: Token discipline verified (zero raw hex/px)
-- [x] R2: Greyscale test passed (status = glyph + text)
-- [x] R3: Handled all applicable UI states (loading, skeleton, empty, error, offline)
-- [x] R4: Touch targets meet minimum height (>=32px web / >=44px mobile / >=52px yard)
-- [x] R5: WCAG AA contrast & visible focus ring confirmed
-- [x] R6: Sentence case & active voice verified
-- [x] R7: Motion is purely functional; reduced-motion respected
-- [x] R8: Zero shadows on content cards; status rail applied
+## B. States
+
+- [ ] Loading uses the correct model from `03#models` (and only one on the surface)
+- [ ] Skeleton matches real dimensions — verified by toggling, zero layout shift
+- [ ] Empty state exists, and the filtered-empty state is separate from the never-had-data state
+- [ ] Error state has: plain statement, error code, retry, and a non-retry escape
+- [ ] Offline behaviour defined and non-blocking
+- [ ] 403 does not leak the protected record's contents
+- [ ] Every mutation shows in-flight, success and failure feedback
+- [ ] Nothing can spin forever — every loader has a timeout branch
+
+## C. Interaction
+
+- [ ] Exactly one primary button per screen region
+- [ ] Every button label is `verb + object`
+- [ ] Destructive actions confirm, name the object, and state the consequence
+- [ ] Disabled controls state why, inline or on hover
+- [ ] Forms: label above, validate on blur, server errors mapped to fields, dirty-state guard
+- [ ] Filter and tab state is in the URL (web)
+- [ ] Keyboard: tab order sane, focus visible, Esc closes, focus returns to trigger
+
+## D. Accessibility
+
+- [ ] All text ≥ 4.5:1; UI borders and glyphs ≥ 3:1
+- [ ] Passes in greyscale — no meaning carried by colour alone
+- [ ] Icons are `aria-hidden` beside labels, `aria-label` when alone
+- [ ] Touch targets ≥ 44px (≥ 52px in Yard Mode)
+- [ ] `prefers-reduced-motion` honoured, including loaders
+- [ ] Headings are a real, ordered hierarchy; landmarks present
+- [ ] Screen-reader pass on one primary flow per PR
+
+## E. Responsive
+
+- [ ] Works at 360, 768, 1024, 1440
+- [ ] No horizontal scroll on desktop tables — columns drop by priority
+- [ ] Mobile table → stacked cards, not a squeezed grid
+- [ ] Sticky headers and action bars respect safe areas and don't cover content
+
+## F. Copy
+
+- [ ] Sentence case everywhere, no ALL-CAPS labels
+- [ ] No "Oops", no exclamation marks, no apologies
+- [ ] Action verb identical in button, loading label and success toast
+- [ ] Empty states invite an action; error states name the next step
+- [ ] Nothing says "Saved" when it only saved locally
+
+## G. The Three Anti-Slop Tests
+
+**1. The greyscale test.** Screenshot, desaturate. If you can't tell a failed vehicle from an
+approved one, the status system is broken.
+
+**2. The squint test.** Blur the screenshot to 8px. The most important element must still be the
+most visually prominent. If a decorative element survives the blur better than the primary action,
+delete the decoration.
+
+**3. The swap test.** Replace the logo and product name with a competitor's. Does anything left on
+the screen still identify this as an automotive inspection console? If not, the status rail, the
+mono data treatment or the density is not doing its job.
+
+## H. The Chanel Rule
+
+Before opening the PR, look at the screen and **remove one thing**. An icon, a divider, a subtitle,
+a border, a shadow, a colour. Then check whether anyone would miss it. Usually not — and the screen
+is better for it.
+
+---
+
+## Definition of Done (UI)
+
+A screen is done when all of the following exist:
+
+```
+□ Matches an archetype in 05-screen-blueprints.md
+□ All applicable states from 03-loaders-states.md implemented
+□ Tokens only, no exceptions
+□ Keyboard + screen reader pass
+□ Screenshots attached: desktop, mobile, empty, error, offline (+ Yard Mode if mobile)
+□ This checklist pasted into the PR with every box ticked
+□ No new component pattern introduced without adding it to 02-components.md in the same PR
 ```
