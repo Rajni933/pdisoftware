@@ -1,0 +1,94 @@
+name: Deploy to Cloudflare (Pages & Worker)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: 'Component to deploy'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - pages
+          - worker
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-pages:
+    name: Deploy Web App to Cloudflare Pages
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.deploy_target == 'all' || inputs.deploy_target == 'pages' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Monorepo Dependencies
+        run: pnpm install --frozen-lockfile || pnpm install
+
+      - name: Enforce Design System Guardrails
+        run: node scripts/check-design-tokens.mjs
+
+      - name: Build Web Application
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://eyskoxjbzziahdatzvmq.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'sb_publishable_YC_deZ2YNk0EwpdQBEliMQ_X2ES1f10' }}
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'https://dhoot-group-pdi-api.workers.dev' }}
+        run: pnpm --filter web build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy apps/web/dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT_NAME || 'dhoot-group-pdi' }} --branch=main
+
+  deploy-worker:
+    name: Deploy Backend to Cloudflare Workers
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.deploy_target == 'all' || inputs.deploy_target == 'worker' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Monorepo Dependencies
+        run: pnpm install --frozen-lockfile || pnpm install
+
+      - name: Typecheck API Worker
+        run: pnpm --filter api-worker typecheck
+
+      - name: Deploy Cloudflare Worker API
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: services/api-worker
+          command: deploy

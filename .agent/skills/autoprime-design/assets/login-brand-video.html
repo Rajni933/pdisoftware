@@ -64,48 +64,47 @@ section{margin-top:48px}section>header{margin-bottom:18px}
 
 /* ---------- auth surfaces ---------- */
 .brandline{font-size:13px;line-height:19px}
-.glass{border-radius:var(--radius-md);background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(16px) saturate(120%);
-  -webkit-backdrop-filter:blur(16px) saturate(120%);
+.glass{border-radius:10px;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(16px) saturate(120%);-webkit-backdrop-filter:blur(16px) saturate(120%);
   box-shadow:0 24px 60px -20px rgba(10,25,48,.55);padding:32px;color:#fff}
-.glass .ttl{font-size:19px;font-weight:600;line-height:26px}
-.glass .sup{font-size:12px;line-height:18px;color:rgba(255,255,255,.72)}
+.glass .ttl{font-size:19px;font-weight:600;line-height:26px;letter-spacing:-.01em;margin:0}
+.glass .sup{font-size:12px;line-height:18px;color:rgba(255,255,255,.72);margin-bottom:2px}
 .gf{display:flex;flex-direction:column;gap:6px}
-.gf label{font-size:13px;line-height:18px;font-weight:500;color:rgba(255,255,255,.78)}
-.gctl{display:flex;align-items:center;gap:8px;background:#fff;border-radius:var(--radius-sm);padding:0 12px}
+.gf label{font-size:13px;line-height:18px;font-weight:500;color:rgba(255,255,255,.88)}
+.gctl{display:flex;align-items:center;gap:8px;background:#fff;border-radius:var(--radius-sm);padding:0 12px;height:36px}
 .gctl input{border:0;background:transparent;outline:none;font:inherit;color:var(--p-n-900);width:100%;
-  font-family:var(--font-mono);padding:0}
+  font-family:var(--font-mono);font-size:14px;font-variant-numeric:tabular-nums;padding:0}
 .gctl .show{font-family:var(--font-sans);font-size:13px;font-weight:500;color:var(--color-action);
   background:none;border:0;cursor:pointer;padding:0;white-space:nowrap}
 .gctl.focus{box-shadow:0 0 0 2px rgba(255,255,255,.9)}
 .gbtn{display:flex;align-items:center;justify-content:center;width:100%;border:0;border-radius:var(--radius-sm);
-  background:#0F2445;color:#fff;font:inherit;font-weight:500;cursor:pointer}
+  background:#0F2445;color:#fff;font:inherit;font-size:14px;font-weight:500;height:36px;cursor:pointer}
 .gbtn:hover{background:#0A1930}
 .glink{color:#9FC0F0;font-size:13px;font-weight:500;text-decoration:none}
-.gmeta{font-family:var(--font-mono);font-size:11px;line-height:16px;color:rgba(255,255,255,.6)}
+.gmeta{font-family:var(--font-mono);font-size:11px;line-height:16px;color:rgba(255,255,255,.60)}
 .envchip{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:var(--radius-xs);
   font-size:11px;font-weight:500;color:#F0CE8A;background:rgba(240,206,138,.14);border:1px solid rgba(240,206,138,.35)}
 .rowgap{display:flex;flex-direction:column;gap:16px}
 
 /* laptop */
-.lp{width:1440px;height:900px;display:grid;grid-template-columns:52% 48%}
-.lp .left{background:var(--auth-stage);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36px;padding:48px}
+.lp{width:1440px;height:900px;display:grid;grid-template-columns:52% 48%;background:var(--auth-stage)}
+.lp .left{background:var(--auth-stage);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;padding:48px}
 .lp .vid{width:560px;aspect-ratio:16/9;background:var(--auth-stage);display:grid;place-items:center;overflow:hidden}
 .lp .vid img{width:100%;height:100%;object-fit:contain;display:block}
-.lp .leftmeta{text-align:center;color:#4A5766}
+.lp .leftmeta{text-align:center}
 .lp .right{background:var(--auth-field);display:grid;place-items:center;padding:48px}
 .lp .glass{width:400px}
 .lp .gctl{height:36px;font-size:14px}
 .lp .gbtn{height:36px;font-size:14px}
 
 /* tablet stacked */
-.tb{width:834px;height:1112px;display:grid;grid-template-rows:38% 62%}
+.tb{width:834px;height:1112px;display:grid;grid-template-rows:38% 62%;background:var(--auth-stage)}
 .tb .band{background:var(--auth-stage);display:grid;place-items:center;overflow:hidden}
 .tb .band img{width:82%;max-width:620px;object-fit:contain;display:block}
-.tb .lower{background:var(--auth-field);display:grid;place-items:center;padding:40px;align-content:center;gap:14px}
-.tb .glass{width:420px}
-.tb .gctl{height:48px;font-size:15px}
-.tb .gbtn{height:48px;font-size:15px}
+.tb .lower{background:var(--auth-stage);display:grid;place-items:center;padding:40px;align-content:center;gap:14px}
+.tb .glass{width:450px}
+.tb .gctl{height:50px;font-size:16px}
+.tb .gbtn{height:50px;font-size:16px}
 
 /* phone */
 .ph{width:390px;height:760px;display:flex;flex-direction:column;padding:44px 20px 28px;
@@ -168,8 +167,8 @@ td.n{font-family:var(--font-mono);white-space:nowrap}
         <div class="left">
           <div class="vid"><img src="../brand/dhoot-logo-poster.webp" alt="Dhoot Group"></div>
           <div class="leftmeta">
-            <div class="brandline" style="font-weight:500">Autoprime Tata · Pre-delivery inspection</div>
-            <div class="brandline" style="color:#667487">Jodhpur · Pali · Barmer</div>
+            <div class="brandline" style="font-weight:600;color:#121A23">Autoprime Tata · Pre-delivery inspection</div>
+            <div class="brandline" style="color:#667487;font-weight:400">Jodhpur · Pali · Barmer</div>
           </div>
         </div>
         <div class="right">

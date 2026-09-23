@@ -30,36 +30,6 @@ serve(async (req) => {
       );
     }
 
-    // Super Admin Quick Verification
-    if ((identifier.toLowerCase() === 'admin' || identifier.toUpperCase() === 'DG001') && (rawPass === '123456' || rawPass === 'Dhootgroup@123')) {
-      const adminToken = `jwt_dhoot_Admin_${Date.now()}`;
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: {
-            token: adminToken,
-            user: {
-              id: '00000000-0000-0000-0000-000000000001',
-              userCode: 'Admin',
-              employeeId: 'Admin',
-              userName: 'System Administration',
-              email: 'bishnoi.sny@gmail.com',
-              phone: '+919829012345',
-              role: 'SUPER_ADMIN',
-              designation: 'System Administrator',
-              brand: 'ALL',
-              nature: 'MD Office',
-              branchCode: 'HO-DHOOT',
-              organizationId: '11111111-1111-1111-1111-111111111111',
-              hasDualBrandAccess: true,
-              permissions: ['*']
-            }
-          }
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     // Query Database users table
     const { data: users, error } = await supabaseClient
       .from('users')
@@ -76,7 +46,7 @@ serve(async (req) => {
 
     const u = users[0];
     const storedHash = u.password_hash || u.password;
-    if (storedHash && storedHash !== rawPass && rawPass !== '123456') {
+    if (storedHash && storedHash !== rawPass) {
       return new Response(
         JSON.stringify({ success: false, error: { message: 'Invalid password' } }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

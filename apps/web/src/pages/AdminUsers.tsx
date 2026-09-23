@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../utils/apiConfig';
+import { supabase } from '../lib/supabase';
 import { 
   Users, Search, Plus, Shield, ShieldCheck, 
   Settings, Key, X, Loader2, Edit3, CheckCircle2, 
@@ -209,7 +210,7 @@ export const AdminUsersPage: React.FC = () => {
   // New User Form State
   const [newUser, setNewUser] = useState({
     userName: '',
-    password: 'Dhootgroup@123',
+    password: '',
     dateOfBirth: '1995-01-01',
     mailId: '',
     mobileNumber: '+91 ',
@@ -224,25 +225,6 @@ export const AdminUsersPage: React.FC = () => {
   // Master Entry Form State
   const [newDesignationTitle, setNewDesignationTitle] = useState('');
   const [newDesignationNature, setNewDesignationNature] = useState('Stockyard');
-
-  const DEFAULT_USERS: EnterpriseUser[] = [
-    {
-      id: '00000000-0000-0000-0000-000000000001',
-      user_code: 'Admin',
-      employee_id: 'Admin',
-      user_name: 'System Administration',
-      password_hash: '123456',
-      mail_id: 'bishnoi.sny@gmail.com',
-      mobile_number: '+919829012345',
-      branch_code: 'HO-DHOOT',
-      designation: 'System Administrator',
-      brand: 'ALL',
-      nature: 'MD Office',
-      status: 'ACTIVE',
-      role: 'SUPER_ADMIN',
-      date_of_birth: '2003-07-10'
-    }
-  ];
 
   useEffect(() => {
     if (currentBrand.code === 'DHOOT-TATA') {
@@ -261,18 +243,35 @@ export const AdminUsersPage: React.FC = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await fetch(getApiUrl('/api/v1/users'));
-      if (res.ok) {
-        const json = await res.json();
-        if (json.data && json.data.length > 0) {
-          setUsersList(json.data);
-          setLoading(false);
-          return;
-        }
+      // 1. Direct Supabase Database Query
+      const { data: dbUsers, error: dbErr } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!dbErr && Array.isArray(dbUsers) && dbUsers.length > 0) {
+        setUsersList(dbUsers as EnterpriseUser[]);
+        setLoading(false);
+        return;
       }
-      setUsersList(DEFAULT_USERS);
+
+      // 2. Try Worker API if active
+      try {
+        const res = await fetch(getApiUrl('/api/v1/users'));
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data && json.data.length > 0) {
+            setUsersList(json.data);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {}
+
+      // 3. Fallback to empty state
+      setUsersList([]);
     } catch (e) {
-      setUsersList(DEFAULT_USERS);
+      setUsersList([]);
     } finally {
       setLoading(false);
     }
@@ -281,28 +280,59 @@ export const AdminUsersPage: React.FC = () => {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch(getApiUrl('/api/v1/users'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUser)
+      const generatedCode = `DG${Math.floor(100 + Math.random() * 900)}`;
+      const payload: Partial<EnterpriseUser> = {
+        id: crypto.randomUUID(),
+        user_code: generatedCode,
+        employee_id: generatedCode,
+        user_name: newUser.userName,
+        password_hash: newUser.password || 'Dhoot@2026',
+        date_of_birth: newUser.dateOfBirth,
+        mail_id: newUser.mailId,
+        mobile_number: newUser.mobileNumber,
+        branch_code: newUser.branchCode,
+        designation: newUser.designation,
+        brand: newUser.brand,
+        nature: newUser.nature,
+        role: newUser.role,
+        status: newUser.status
+      };
+
+      // 1. Insert directly into Supabase users table
+      await supabase.from('users').insert({
+        ...payload,
+        organization_id: '11111111-1111-1111-1111-111111111111',
+        first_name: newUser.userName.split(' ')[0] || 'User',
+        last_name: newUser.userName.split(' ').slice(1).join(' ') || '',
+        email: newUser.mailId,
+        phone: newUser.mobileNumber,
+        is_active: newUser.status === 'ACTIVE'
       });
-      if (res.ok) {
-        setShowCreateModal(false);
-        setNewUser({
-          userName: '',
-          password: 'Dhootgroup@123',
-          dateOfBirth: '1995-01-01',
-          mailId: '',
-          mobileNumber: '+91 ',
-          branchCode: 'HO-DHOOT',
-          designation: 'PDI Engineer',
-          brand: 'Dhoot Group',
-          nature: 'Stockyard',
-          role: 'PDI_ENGINEER',
-          status: 'ACTIVE'
+
+      // 2. Also notify worker if available
+      try {
+        await fetch(getApiUrl('/api/v1/users'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newUser)
         });
-        fetchUsers();
-      }
+      } catch (err) {}
+
+      setShowCreateModal(false);
+      setNewUser({
+        userName: '',
+        password: '',
+        dateOfBirth: '1995-01-01',
+        mailId: '',
+        mobileNumber: '+91 ',
+        branchCode: 'HO-DHOOT',
+        designation: 'PDI Engineer',
+        brand: 'Dhoot Group',
+        nature: 'Stockyard',
+        role: 'PDI_ENGINEER',
+        status: 'ACTIVE'
+      });
+      fetchUsers();
     } catch (e) {
       console.error(e);
     }
@@ -312,16 +342,31 @@ export const AdminUsersPage: React.FC = () => {
     e.preventDefault();
     if (!selectedUser) return;
     try {
-      const res = await fetch(getApiUrl(`/api/v1/users/${selectedUser.id}`), {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(selectedUser)
-      });
-      if (res.ok) {
-        setShowEditModal(false);
-        setSelectedUser(null);
-        fetchUsers();
-      }
+      // 1. Direct Supabase update
+      await supabase.from('users').update({
+        user_name: selectedUser.user_name,
+        role: selectedUser.role,
+        designation: selectedUser.designation,
+        brand: selectedUser.brand,
+        nature: selectedUser.nature,
+        status: selectedUser.status,
+        mobile_number: selectedUser.mobile_number,
+        mail_id: selectedUser.mail_id,
+        is_active: selectedUser.status === 'ACTIVE'
+      }).eq('id', selectedUser.id);
+
+      // 2. Also notify worker if available
+      try {
+        await fetch(getApiUrl(`/api/v1/users/${selectedUser.id}`), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(selectedUser)
+        });
+      } catch (err) {}
+
+      setShowEditModal(false);
+      setSelectedUser(null);
+      fetchUsers();
     } catch (e) {
       console.error(e);
     }

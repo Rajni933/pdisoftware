@@ -95,7 +95,7 @@ usersRouter.post('/', async (c) => {
     user_name: body.userName || body.user_name,
     first_name: (body.userName || body.user_name || '').split(' ')[0] || 'User',
     last_name: (body.userName || body.user_name || '').split(' ').slice(1).join(' ') || '',
-    password_hash: body.password || body.password_hash || 'Dhootgroup@123',
+    password_hash: body.password || body.password_hash || crypto.randomUUID().slice(0, 12),
     date_of_birth: body.dateOfBirth || body.date_of_birth || null,
     mail_id: body.mailId || body.mail_id || `${generatedUserCode.toLowerCase()}@dhootgroup.com`,
     email: body.mailId || body.mail_id || `${generatedUserCode.toLowerCase()}@dhootgroup.com`,

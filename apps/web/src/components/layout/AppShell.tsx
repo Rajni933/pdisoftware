@@ -12,7 +12,7 @@ export const AppShell: React.FC<{ children?: React.ReactNode }> = ({ children })
       <Header isMobileMenuOpen={menuOpen} onToggleMobileMenu={() => setMenuOpen(!menuOpen)} />
 
       <div className="flex-1 flex overflow-hidden">
-        <div className="hidden lg:block w-60 shrink-0 h-full border-r border-line bg-surface">
+        <div className="hidden lg:block w-64 shrink-0 h-full border-r border-line bg-surface">
           <Sidebar />
         </div>
 
@@ -22,7 +22,7 @@ export const AppShell: React.FC<{ children?: React.ReactNode }> = ({ children })
             onClick={() => setMenuOpen(false)}
           >
             <div
-              className="w-60 bg-surface h-full shadow-pop flex flex-col"
+              className="w-64 bg-surface h-full shadow-pop flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               <Sidebar onCloseMobile={() => setMenuOpen(false)} />

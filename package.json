@@ -10,6 +10,8 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
+    "db": "node services/local-db/server.mjs",
+    "setup:db": "node scripts/setup-database.mjs",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "test": "turbo test",

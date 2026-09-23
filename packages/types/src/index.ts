@@ -295,6 +295,100 @@ export interface ChecklistResponse {
   item?: ChecklistItem;
 }
 
+export interface Stockyard {
+  id: string;
+  branchId?: string | null;
+  code: string;
+  name: string;
+  brand?: 'Tata Motors' | 'Hyundai' | 'Shared';
+  city?: string;
+  state?: string;
+  capacity?: string | number;
+  manager?: string;
+  phone?: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface VehicleModel {
+  id: string;
+  brand: string;
+  modelName: string;
+  bodyType: string;
+  fuelTypes: string[];
+  variants: string[];
+  colors: string[];
+  baseExShowroom: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Financier {
+  id: string;
+  name: string;
+  category: 'NATIONALIZED_BANK' | 'PRIVATE_BANK' | 'NBFC' | 'CAPTIVE_FINANCE';
+  contactPerson?: string | null;
+  contactPhone?: string | null;
+  interestRate?: number;
+  isActive: boolean;
+  createdAt?: string;
+}
+
+export interface InsuranceProvider {
+  id: string;
+  name: string;
+  code?: string;
+  tieUpDiscount: number;
+  claimsLead?: string | null;
+  contactPhone?: string | null;
+  coveragePackages: string[];
+  cashlessTieup: boolean;
+  isActive: boolean;
+  createdAt?: string;
+}
+
+export interface YardInwardEntry {
+  id: string;
+  organizationId: string;
+  branchId?: string | null;
+  stockyardId?: string | null;
+  gateEntryNo: string;
+  carrierTrailerNo: string;
+  transporterName: string;
+  driverName?: string | null;
+  driverPhone?: string | null;
+  lrNumber?: string | null;
+  expectedCount: number;
+  receivedCount: number;
+  transitDamageCount: number;
+  receivedBy?: string | null;
+  unloadingBay?: string | null;
+  receivedAt: string;
+  notes?: string | null;
+  status: string;
+  createdAt: string;
+}
+
+export interface PdiCertificate {
+  id: string;
+  certificateNumber: string;
+  vehicleId: string;
+  sessionId: string;
+  vin: string;
+  model: string;
+  variant: string;
+  color: string;
+  issuedAt: string;
+  issuedBy: string;
+  approvedBy: string;
+  verificationHash: string;
+  qrCodeUrl?: string;
+  pdfUrl?: string;
+  status: 'VALID' | 'REVOKED';
+}
+
 export interface ApiResponse<T> {
   success: true;
   data: T;
@@ -302,7 +396,7 @@ export interface ApiResponse<T> {
     page?: number;
     limit?: number;
     total?: number;
-    requestId: string;
+    requestId?: string;
   };
 }
 
@@ -312,6 +406,6 @@ export interface ApiErrorResponse {
     code: string;
     message: string;
     details?: Record<string, unknown>;
-    requestId: string;
+    requestId?: string;
   };
 }

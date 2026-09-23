@@ -101,16 +101,22 @@ export const BrandVideo: React.FC<BrandVideoProps> = ({
         )}
       </div>
 
-      {/* Two-line minimalist caption below video per Brief 02 mockup */}
+      {/* Two-line minimalist caption below video per Brief 03 locked spec (gap: 40px) */}
       {(captionProduct || captionBranches) && (
-        <div className="mt-[36px] text-center text-[var(--t-caption-size,0.75rem)] leading-[var(--t-caption-lh,18px)]">
+        <div className="mt-[40px] text-center" style={{ marginTop: '40px', textAlign: 'center' }}>
           {captionProduct && (
-            <div className="font-[var(--fw-medium,500)] text-[13px] leading-[19px] text-[var(--color-text-secondary)]">
+            <div
+              className="text-[13px] leading-[19px] font-[var(--fw-semibold,600)] text-[var(--color-text-primary)]"
+              style={{ fontSize: '13px', lineHeight: '19px', fontWeight: 600, color: 'var(--color-text-primary)' }}
+            >
               {captionProduct}
             </div>
           )}
           {captionBranches && (
-            <div className="font-[var(--font-mono)] text-[12px] leading-[18px] text-[var(--color-text-tertiary)] tabular-nums mt-[2px]">
+            <div
+              className="text-[13px] leading-[19px] font-normal text-[var(--color-text-tertiary)] tabular-nums mt-[2px]"
+              style={{ fontSize: '13px', lineHeight: '19px', fontWeight: 400, color: 'var(--color-text-tertiary)', marginTop: '2px' }}
+            >
               {captionBranches}
             </div>
           )}

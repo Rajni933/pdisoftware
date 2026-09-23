@@ -65,41 +65,65 @@
 }
 
 /* --------------------------------------------------------------------------
-   ADR-009: Scoped Auth Glass Card Form Styling (Login Screen only)
+   ADR-009 / Brief 03: Scoped Auth Glass Card Form Styling (Login Screen only)
    -------------------------------------------------------------------------- */
+.auth-card-content {
+  width: 100%;
+}
 .auth-card-content label {
-  color: rgba(255, 255, 255, 0.78) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
   font-size: var(--t-label-size) !important;
   line-height: var(--t-label-lh) !important;
   font-weight: var(--fw-medium) !important;
+  margin-bottom: 6px !important;
+  display: block !important;
+  text-align: left !important;
 }
 .auth-card-content input {
-  background-color: var(--auth-input-bg, #FFFFFF) !important;
-  color: var(--p-n-900, #121A23) !important;
-  border-radius: var(--radius-sm) !important;
-  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background-color: var(--auth-glass-input-bg, rgba(255, 255, 255, 0.07)) !important;
+  color: var(--color-text-inverse) !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--auth-glass-input-border, rgba(255, 255, 255, 0.16)) !important;
   font-family: var(--font-mono) !important;
   font-variant-numeric: tabular-nums !important;
+  font-size: var(--t-body-size) !important;
+  height: 46px !important;
+  padding-right: 14px !important;
+  box-sizing: border-box !important;
+  transition: border-color var(--dur-micro) var(--ease-out) !important;
 }
 .auth-card-content input:focus {
-  box-shadow: var(--shadow-auth-focus) !important;
-  border-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: var(--auth-brand-blue) !important;
+  box-shadow: var(--focus-ring) !important;
+  outline: none !important;
 }
 .auth-card-content button[type="submit"] {
-  background-color: var(--auth-btn-bg, #0F2445) !important;
-  color: #FFFFFF !important;
-  font-weight: var(--fw-medium) !important;
-  border-radius: var(--radius-sm) !important;
-  transition: background-color var(--dur-micro) var(--ease-out);
+  background-color: var(--auth-brand-blue) !important;
+  color: var(--color-text-inverse) !important;
+  font-family: var(--font-sans) !important;
+  font-weight: var(--fw-semibold, 600) !important;
+  border-radius: var(--radius-md) !important;
+  height: 46px !important;
+  font-size: var(--t-body-size) !important;
+  width: 100% !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: var(--space-2) !important;
+  box-shadow: var(--shadow-modal) !important;
+  transition: background-color var(--dur-micro) var(--ease-out) !important;
 }
 .auth-card-content button[type="submit"]:hover {
-  background-color: #0A1930 !important;
+  background-color: var(--auth-brand-blue-hover) !important;
 }
 .auth-card-content a,
 .auth-card-content .auth-forgot-link {
-  color: var(--auth-link, #9FC0F0) !important;
+  color: var(--auth-brand-link) !important;
   font-weight: var(--fw-medium) !important;
   font-size: var(--t-label-size) !important;
+  line-height: var(--t-label-lh) !important;
   text-decoration: none !important;
 }
 .auth-card-content .auth-forgot-link:hover {
@@ -107,10 +131,13 @@
 }
 .auth-card-content button[aria-label*="password"],
 .auth-card-content button[aria-label*="Password"] {
-  color: var(--color-action, #1A3A6B) !important;
+  color: var(--auth-brand-link) !important;
+  font-family: var(--font-sans) !important;
   font-weight: var(--fw-medium) !important;
   font-size: var(--t-label-size) !important;
   background: transparent !important;
   border: 0 !important;
+  cursor: pointer !important;
+  padding: 0 !important;
 }
 

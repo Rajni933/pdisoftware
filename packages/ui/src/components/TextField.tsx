@@ -7,6 +7,7 @@ export interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputEleme
   optional?: boolean;
   isMono?: boolean;
   fieldSize?: 'sm' | 'md' | 'lg';
+  startAdornment?: React.ReactNode;
   endAdornment?: React.ReactNode;
 }
 
@@ -17,6 +18,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(({
   optional,
   isMono,
   fieldSize = 'sm',
+  startAdornment,
   endAdornment,
   id: customId,
   className = '',
@@ -71,14 +73,31 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(({
               : 'border-[var(--color-border)] hover:border-[var(--color-border-strong)] focus:border-[var(--color-border-focus)] focus:shadow-[var(--focus-ring)]'
             }
             ${disabled ? 'bg-[var(--color-surface-sunken)] text-[var(--color-text-disabled)] cursor-not-allowed' : ''}
-            ${endAdornment ? 'pr-[var(--space-12,48px)]' : ''}
+            ${startAdornment ? 'pl-[42px]' : ''}
+            ${endAdornment ? 'pr-[48px]' : ''}
             focus:outline-none
             ${className}
           `}
+          style={{
+            ...(props.style || {}),
+            paddingLeft: startAdornment ? '42px' : (props.style?.paddingLeft || undefined),
+            paddingRight: endAdornment ? '48px' : (props.style?.paddingRight || undefined),
+          }}
           {...props}
         />
+        {startAdornment && (
+          <div
+            className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center z-10 pointer-events-none text-[var(--color-text-tertiary)]"
+            style={{ left: '14px', top: '50%', transform: 'translateY(-50%)' }}
+          >
+            {startAdornment}
+          </div>
+        )}
         {endAdornment && (
-          <div className="absolute right-[var(--space-2,8px)] flex items-center justify-center">
+          <div
+            className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center z-10"
+            style={{ right: '12px', top: '50%', transform: 'translateY(-50%)' }}
+          >
             {endAdornment}
           </div>
         )}

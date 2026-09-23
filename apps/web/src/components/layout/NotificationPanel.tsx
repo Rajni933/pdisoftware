@@ -99,20 +99,6 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
         priority: 'HIGH',
         timestamp: now - 30 * 60 * 1000
       });
-    } else {
-      // General inward carrier update
-      list.push({
-        id: 'notif-inward-regular',
-        title: 'Carrier Trailer Arrived at Gate',
-        message: 'Trailer MH-12-TR-4421 arrived with 8 new units. Awaiting paper PDI verification & unloading.',
-        time: '45m ago',
-        type: 'INWARD',
-        isUnread: true,
-        link: '/receiving',
-        actionText: 'Receive at Gate',
-        priority: 'HIGH',
-        timestamp: now - 45 * 60 * 1000
-      });
     }
 
     // PDI Inspection Queue Alert
@@ -141,19 +127,6 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
         id: `notif-defect-${sample.vin}`,
         title: 'Defect Flagged in Workshop',
         message: `Minor paint/bumper defect flagged during ${sample.model} (${sample.vin}) inspection. Repair ticket active in workshop.`,
-        time: '2h ago',
-        type: 'DEFECT',
-        isUnread: true,
-        link: '/repairs',
-        actionText: 'View Repair Ticket',
-        priority: 'HIGH',
-        timestamp: now - 120 * 60 * 1000
-      });
-    } else {
-      list.push({
-        id: 'notif-defect-sample',
-        title: 'Defect Flagged in Workshop',
-        message: 'Rear bumper scratch reported during inspection (Bay 1). Minor buffing required.',
         time: '2h ago',
         type: 'DEFECT',
         isUnread: true,

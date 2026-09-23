@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Settings, Users, BarChart3 } from 'lucide-react';
 import { BrandVideo } from './BrandVideo';
 
 export interface AuthShellProps {
@@ -13,6 +14,7 @@ export interface AuthShellProps {
   orgName?: string;
   captionBranches?: string;
   isKeyboardOpen?: boolean;
+  error?: string | null;
 }
 
 export const AuthShell: React.FC<AuthShellProps> = ({
@@ -21,12 +23,13 @@ export const AuthShell: React.FC<AuthShellProps> = ({
   environment = 'Staging',
   version = 'v1.0.3 (412)',
   branchName = 'Basni',
-  supportPhone = '1800 209 7979',
+  supportPhone = '1800 000 000',
   title = 'Autoprime Tata',
   subtitle = 'Pre-delivery inspection',
   orgName = 'Dhoot Group',
   captionBranches = 'Jodhpur · Pali · Barmer',
   isKeyboardOpen = false,
+  error = null,
 }) => {
   const [detectedVariant, setDetectedVariant] = useState<'split' | 'stacked' | 'plain'>('split');
   const [isLandscape, setIsLandscape] = useState(false);
@@ -55,199 +58,211 @@ export const AuthShell: React.FC<AuthShellProps> = ({
 
   const activeVariant = variant === 'auto' ? detectedVariant : variant;
 
-  // Metadata Footer Line under the Card
+  // Metadata Footer Line under the Card (Brief 03 locked values: mt 14px, gap 10px)
   const renderMetaFooter = (isGlass = true) => (
     <div
-      className={`mt-[var(--space-4,16px)] flex items-center justify-center gap-[var(--space-2,8px)] text-[var(--t-caption-size,0.75rem)] leading-[var(--t-caption-lh,18px)] ${
-        isGlass ? 'text-white/75' : 'text-[var(--color-text-tertiary)]'
-      }`}
+      style={{
+        marginTop: '14px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '10px',
+      }}
     >
       {environment && environment.toLowerCase() !== 'production' && (
-        <span className="inline-flex items-center px-[var(--space-1-5,6px)] py-[1px] rounded-[var(--radius-xs)] font-[var(--fw-medium,500)] text-[var(--t-micro-size,0.6875rem)] bg-[var(--color-warning-soft)] text-[var(--color-warning)] border border-[var(--color-warning-border)]">
+        <span
+          style={{
+            height: '20px',
+            padding: '0 7px',
+            borderRadius: '3px',
+            fontSize: '11px',
+            fontWeight: 500,
+            color: 'var(--auth-badge-fg)',
+            background: 'var(--auth-badge-bg)',
+            border: '1px solid var(--auth-badge-border)',
+            display: 'inline-flex',
+            alignItems: 'center',
+          }}
+        >
           {environment}
         </span>
       )}
-      <span className="font-[var(--font-mono)] tabular-nums">
-        {!isGlass && branchName ? `${branchName} · ` : ''}{version}
+      <span
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '11px',
+          lineHeight: '16px',
+          color: isGlass ? 'rgba(255, 255, 255, 0.60)' : 'var(--color-text-secondary)',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {version}
+        {supportPhone && ` · Support ${supportPhone}`}
       </span>
-      {supportPhone && (
-        <>
-          <span aria-hidden="true">·</span>
-          <span>Support {supportPhone}</span>
-        </>
-      )}
     </div>
   );
 
-  // --------------------------------------------------------------------------
-  // SURFACE 1: Laptop and Desktop (≥ 1024 px) — Two Panels, Split Layout
-  // --------------------------------------------------------------------------
-  if (activeVariant === 'split') {
-    return (
-      <div className="h-screen w-full flex flex-row overflow-hidden">
-        {/* Left Panel (52% width) — --auth-stage (Light Grey Radial, No Border) */}
+  return (
+    <div
+      className="min-h-screen w-full relative overflow-x-hidden flex flex-col justify-between"
+      style={{
+        backgroundColor: 'var(--auth-car-bg)',
+        backgroundImage: 'radial-gradient(ellipse at 25% 50%, rgba(5, 13, 26, 0.92) 0%, rgba(5, 13, 26, 0.65) 55%, rgba(5, 13, 26, 0.15) 100%), url("/brand/login-car-bg.jpg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center right',
+        backgroundRepeat: 'no-repeat',
+        minHeight: '100vh',
+        width: '100vw',
+      }}
+    >
+      <div className="w-full max-w-[1440px] mx-auto px-6 lg:px-16 py-8 lg:py-12 flex-1 flex flex-col lg:flex-row items-center justify-between gap-10">
+        {/* Left Section: Brand Logo, Manifesto & Pillars */}
         <section
           aria-label="Brand Presentation"
-          className="w-[52%] h-full flex flex-col items-center justify-center p-[var(--space-8,32px)] select-none"
-          style={{ background: 'var(--auth-stage)' }}
+          className="w-full lg:flex-1 flex flex-col justify-between h-full max-w-[560px] select-none"
         >
-          <div className="w-full max-w-[560px] flex flex-col items-center justify-center">
-            <BrandVideo
-              captionProduct={subtitle ? `${title} · ${subtitle}` : title}
-              captionBranches={captionBranches}
-            />
+          {/* Top: Brand Logo Lockup */}
+          <div className="flex flex-col items-start mb-6 lg:mb-12">
+            <div className="flex items-center gap-3 mb-2">
+              <img
+                src="/brand/dhoot-mark-clean.png"
+                alt="Dhoot Group Logo"
+                className="w-16 h-16 object-contain"
+                style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}
+              />
+            </div>
+            <h2 className="text-2xl lg:text-3xl font-bold tracking-tight text-white m-0">
+              {orgName}
+            </h2>
+            <p className="text-xs lg:text-sm font-normal text-[rgba(255,255,255,0.72)] mt-1">
+              {orgName} · {subtitle}
+            </p>
           </div>
-        </section>
 
-        {/* Right Panel (48% width) — --auth-field (Navy Gradient) */}
-        <section
-          aria-label="Account Authentication"
-          className="w-[48%] h-full flex flex-col items-center justify-center p-[var(--space-8,32px)] overflow-y-auto"
-          style={{ background: 'var(--auth-field)' }}
-        >
-          <div className="w-[400px] flex flex-col items-center">
-            {/* Translucent Glass Card (ADR-009) */}
+          {/* Middle: People Processes Performance Manifesto (hidden on small mobile to conserve space) */}
+          <div className="my-auto py-4 lg:py-8">
             <div
-              className="w-[400px] rounded-[var(--radius-md)] p-[32px]"
-              style={{
-                background: 'var(--auth-card-bg)',
-                border: '1px solid var(--auth-card-border)',
-                backdropFilter: 'blur(16px) saturate(120%)',
-                WebkitBackdropFilter: 'blur(16px) saturate(120%)',
-                boxShadow: 'var(--shadow-auth-card)',
-              }}
+              className="flex flex-col font-bold text-white tracking-[0.06em]"
+              style={{ fontSize: 'clamp(26px, 3.2vw, 40px)', lineHeight: '1.25' }}
             >
-              {/* Header inside glass card per Brief 02 mockup (.sup + .ttl) */}
-              <div className="mb-[20px] text-left">
-                <div className="text-[12px] leading-[18px] text-white/70 mb-[2px]">
-                  {title}
-                </div>
-                <h1 className="text-[19px] leading-[26px] font-[var(--fw-semibold,600)] text-white m-0">
-                  Sign in
-                </h1>
-              </div>
-
-              {/* Auth Form / Children */}
-              <div className="auth-card-content text-white">
-                {children}
-              </div>
+              <span>PEOPLE</span>
+              <span>PROCESSES</span>
+              <span>PERFORMANCE</span>
             </div>
-
-            {/* Subline below card */}
-            <div className="w-[400px]">
-              {renderMetaFooter(true)}
-            </div>
-          </div>
-        </section>
-      </div>
-    );
-  }
-
-  // --------------------------------------------------------------------------
-  // SURFACE 2: Tablet (768–1023 px & Landscape Phone) — Stacked Layout
-  // --------------------------------------------------------------------------
-  if (activeVariant === 'stacked') {
-    const topHeightClass = isKeyboardOpen
-      ? 'max-h-0 opacity-0 py-0'
-      : isLandscape
-      ? 'h-[30vh] max-h-[260px]'
-      : 'h-[38vh] max-h-[380px]';
-
-    return (
-      <div className="min-h-screen w-full flex flex-col overflow-x-hidden">
-        {/* Top Band — --auth-stage */}
-        <section
-          aria-label="Brand Video"
-          className={`w-full flex items-center justify-center px-[var(--space-6,24px)] transition-all duration-[var(--dur-enter)] ease-[var(--ease-out)] overflow-hidden shrink-0 border-b border-[var(--color-border-subtle)] ${topHeightClass}`}
-          style={{ background: 'var(--auth-stage)' }}
-        >
-          <div className="w-full max-w-[480px]">
-            <BrandVideo
-              paused={isKeyboardOpen}
-              captionProduct={subtitle ? `${title} · ${subtitle}` : title}
-              captionBranches={captionBranches}
+            <div
+              className="w-44 lg:w-52 h-[3px] my-4 lg:my-5 rounded-full"
+              style={{ background: 'var(--auth-brand-blue)' }}
             />
+            <div className="text-xs lg:text-sm tracking-[0.22em] font-medium text-[rgba(255,255,255,0.78)] uppercase">
+              TOGETHER WE DRIVE MORE
+            </div>
+          </div>
+
+          {/* Bottom: 3 Value Pillars */}
+          <div className="hidden lg:flex items-center gap-6 xl:gap-8 pt-8 mt-auto border-t border-[rgba(255,255,255,0.10)]">
+            {/* Pillar 1: SAFER OPERATIONS */}
+            <div className="flex items-center gap-2.5">
+              <Settings className="w-6 h-6 text-[rgba(255,255,255,0.85)] shrink-0" strokeWidth={1.5} />
+              <div className="flex flex-col text-[10px] xl:text-[11px] leading-[14px]">
+                <span className="font-bold tracking-wider text-white">SAFER</span>
+                <span className="text-[rgba(255,255,255,0.7)] tracking-wider">OPERATIONS</span>
+              </div>
+            </div>
+
+            {/* Pillar 2: BETTER CUSTOMER EXPERIENCE */}
+            <div className="flex items-center gap-2.5">
+              <Users className="w-6 h-6 text-[rgba(255,255,255,0.85)] shrink-0" strokeWidth={1.5} />
+              <div className="flex flex-col text-[10px] xl:text-[11px] leading-[14px]">
+                <span className="font-bold tracking-wider text-white">BETTER</span>
+                <span className="text-[rgba(255,255,255,0.7)] tracking-wider">CUSTOMER EXPERIENCE</span>
+              </div>
+            </div>
+
+            {/* Pillar 3: STRONGER TOMORROW */}
+            <div className="flex items-center gap-2.5">
+              <BarChart3 className="w-6 h-6 text-[rgba(255,255,255,0.85)] shrink-0" strokeWidth={1.5} />
+              <div className="flex flex-col text-[10px] xl:text-[11px] leading-[14px]">
+                <span className="font-bold tracking-wider text-white">STRONGER</span>
+                <span className="text-[rgba(255,255,255,0.7)] tracking-wider">TOMORROW</span>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* Bottom Band — --auth-field with Glass Card */}
+        {/* Right Section: Glassmorphic Authentication Card */}
         <section
           aria-label="Account Authentication"
-          className="flex-1 w-full flex flex-col items-center justify-center p-[var(--space-6,24px)] py-[var(--space-8,32px)]"
-          style={{ background: 'var(--auth-field)' }}
+          className="w-full lg:w-auto flex flex-col items-center justify-center"
         >
           <div
-            className="w-full max-w-[420px] rounded-[var(--radius-md)] p-[var(--space-8,32px)]"
+            className="w-full max-w-[420px] rounded-2xl relative"
             style={{
-              background: 'var(--auth-card-bg)',
-              border: '1px solid var(--auth-card-border)',
-              backdropFilter: 'blur(16px) saturate(120%)',
-              WebkitBackdropFilter: 'blur(16px) saturate(120%)',
-              boxShadow: 'var(--shadow-auth-card)',
+              background: 'var(--auth-glass-bg, rgba(12, 26, 48, 0.70))',
+              border: '1px solid var(--auth-glass-border, rgba(255, 255, 255, 0.14))',
+              backdropFilter: 'blur(24px) saturate(140%)',
+              WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+              boxShadow: '0 24px 60px -15px rgba(0, 10, 30, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+              padding: '36px 32px',
+              color: 'var(--color-text-inverse)',
             }}
           >
-            <div className="mb-[var(--space-5,20px)] text-left">
-              <div className="text-[12px] leading-[18px] text-white/70 mb-[2px]">
-                {title}
+            {/* Error Banner inside card above header */}
+            {error && (
+              <div
+                role="alert"
+                style={{
+                  background: 'var(--auth-error-bg)',
+                  border: '1px solid var(--auth-error-border)',
+                  color: 'var(--auth-error-fg)',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  lineHeight: '18px',
+                  marginBottom: '18px',
+                }}
+              >
+                {error}
               </div>
-              <h1 className="text-[19px] leading-[26px] font-[var(--fw-semibold,600)] text-white m-0">
+            )}
+
+            {/* Header Block */}
+            <div style={{ marginBottom: '22px', textAlign: 'left' }}>
+              <div
+                style={{
+                  fontSize: '13px',
+                  lineHeight: '18px',
+                  fontWeight: 500,
+                  color: 'rgba(255, 255, 255, 0.75)',
+                }}
+              >
+                {orgName}
+              </div>
+              <h1
+                style={{
+                  fontSize: '28px',
+                  lineHeight: '34px',
+                  fontWeight: 700,
+                  letterSpacing: '-0.02em',
+                  color: 'var(--color-text-inverse)',
+                  margin: '4px 0 0 0',
+                }}
+              >
                 Sign in
               </h1>
             </div>
 
-            <div className="auth-card-content text-white">
+            {/* Auth Form / Children */}
+            <div className="auth-card-content text-white w-full">
               {children}
             </div>
           </div>
 
-          <div className="w-full max-w-[420px]">
-            {renderMetaFooter(true)}
+          {/* Meta footer centered under card */}
+          <div style={{ width: '100%', maxWidth: '420px' }}>
+            {renderMetaFooter()}
           </div>
         </section>
       </div>
-    );
-  }
-
-  // --------------------------------------------------------------------------
-  // SURFACE 3: Phone (< 768 px) — Plain Surface, Zero Glass Card, Bottom-Weighted
-  // --------------------------------------------------------------------------
-  return (
-    <div
-      className="min-h-screen w-full flex flex-col justify-between p-[var(--space-5,20px)] pt-[44px] pb-[28px]"
-      style={{
-        background: 'var(--auth-mobile-bg)',
-      }}
-    >
-      {/* Static Brand Poster Header (No video on mobile phone per brief) */}
-      <header
-        className={`transition-all duration-[var(--dur-enter)] ease-[var(--ease-out)] overflow-hidden ${
-          isKeyboardOpen ? 'max-h-0 opacity-0 mb-0' : 'max-h-[160px] opacity-100 mb-[var(--space-6,24px)]'
-        }`}
-      >
-        <div className="w-[150px] aspect-[16/9] mb-[var(--space-2,6px)]">
-          <img
-            src="/brand/dhoot-logo-poster.webp"
-            alt="Dhoot Group"
-            className="w-full h-full object-contain pointer-events-none"
-            loading="eager"
-          />
-        </div>
-        <h1 className="text-[15px] leading-[22px] font-[var(--fw-semibold,600)] text-[var(--color-text-primary)] m-0">
-          {title}
-        </h1>
-        <p className="text-[12px] leading-[18px] text-[var(--color-text-secondary)] m-0 mt-[2px]">
-          {subtitle}
-        </p>
-      </header>
-
-      {/* Flexible gap pushes form to lower 60% thumb reach */}
-      <div className="flex-1 min-h-[32px]" />
-
-      {/* Form Container — plain surface, 52px targets, 16px text */}
-      <main className="w-full">
-        {children}
-        {renderMetaFooter(false)}
-      </main>
     </div>
   );
 };

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { LogOut, Menu, X, Bell, Search, Settings, HelpCircle } from 'lucide-react';
+import { LogOut, Menu, X, Bell, Search, Settings, HelpCircle, Database } from 'lucide-react';
 import { NotificationPanel } from './NotificationPanel';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
+import { DatabaseConfigModal } from '../common/DatabaseConfigModal';
+import { checkDatabaseConnection } from '../../lib/supabase';
 import { CountBadge } from '@autoprime/ui';
 
 interface HeaderProps {
@@ -40,6 +42,32 @@ export const Header: React.FC<HeaderProps> = ({ isMobileMenuOpen, onToggleMobile
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(3);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [dbModalOpen, setDbModalOpen] = useState(false);
+  const [dbStatus, setDbStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
+
+  useEffect(() => {
+    let mounted = true;
+    const verifyConnection = async () => {
+      try {
+        const res = await checkDatabaseConnection();
+        if (mounted) {
+          setDbStatus(res.connected ? 'connected' : 'disconnected');
+        }
+      } catch {
+        if (mounted) setDbStatus('disconnected');
+      }
+    };
+    verifyConnection();
+
+    const handleConfigChange = () => {
+      verifyConnection();
+    };
+    window.addEventListener('supabase_config_changed', handleConfigChange);
+    return () => {
+      mounted = false;
+      window.removeEventListener('supabase_config_changed', handleConfigChange);
+    };
+  }, []);
 
   // Keyboard navigation shortcuts (05-screen-blueprints §A)
   useEffect(() => {
@@ -135,6 +163,26 @@ export const Header: React.FC<HeaderProps> = ({ isMobileMenuOpen, onToggleMobile
             <HelpCircle className="w-4 h-4" />
           </button>
 
+          {/* Database Live / Config Pill Button */}
+          <button
+            type="button"
+            onClick={() => setDbModalOpen(true)}
+            className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold border transition-all cursor-pointer ${
+              dbStatus === 'connected'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                : dbStatus === 'checking'
+                ? 'bg-slate-50 text-slate-600 border-line hover:bg-slate-100'
+                : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+            }`}
+            title="Supabase Database Connection & Seeder"
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              dbStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : dbStatus === 'checking' ? 'bg-slate-400' : 'bg-amber-500'
+            }`} />
+            <Database className="w-3.5 h-3.5" />
+            <span>{dbStatus === 'connected' ? 'DB Live' : dbStatus === 'checking' ? 'Checking DB' : 'DB Setup'}</span>
+          </button>
+
           {/* Settings link */}
           <button
             type="button"
@@ -198,6 +246,12 @@ export const Header: React.FC<HeaderProps> = ({ isMobileMenuOpen, onToggleMobile
       <KeyboardShortcutsModal
         isOpen={shortcutsOpen}
         onClose={() => setShortcutsOpen(false)}
+      />
+
+      {/* Database Connection & Seeder Configuration Modal */}
+      <DatabaseConfigModal
+        isOpen={dbModalOpen}
+        onClose={() => setDbModalOpen(false)}
       />
     </>
   );

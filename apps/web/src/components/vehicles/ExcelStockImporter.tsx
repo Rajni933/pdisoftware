@@ -3,13 +3,13 @@ import {
   FileSpreadsheet, Download, Upload, Check, AlertCircle, 
   X, Loader2, RefreshCw, FileCheck, CheckCircle2, AlertTriangle, ShieldCheck
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { saveStockInventory, isHyundaiItem } from '../../data/seedData';
 import { formatDate } from '../../utils/dateUtils';
 import { StockVehicle } from '../../pages/Vehicles';
 import { getApiUrl } from '../../utils/apiConfig';
+import { bulkImportVehicles } from '../../services/dataService';
 
 interface ExcelStockImporterProps {
   isOpen: boolean;
@@ -267,7 +267,7 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
   };
 
   // 2. Parse Pasted Text (TSV, CSV, Tab-Delimited)
-  const handleParseText = (text: string) => {
+  const handleParseText = async (text: string) => {
     setCsvText(text);
     setErrorMsg(null);
     setSuccessCount(null);
@@ -278,7 +278,8 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
     }
 
     try {
-      // Use SheetJS to parse pasted text cleanly
+      // Use SheetJS dynamically to parse pasted text cleanly
+      const XLSX = await import('xlsx');
       const workbook = XLSX.read(text, { type: 'string', raw: true });
       const firstSheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[firstSheetName];
@@ -302,8 +303,9 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
     setSuccessCount(null);
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
+        const XLSX = await import('xlsx');
         const data = new Uint8Array(event.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array', cellDates: true });
         const firstSheetName = workbook.SheetNames[0];
@@ -430,6 +432,9 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
 
       // Save to localStorage & notify all components
       saveStockInventory(finalStock);
+
+      // Direct Live Supabase Database Upsert
+      await bulkImportVehicles(deduplicatedIncoming);
 
       // 1. Sync to Backend Edge API (Cloudflare Worker API)
       try {

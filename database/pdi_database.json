@@ -1,0 +1,1552 @@
+{
+  "users": [
+    {
+      "id": "a0000000-0000-0000-0000-000000000001",
+      "user_code": "ADMIN01",
+      "employee_id": "ADMIN01",
+      "first_name": "Rajesh",
+      "last_name": "Dhoot",
+      "user_name": "Rajesh Dhoot (Super Admin)",
+      "email": "admin@dhootgroup.com",
+      "mail_id": "admin@dhootgroup.com",
+      "phone": "9822001122",
+      "role": "SUPER_ADMIN",
+      "designation": "Managing Director / Super Admin",
+      "brand": "ALL",
+      "nature": "Management",
+      "branch_code": "HO-DHOOT",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "is_active": true,
+      "status": "ACTIVE",
+      "password_hash": "Admin@2026",
+      "created_at": "2026-09-23T10:04:58.253Z"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000002",
+      "user_code": "PDI01",
+      "employee_id": "PDI01",
+      "first_name": "Vikram",
+      "last_name": "Malhotra",
+      "user_name": "Vikram Malhotra (PDI Engineer)",
+      "email": "pdi@dhootgroup.com",
+      "mail_id": "pdi@dhootgroup.com",
+      "phone": "9822002233",
+      "role": "PDI_ENGINEER",
+      "designation": "Senior PDI Quality Engineer",
+      "brand": "ALL",
+      "nature": "Stockyard",
+      "branch_code": "YARD-PUNE-CENTRAL",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "is_active": true,
+      "status": "ACTIVE",
+      "password_hash": "Pdi@2026",
+      "created_at": "2026-09-23T10:04:58.253Z"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000003",
+      "user_code": "QA01",
+      "employee_id": "QA01",
+      "first_name": "Kavita",
+      "last_name": "Deshmukh",
+      "user_name": "Kavita Deshmukh (QA Manager)",
+      "email": "qa@dhootgroup.com",
+      "mail_id": "qa@dhootgroup.com",
+      "phone": "9822003344",
+      "role": "QA_MANAGER",
+      "designation": "Quality Assurance Manager",
+      "brand": "ALL",
+      "nature": "Management",
+      "branch_code": "HO-DHOOT",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "is_active": true,
+      "status": "ACTIVE",
+      "password_hash": "Qa@2026",
+      "created_at": "2026-09-23T10:04:58.253Z"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000004",
+      "user_code": "YARD01",
+      "employee_id": "YARD01",
+      "first_name": "Suresh",
+      "last_name": "Patil",
+      "user_name": "Suresh Patil (Yard Supervisor)",
+      "email": "yard@dhootgroup.com",
+      "mail_id": "yard@dhootgroup.com",
+      "phone": "9822004455",
+      "role": "YARD_SUPERVISOR",
+      "designation": "Central Yard Gate Supervisor",
+      "brand": "ALL",
+      "nature": "Stockyard",
+      "branch_code": "YARD-PUNE-CENTRAL",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "is_active": true,
+      "status": "ACTIVE",
+      "password_hash": "Yard@2026",
+      "created_at": "2026-09-23T10:04:58.253Z"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000005",
+      "user_code": "SALES01",
+      "employee_id": "SALES01",
+      "first_name": "Anita",
+      "last_name": "Joshi",
+      "user_name": "Anita Joshi (Sales Consultant)",
+      "email": "sales@dhootgroup.com",
+      "mail_id": "sales@dhootgroup.com",
+      "phone": "9822005566",
+      "role": "SALES_CONSULTANT",
+      "designation": "Senior Sales Relationship Consultant",
+      "brand": "ALL",
+      "nature": "Showroom",
+      "branch_code": "SHOWROOM-PUNE-CENTRAL",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "is_active": true,
+      "status": "ACTIVE",
+      "password_hash": "Sales@2026",
+      "created_at": "2026-09-23T10:04:58.253Z"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000006",
+      "user_code": "MGR01",
+      "employee_id": "MGR01",
+      "first_name": "Amit",
+      "last_name": "Shinde",
+      "user_name": "Amit Shinde (Branch Manager)",
+      "email": "amit.shinde@dhootgroup.com",
+      "mail_id": "amit.shinde@dhootgroup.com",
+      "phone": "9822007788",
+      "role": "BRANCH_MANAGER",
+      "designation": "General Showroom Manager",
+      "brand": "TATA",
+      "nature": "Management",
+      "branch_code": "DHOOT-TATA-PUNE",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "is_active": true,
+      "status": "ACTIVE",
+      "password_hash": "Mgr@2026",
+      "created_at": "2026-09-23T10:04:58.253Z"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000007",
+      "user_code": "TECH01",
+      "employee_id": "TECH01",
+      "first_name": "Rakesh",
+      "last_name": "Pawar",
+      "user_name": "Rakesh Pawar (Technician)",
+      "email": "rakesh.p@dhootgroup.com",
+      "mail_id": "rakesh.p@dhootgroup.com",
+      "phone": "9822008899",
+      "role": "TECHNICIAN",
+      "designation": "Master Workshop Technician",
+      "brand": "ALL",
+      "nature": "Workshop",
+      "branch_code": "YARD-PUNE-CENTRAL",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "is_active": true,
+      "status": "ACTIVE",
+      "password_hash": "Tech@2026",
+      "created_at": "2026-09-23T10:04:58.253Z"
+    }
+  ],
+  "organizations": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "name": "Autoprime Tata - Dhoot Group",
+      "code": "DHOOT-TATA",
+      "is_active": true
+    },
+    {
+      "id": "11111111-1111-1111-1111-111111111112",
+      "name": "Raja Hyundai - Dhoot Group",
+      "code": "DHOOT-HYUNDAI",
+      "is_active": true
+    }
+  ],
+  "zones": [
+    {
+      "id": "22222222-2222-2222-2222-222222222221",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "name": "North Zone",
+      "code": "ZONE-NORTH"
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "name": "West Zone",
+      "code": "ZONE-WEST"
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222223",
+      "organization_id": "11111111-1111-1111-1111-111111111112",
+      "name": "Maharashtra Zone",
+      "code": "ZONE-MH"
+    }
+  ],
+  "branches": [
+    {
+      "id": "33333333-3333-3333-3333-333333333331",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "name": "Autoprime Tata — Nagar Road Showroom",
+      "code": "DHOOT-TATA-PUNE",
+      "brand": "Tata Motors",
+      "type": "Main Showroom",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "capacity": "45 Units",
+      "manager": "Rajesh Dhoot",
+      "phone": "020-26651234",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "33333333-3333-3333-3333-333333333332",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "name": "Autoprime Tata — Worli South Showroom",
+      "code": "DHOOT-TATA-MUMBAI",
+      "brand": "Tata Motors",
+      "type": "Main Showroom",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "capacity": "30 Units",
+      "manager": "Manish Gehlot",
+      "phone": "022-24567890",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "33333333-3333-3333-3333-333333333333",
+      "organization_id": "11111111-1111-1111-1111-111111111112",
+      "name": "Autoprime Hyundai — Wakad Showroom",
+      "code": "DHOOT-HYUNDAI-PUNE",
+      "brand": "Hyundai",
+      "type": "Main Showroom",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "capacity": "35 Units",
+      "manager": "Pradeep Dhoot",
+      "phone": "020-27712345",
+      "status": "ACTIVE"
+    }
+  ],
+  "stockyards": [
+    {
+      "id": "44444444-4444-4444-4444-444444444441",
+      "code": "YARD-PUNE-CENTRAL",
+      "name": "Pune Central Stockyard",
+      "brand": "Shared",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "capacity": "250 Units",
+      "manager": "Suresh Patil",
+      "phone": "9822004455",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "44444444-4444-4444-4444-444444444442",
+      "code": "YARD-CHAKAN-LOGISTICS",
+      "name": "Chakan Inward Logistics Yard",
+      "brand": "Tata Motors",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "capacity": "400 Units",
+      "manager": "Amit Shinde",
+      "phone": "9822007788",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "44444444-4444-4444-4444-444444444443",
+      "code": "YARD-HADAPSAR-DELIVERY",
+      "name": "Hadapsar Pre-Delivery Hub",
+      "brand": "Hyundai",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "capacity": "180 Units",
+      "manager": "Nitin Kale",
+      "phone": "9822009900",
+      "status": "ACTIVE"
+    }
+  ],
+  "master_vehicle_models": [
+    {
+      "id": "m-1",
+      "brand": "TATA",
+      "model_name": "Tata Safari",
+      "segment": "Flagship SUV",
+      "body_type": "SUV",
+      "fuel_types": [
+        "DIESEL"
+      ],
+      "base_ex_showroom": 1619000,
+      "variants": [
+        "Smart",
+        "Pure",
+        "Adventure",
+        "Accomplished",
+        "Accomplished Plus 6S AT"
+      ],
+      "colors": [
+        "Oberon Black",
+        "Cosmic Gold",
+        "Stardust Ash",
+        "Supernova Copper"
+      ],
+      "active": true
+    },
+    {
+      "id": "m-2",
+      "brand": "TATA",
+      "model_name": "Tata Harrier",
+      "segment": "Mid-size SUV",
+      "body_type": "SUV",
+      "fuel_types": [
+        "DIESEL"
+      ],
+      "base_ex_showroom": 1549000,
+      "variants": [
+        "Smart",
+        "Pure",
+        "Adventure",
+        "Fearless",
+        "Fearless Plus Dark 6MT"
+      ],
+      "colors": [
+        "Oberon Black",
+        "Daytona Grey",
+        "Sunlit Yellow",
+        "Pebble Grey"
+      ],
+      "active": true
+    },
+    {
+      "id": "m-3",
+      "brand": "TATA",
+      "model_name": "Tata Curvv.ev",
+      "segment": "Coupe SUV",
+      "body_type": "EV",
+      "fuel_types": [
+        "EV"
+      ],
+      "base_ex_showroom": 1749000,
+      "variants": [
+        "Creative 45",
+        "Accomplished 55",
+        "Accomplished Plus 55"
+      ],
+      "colors": [
+        "Empowered Oxide",
+        "Flame Red",
+        "Pristine White",
+        "Virtual Sunrise"
+      ],
+      "active": true
+    },
+    {
+      "id": "m-4",
+      "brand": "TATA",
+      "model_name": "Tata Nexon.ev",
+      "segment": "Compact EV",
+      "body_type": "EV",
+      "fuel_types": [
+        "EV"
+      ],
+      "base_ex_showroom": 1449000,
+      "variants": [
+        "Creative 45",
+        "Empowered Plus 45",
+        "Fearless 45"
+      ],
+      "colors": [
+        "Empowered Oxide",
+        "Intensi Teal",
+        "Pristine White"
+      ],
+      "active": true
+    },
+    {
+      "id": "m-5",
+      "brand": "TATA",
+      "model_name": "Tata Nexon",
+      "segment": "Compact SUV",
+      "body_type": "SUV",
+      "fuel_types": [
+        "PETROL",
+        "DIESEL",
+        "CNG"
+      ],
+      "base_ex_showroom": 799000,
+      "variants": [
+        "Smart",
+        "Pure",
+        "Creative",
+        "Fearless",
+        "Fearless Plus S DT"
+      ],
+      "colors": [
+        "Fearless Purple",
+        "Creative Ocean",
+        "Daytona Grey",
+        "Flame Red"
+      ],
+      "active": true
+    },
+    {
+      "id": "m-6",
+      "brand": "TATA",
+      "model_name": "Tata Punch",
+      "segment": "Micro SUV",
+      "body_type": "SUV",
+      "fuel_types": [
+        "PETROL",
+        "CNG",
+        "EV"
+      ],
+      "base_ex_showroom": 612000,
+      "variants": [
+        "Pure",
+        "Adventure",
+        "Accomplished",
+        "Creative DT AMT"
+      ],
+      "colors": [
+        "Tornado Blue",
+        "Calypso Red",
+        "Tropical Mist",
+        "Daytona Grey"
+      ],
+      "active": true
+    },
+    {
+      "id": "m-7",
+      "brand": "TATA",
+      "model_name": "Tata Altroz",
+      "segment": "Premium Hatchback",
+      "body_type": "HATCHBACK",
+      "fuel_types": [
+        "PETROL",
+        "DIESEL",
+        "CNG"
+      ],
+      "base_ex_showroom": 664000,
+      "variants": [
+        "XE",
+        "XM",
+        "XT",
+        "XZ",
+        "Racer R3 Turbo"
+      ],
+      "colors": [
+        "Atomic Orange",
+        "Downtown Red",
+        "Avenue White",
+        "Harbour Blue"
+      ],
+      "active": true
+    },
+    {
+      "id": "m-8",
+      "brand": "TATA",
+      "model_name": "Tata Tiago",
+      "segment": "Compact Hatchback",
+      "body_type": "HATCHBACK",
+      "fuel_types": [
+        "PETROL",
+        "CNG",
+        "EV"
+      ],
+      "base_ex_showroom": 565000,
+      "variants": [
+        "XE",
+        "XM",
+        "XT",
+        "XZ+",
+        "XZ+ Dual Tone"
+      ],
+      "colors": [
+        "Tornado Blue",
+        "Daytona Grey",
+        "Flame Red",
+        "Opal White"
+      ],
+      "active": true
+    },
+    {
+      "id": "m-9",
+      "brand": "HYUNDAI",
+      "model_name": "Hyundai Creta",
+      "segment": "Premium SUV",
+      "body_type": "SUV",
+      "fuel_types": [
+        "PETROL",
+        "DIESEL",
+        "TURBO"
+      ],
+      "base_ex_showroom": 1099000,
+      "variants": [
+        "E",
+        "EX",
+        "S",
+        "SX",
+        "SX (O)",
+        "SX (O) Turbo DCT"
+      ],
+      "colors": [
+        "Ranger Khaki",
+        "Abyss Black",
+        "Atlas White",
+        "Titan Grey"
+      ],
+      "active": true
+    },
+    {
+      "id": "m-10",
+      "brand": "HYUNDAI",
+      "model_name": "Hyundai Venue",
+      "segment": "Compact SUV",
+      "body_type": "SUV",
+      "fuel_types": [
+        "PETROL",
+        "DIESEL",
+        "TURBO"
+      ],
+      "base_ex_showroom": 794000,
+      "variants": [
+        "E",
+        "S",
+        "S+",
+        "SX",
+        "SX (O)"
+      ],
+      "colors": [
+        "Fiery Red",
+        "Typhoon Silver",
+        "Denim Blue",
+        "Phantom Black"
+      ],
+      "active": true
+    },
+    {
+      "id": "m-11",
+      "brand": "HYUNDAI",
+      "model_name": "Hyundai Verna",
+      "segment": "Premium Sedan",
+      "body_type": "SEDAN",
+      "fuel_types": [
+        "PETROL",
+        "TURBO"
+      ],
+      "base_ex_showroom": 1100000,
+      "variants": [
+        "EX",
+        "S",
+        "SX",
+        "SX (O) Turbo"
+      ],
+      "colors": [
+        "Starry Night",
+        "Titan Grey",
+        "Abyss Black",
+        "Atlas White"
+      ],
+      "active": true
+    },
+    {
+      "id": "m-12",
+      "brand": "HYUNDAI",
+      "model_name": "Hyundai Exter",
+      "segment": "Micro SUV",
+      "body_type": "SUV",
+      "fuel_types": [
+        "PETROL",
+        "CNG"
+      ],
+      "base_ex_showroom": 612000,
+      "variants": [
+        "EX",
+        "S",
+        "SX",
+        "SX (O) Connect"
+      ],
+      "colors": [
+        "Ranger Khaki",
+        "Cosmic Blue",
+        "Starry Night",
+        "Atlas White"
+      ],
+      "active": true
+    },
+    {
+      "id": "m-13",
+      "brand": "HYUNDAI",
+      "model_name": "Hyundai Alcazar",
+      "segment": "7-Seater Premium SUV",
+      "body_type": "SUV",
+      "fuel_types": [
+        "PETROL",
+        "DIESEL"
+      ],
+      "base_ex_showroom": 1677000,
+      "variants": [
+        "Executive",
+        "Prestige",
+        "Platinum",
+        "Signature"
+      ],
+      "colors": [
+        "Robust Emerald Matte",
+        "Starry Night",
+        "Atlas White"
+      ],
+      "active": true
+    }
+  ],
+  "master_financiers": [
+    {
+      "id": "f-1",
+      "name": "HDFC Bank Auto Loans",
+      "code": "HDFC",
+      "category": "PRIVATE_BANK",
+      "contact_person": "Rajesh Sharma",
+      "contact_phone": "+91 98290 11221",
+      "interest_rate": 8.65,
+      "active": true
+    },
+    {
+      "id": "f-2",
+      "name": "State Bank of India",
+      "code": "SBI",
+      "category": "NATIONALIZED_BANK",
+      "contact_person": "Vikram Rathore",
+      "contact_phone": "+91 98290 22332",
+      "interest_rate": 8.5,
+      "active": true
+    },
+    {
+      "id": "f-3",
+      "name": "ICICI Bank Car Loans",
+      "code": "ICICI",
+      "category": "PRIVATE_BANK",
+      "contact_person": "Amit Joshi",
+      "contact_phone": "+91 98290 33443",
+      "interest_rate": 8.7,
+      "active": true
+    },
+    {
+      "id": "f-4",
+      "name": "Tata Capital Financial Services",
+      "code": "TATA_CAP",
+      "category": "CAPTIVE_FINANCE",
+      "contact_person": "Kailash Meena",
+      "contact_phone": "+91 98290 44554",
+      "interest_rate": 8.4,
+      "active": true
+    },
+    {
+      "id": "f-5",
+      "name": "Kotak Mahindra Prime",
+      "code": "KOTAK",
+      "category": "PRIVATE_BANK",
+      "contact_person": "Suresh Patel",
+      "contact_phone": "+91 98290 55665",
+      "interest_rate": 8.75,
+      "active": true
+    },
+    {
+      "id": "f-6",
+      "name": "Axis Bank",
+      "code": "AXIS",
+      "category": "PRIVATE_BANK",
+      "contact_person": "Dinesh Gehlot",
+      "contact_phone": "+91 98290 66776",
+      "interest_rate": 8.8,
+      "active": true
+    },
+    {
+      "id": "f-7",
+      "name": "Bank of Baroda",
+      "code": "BOB",
+      "category": "NATIONALIZED_BANK",
+      "contact_person": "Manish Purohit",
+      "contact_phone": "+91 98290 77887",
+      "interest_rate": 8.55,
+      "active": true
+    }
+  ],
+  "master_insurance_providers": [
+    {
+      "id": "i-1",
+      "name": "Tata AIG General Insurance",
+      "code": "TATA_AIG",
+      "tie_up_discount": 65,
+      "claims_lead": "Kavita Sen (Zonal Claims Lead)",
+      "contact_phone": "+91 1800 2667780",
+      "coverage_packages": [
+        "Zero Dep",
+        "Engine Protect",
+        "RTI",
+        "Key Replacement"
+      ],
+      "cashless_tieup": true,
+      "active": true
+    },
+    {
+      "id": "i-2",
+      "name": "ICICI Lombard General Insurance",
+      "code": "ICICI_LOMB",
+      "tie_up_discount": 60,
+      "claims_lead": "Manoj Sharma (Surveyor Head)",
+      "contact_phone": "+91 1800 2666",
+      "coverage_packages": [
+        "Zero Dep",
+        "RTI",
+        "Consumables Cover"
+      ],
+      "cashless_tieup": true,
+      "active": true
+    },
+    {
+      "id": "i-3",
+      "name": "Bajaj Allianz General Insurance",
+      "code": "BAJAJ_ALLZ",
+      "tie_up_discount": 62,
+      "claims_lead": "Alok Gupta (Regional Claims Mgr)",
+      "contact_phone": "+91 1800 209 5858",
+      "coverage_packages": [
+        "Zero Dep",
+        "Engine Protect",
+        "Tyre Protect"
+      ],
+      "cashless_tieup": true,
+      "active": true
+    },
+    {
+      "id": "i-4",
+      "name": "HDFC ERGO General Insurance",
+      "code": "HDFC_ERGO",
+      "tie_up_discount": 58,
+      "claims_lead": "Sneha Patel (Claims Desk)",
+      "contact_phone": "+91 1800 266 6444",
+      "coverage_packages": [
+        "Zero Dep",
+        "24x7 Roadside Assistance"
+      ],
+      "cashless_tieup": true,
+      "active": true
+    },
+    {
+      "id": "i-5",
+      "name": "National Insurance Company Ltd",
+      "code": "NICL",
+      "tie_up_discount": 50,
+      "claims_lead": "R. K. Verma (Divisional Officer)",
+      "contact_phone": "+91 1800 345 0330",
+      "coverage_packages": [
+        "Comprehensive Standard Package"
+      ],
+      "cashless_tieup": true,
+      "active": true
+    }
+  ],
+  "master_designations": [
+    {
+      "id": "desig-1",
+      "name": "Managing Director / Super Admin",
+      "code": "MD_ADMIN",
+      "active": true
+    },
+    {
+      "id": "desig-2",
+      "name": "General Manager",
+      "code": "GM",
+      "active": true
+    },
+    {
+      "id": "desig-3",
+      "name": "Branch Manager",
+      "code": "BM",
+      "active": true
+    },
+    {
+      "id": "desig-4",
+      "name": "Quality Assurance Manager",
+      "code": "QA_MGR",
+      "active": true
+    },
+    {
+      "id": "desig-5",
+      "name": "Senior PDI Quality Engineer",
+      "code": "PDI_ENG",
+      "active": true
+    },
+    {
+      "id": "desig-6",
+      "name": "Yard Supervisor",
+      "code": "YARD_SUP",
+      "active": true
+    },
+    {
+      "id": "desig-7",
+      "name": "Senior Sales Consultant",
+      "code": "SALES_CONS",
+      "active": true
+    },
+    {
+      "id": "desig-8",
+      "name": "Workshop Technician",
+      "code": "TECH",
+      "active": true
+    }
+  ],
+  "master_nature_types": [
+    {
+      "id": "nat-1",
+      "name": "Management",
+      "code": "MGMT",
+      "active": true
+    },
+    {
+      "id": "nat-2",
+      "name": "Showroom Sales",
+      "code": "SALES",
+      "active": true
+    },
+    {
+      "id": "nat-3",
+      "name": "Quality Inspection",
+      "code": "QA_PDI",
+      "active": true
+    },
+    {
+      "id": "nat-4",
+      "name": "Stockyard Operations",
+      "code": "YARD",
+      "active": true
+    },
+    {
+      "id": "nat-5",
+      "name": "Workshop & Bodyshop",
+      "code": "WORKSHOP",
+      "active": true
+    }
+  ],
+  "checklist_categories": [
+    {
+      "id": "cat-1",
+      "code": "EXTERIOR_BODY",
+      "name": "Exterior & Body Panels",
+      "description": "Inspection of panels, paint, windshield, chrome badges, and mirrors",
+      "display_order": 1
+    },
+    {
+      "id": "cat-2",
+      "code": "LIGHTING_ELECTRICAL",
+      "name": "Lighting & Electricals",
+      "description": "Headlamps, DRLs, taillights, blinkers, hazard, horn, and wiper motors",
+      "display_order": 2
+    },
+    {
+      "id": "cat-3",
+      "code": "UNDERHOOD_ENGINE",
+      "name": "Under-Hood & Fluid Levels",
+      "description": "Engine oil, coolant, brake fluid, battery health, wire harnesses",
+      "display_order": 3
+    },
+    {
+      "id": "cat-4",
+      "code": "UNDERBODY_TYRES",
+      "name": "Underbody, Wheels & Suspension",
+      "description": "Tyre pressure, tread, alloy condition, suspension, and underbody shield",
+      "display_order": 4
+    },
+    {
+      "id": "cat-5",
+      "code": "INTERIOR_CABIN",
+      "name": "Interior Cabin & Dashboard",
+      "description": "Seat upholstery, dashboard, touch infotainment, AC cooling, power windows",
+      "display_order": 5
+    },
+    {
+      "id": "cat-6",
+      "code": "BOOT_SPARE_WHEEL",
+      "name": "Boot, Tools & Safety Gear",
+      "description": "Spare wheel, jack, wheel spanner, warning triangle, parcel tray",
+      "display_order": 6
+    },
+    {
+      "id": "cat-7",
+      "code": "BRAKES_ROAD_TEST",
+      "name": "Brakes & Road Functionality",
+      "description": "Brake pedal feel, handbrake / EPB hold, steering response, gear shifting",
+      "display_order": 7
+    },
+    {
+      "id": "cat-8",
+      "code": "DOCUMENTATION_IDENTITY",
+      "name": "Documentation & Keys",
+      "description": "VIN plate verification, smart keys (2 keys), manual, warranty booklet",
+      "display_order": 8
+    }
+  ],
+  "checklist_items": [
+    {
+      "id": "chk-01",
+      "category_id": "cat-1",
+      "item_code": "EXT-01",
+      "title": "Panel Gaps & Flush Alignment",
+      "instructions": "Check hood, doors, tailgate and bumper shutlines for uniform gap (3.5mm ± 0.5mm).",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "MAJOR",
+      "display_order": 1
+    },
+    {
+      "id": "chk-02",
+      "category_id": "cat-1",
+      "item_code": "EXT-02",
+      "title": "Paint Finish & Scratch Inspection",
+      "instructions": "Inspect panels under daylight for transit scratches, clear-coat swirl marks or paint chips.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "CRITICAL",
+      "display_order": 2
+    },
+    {
+      "id": "chk-03",
+      "category_id": "cat-1",
+      "item_code": "EXT-03",
+      "title": "Windshield & Window Panes",
+      "instructions": "Verify front windshield, rear glass, and window panes are crack-free and date-coded.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "CRITICAL",
+      "display_order": 3
+    },
+    {
+      "id": "chk-04",
+      "category_id": "cat-1",
+      "item_code": "EXT-04",
+      "title": "ORVM Power Fold & Adjustment",
+      "instructions": "Test left and right mirror power folding motor and glass tilt adjustments.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "MINOR",
+      "display_order": 4
+    },
+    {
+      "id": "chk-05",
+      "category_id": "cat-2",
+      "item_code": "LGT-01",
+      "title": "LED DRLs & Headlamp High/Low Beam",
+      "instructions": "Turn on low beam, high beam, projector lamps and fog lamps. Verify leveler.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "CRITICAL",
+      "display_order": 1
+    },
+    {
+      "id": "chk-06",
+      "category_id": "cat-2",
+      "item_code": "LGT-02",
+      "title": "Turn Indicators & Hazard Flashers",
+      "instructions": "Verify front, mirror, and rear indicator LED sequences and hazard switch.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "CRITICAL",
+      "display_order": 2
+    },
+    {
+      "id": "chk-07",
+      "category_id": "cat-2",
+      "item_code": "LGT-03",
+      "title": "Tail Lamps & Connected Lightbar",
+      "instructions": "Verify rear connected lightbar glow, high-mount stop lamp and reverse white lamps.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "MAJOR",
+      "display_order": 3
+    },
+    {
+      "id": "chk-08",
+      "category_id": "cat-2",
+      "item_code": "LGT-04",
+      "title": "Dual Horn Sound & Pitch",
+      "instructions": "Press horn pad on steering. Test dual trumpet tone output.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "MAJOR",
+      "display_order": 4
+    },
+    {
+      "id": "chk-09",
+      "category_id": "cat-3",
+      "item_code": "ENG-01",
+      "title": "Engine Oil Level & Dipstick",
+      "instructions": "Pull dipstick; verify oil level is between MIN and MAX marks. Oil clean and amber.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "CRITICAL",
+      "display_order": 1
+    },
+    {
+      "id": "chk-10",
+      "category_id": "cat-3",
+      "item_code": "ENG-02",
+      "title": "Coolant Reservoir Level",
+      "instructions": "Check coolant expansion tank level (cold engine). Inspect for hose leaks.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "CRITICAL",
+      "display_order": 2
+    },
+    {
+      "id": "chk-11",
+      "category_id": "cat-3",
+      "item_code": "ENG-03",
+      "title": "Brake & Clutch Fluid Level",
+      "instructions": "Verify master cylinder reservoir fluid level is at MAX mark.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "CRITICAL",
+      "display_order": 3
+    },
+    {
+      "id": "chk-12",
+      "category_id": "cat-3",
+      "item_code": "ENG-04",
+      "title": "12V Battery Voltage Check",
+      "instructions": "Measure open circuit terminal voltage with multimeter (target: >= 12.6V).",
+      "response_type": "NUMERIC",
+      "is_mandatory": true,
+      "failure_severity": "MAJOR",
+      "display_order": 4
+    },
+    {
+      "id": "chk-13",
+      "category_id": "cat-4",
+      "item_code": "TYR-01",
+      "title": "Tyre Pressure Calibration (PSI)",
+      "instructions": "Measure and calibrate tyre pressure to manufacturer spec (33-36 PSI).",
+      "response_type": "NUMERIC",
+      "is_mandatory": true,
+      "failure_severity": "MAJOR",
+      "display_order": 1
+    },
+    {
+      "id": "chk-14",
+      "category_id": "cat-4",
+      "item_code": "TYR-02",
+      "title": "Alloy Wheels & Sidewall Condition",
+      "instructions": "Inspect rims for kerb rash, rim dents, or tyre sidewall cuts/bulges.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "CRITICAL",
+      "display_order": 2
+    },
+    {
+      "id": "chk-15",
+      "category_id": "cat-4",
+      "item_code": "TYR-03",
+      "title": "Wheel Lug Nuts Torque",
+      "instructions": "Check all 4 wheels lug nuts are torqued to specification (110 Nm).",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "CRITICAL",
+      "display_order": 3
+    },
+    {
+      "id": "chk-16",
+      "category_id": "cat-4",
+      "item_code": "UND-01",
+      "title": "Underbody Anti-Rust & Shield Inspection",
+      "instructions": "Inspect underbody floor pan on ramp for scrape marks or missing clips.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "MAJOR",
+      "display_order": 4
+    },
+    {
+      "id": "chk-17",
+      "category_id": "cat-5",
+      "item_code": "INT-01",
+      "title": "Touchscreen Infotainment & Audio",
+      "instructions": "Verify touch response, Bluetooth, Apple CarPlay / Android Auto, and speakers.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "MAJOR",
+      "display_order": 1
+    },
+    {
+      "id": "chk-18",
+      "category_id": "cat-5",
+      "item_code": "INT-02",
+      "title": "AC Cooling & Climate Control",
+      "instructions": "Run AC at lowest temperature (16°C) for 3 minutes; verify blower & vent cooling.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "CRITICAL",
+      "display_order": 2
+    },
+    {
+      "id": "chk-19",
+      "category_id": "cat-5",
+      "item_code": "INT-03",
+      "title": "All Power Windows & Central Lock",
+      "instructions": "Test all 4 window switches for one-touch up/down and remote key lock.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "MAJOR",
+      "display_order": 3
+    },
+    {
+      "id": "chk-20",
+      "category_id": "cat-5",
+      "item_code": "INT-04",
+      "title": "Odometer Reading (KM)",
+      "instructions": "Record odometer reading from instrument cluster (target: < 50 km).",
+      "response_type": "NUMERIC",
+      "is_mandatory": true,
+      "failure_severity": "MAJOR",
+      "display_order": 4
+    },
+    {
+      "id": "chk-21",
+      "category_id": "cat-6",
+      "item_code": "BOT-01",
+      "title": "Spare Wheel & Tool Kit Complete",
+      "instructions": "Check presence of spare tyre, jack, tommy bar, spanner, and tow hook.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "CRITICAL",
+      "display_order": 1
+    },
+    {
+      "id": "chk-22",
+      "category_id": "cat-6",
+      "item_code": "BOT-02",
+      "title": "Emergency Warning Triangle & Medikit",
+      "instructions": "Verify reflective safety triangle and first aid kit in boot compartment.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "MAJOR",
+      "display_order": 2
+    },
+    {
+      "id": "chk-23",
+      "category_id": "cat-7",
+      "item_code": "BRK-01",
+      "title": "Foot Brake & EPB Auto-Hold",
+      "instructions": "Test brake firmness, ABS bite, and electronic parking brake auto-hold.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "CRITICAL",
+      "display_order": 1
+    },
+    {
+      "id": "chk-24",
+      "category_id": "cat-7",
+      "item_code": "BRK-02",
+      "title": "Steering Centering & Tracking",
+      "instructions": "Verify steering wheel is dead-center with zero pull during yard driving.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "MAJOR",
+      "display_order": 2
+    },
+    {
+      "id": "chk-25",
+      "category_id": "cat-8",
+      "item_code": "DOC-01",
+      "title": "Chassis / VIN Plate Match",
+      "instructions": "Match physical VIN stamped on driver B-pillar / engine bay with invoice.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "CRITICAL",
+      "display_order": 1
+    },
+    {
+      "id": "chk-26",
+      "category_id": "cat-8",
+      "item_code": "DOC-02",
+      "title": "2 Smart Keys / Key Fobs Present",
+      "instructions": "Test lock, unlock, and boot release buttons on both physical key fobs.",
+      "response_type": "PASS_FAIL",
+      "is_mandatory": true,
+      "failure_severity": "CRITICAL",
+      "display_order": 2
+    }
+  ],
+  "vehicles": [
+    {
+      "id": "veh-001",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "branch_id": "33333333-3333-3333-3333-333333333331",
+      "stockyard_id": "44444444-4444-4444-4444-444444444441",
+      "vin": "MAT612345S9988771",
+      "chassis_no": "CH-SAF-8871",
+      "engine_no": "ENG-KRY-8871",
+      "brand": "TATA",
+      "model": "Tata Safari",
+      "variant": "Accomplished Plus 6S (Dark Edition)",
+      "color": "Oberon Black",
+      "fuel_type": "Diesel",
+      "transmission": "Automatic",
+      "manufacturing_year": 2026,
+      "location": "Pune Central Stockyard",
+      "yard_bay": "Bay A-1",
+      "status": "RECEIVED",
+      "odometer_reading": 14,
+      "battery_voltage": 12.8,
+      "inspector_name": "Vikram Malhotra",
+      "created_at": "2026-09-23T06:04:58.253Z"
+    },
+    {
+      "id": "veh-002",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "branch_id": "33333333-3333-3333-3333-333333333331",
+      "stockyard_id": "44444444-4444-4444-4444-444444444441",
+      "vin": "MAT612345S9988772",
+      "chassis_no": "CH-HAR-8872",
+      "engine_no": "ENG-KRY-8872",
+      "brand": "TATA",
+      "model": "Tata Harrier",
+      "variant": "Fearless Plus Dark",
+      "color": "Oberon Black",
+      "fuel_type": "Diesel",
+      "transmission": "Manual",
+      "manufacturing_year": 2026,
+      "location": "Pune Central Stockyard",
+      "yard_bay": "Bay A-2",
+      "status": "PDI_PENDING",
+      "odometer_reading": 18,
+      "battery_voltage": 12.7,
+      "inspector_name": "Vikram Malhotra",
+      "created_at": "2026-09-23T04:04:58.253Z"
+    },
+    {
+      "id": "veh-003",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "branch_id": "33333333-3333-3333-3333-333333333331",
+      "stockyard_id": "44444444-4444-4444-4444-444444444442",
+      "vin": "MAT612345S9988773",
+      "chassis_no": "CH-CRV-8873",
+      "engine_no": "ENG-EV-8873",
+      "brand": "TATA",
+      "model": "Tata Curvv.ev",
+      "variant": "Empowered Plus 55",
+      "color": "Virtual Sunrise",
+      "fuel_type": "EV",
+      "transmission": "Automatic",
+      "manufacturing_year": 2026,
+      "location": "Chakan Inward Logistics Yard",
+      "yard_bay": "Bay C-4",
+      "status": "PDI_APPROVED",
+      "certificate_no": "CERT-TATA-88773",
+      "odometer_reading": 22,
+      "battery_voltage": 12.8,
+      "inspector_name": "Vikram Malhotra",
+      "customer_name": "Pooja Kulkarni",
+      "booking_id": "bkg-002",
+      "created_at": "2026-09-22T10:04:58.253Z"
+    },
+    {
+      "id": "veh-004",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "branch_id": "33333333-3333-3333-3333-333333333331",
+      "stockyard_id": "44444444-4444-4444-4444-444444444441",
+      "vin": "MAT612345S9988774",
+      "chassis_no": "CH-NEX-8874",
+      "engine_no": "ENG-NXN-8874",
+      "brand": "TATA",
+      "model": "Tata Nexon",
+      "variant": "Fearless Plus S",
+      "color": "Daytona Grey",
+      "fuel_type": "Petrol",
+      "transmission": "DCA",
+      "manufacturing_year": 2026,
+      "location": "Pune Central Stockyard",
+      "yard_bay": "Bay A-3",
+      "status": "DELIVERY_READY",
+      "certificate_no": "CERT-TATA-88774",
+      "odometer_reading": 15,
+      "battery_voltage": 12.6,
+      "inspector_name": "Vikram Malhotra",
+      "created_at": "2026-09-21T10:04:58.253Z"
+    },
+    {
+      "id": "veh-005",
+      "organization_id": "11111111-1111-1111-1111-111111111112",
+      "branch_id": "33333333-3333-3333-3333-333333333333",
+      "stockyard_id": "44444444-4444-4444-4444-444444444443",
+      "vin": "MAL612345S9988775",
+      "chassis_no": "CH-CRT-8875",
+      "engine_no": "ENG-HYU-8875",
+      "brand": "HYUNDAI",
+      "model": "Hyundai Creta",
+      "variant": "SX(O) Turbo DCT",
+      "color": "Titan Grey",
+      "fuel_type": "Petrol",
+      "transmission": "DCT",
+      "manufacturing_year": 2026,
+      "location": "Hadapsar Pre-Delivery Hub",
+      "yard_bay": "Bay H-1",
+      "status": "PDI_PENDING",
+      "odometer_reading": 12,
+      "battery_voltage": 12.8,
+      "inspector_name": "Vikram Malhotra",
+      "created_at": "2026-09-23T02:04:58.253Z"
+    },
+    {
+      "id": "veh-006",
+      "organization_id": "11111111-1111-1111-1111-111111111112",
+      "branch_id": "33333333-3333-3333-3333-333333333333",
+      "stockyard_id": "44444444-4444-4444-4444-444444444443",
+      "vin": "MAL612345S9988776",
+      "chassis_no": "CH-VEN-8876",
+      "engine_no": "ENG-HYU-8876",
+      "brand": "HYUNDAI",
+      "model": "Hyundai Venue",
+      "variant": "SX Opt Knight Edition",
+      "color": "Abyss Black",
+      "fuel_type": "Petrol",
+      "transmission": "Manual",
+      "manufacturing_year": 2026,
+      "location": "Hadapsar Pre-Delivery Hub",
+      "yard_bay": "Bay H-2",
+      "status": "RECEIVED",
+      "odometer_reading": 19,
+      "battery_voltage": 12.7,
+      "inspector_name": "Vikram Malhotra",
+      "created_at": "2026-09-22T22:04:58.253Z"
+    },
+    {
+      "id": "veh-007",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "branch_id": "33333333-3333-3333-3333-333333333331",
+      "stockyard_id": "44444444-4444-4444-4444-444444444441",
+      "vin": "MAT612345S9988777",
+      "chassis_no": "CH-PNC-8877",
+      "engine_no": "ENG-PNC-8877",
+      "brand": "TATA",
+      "model": "Tata Punch",
+      "variant": "Accomplished Dazzle",
+      "color": "Tropical Mist",
+      "fuel_type": "Petrol",
+      "transmission": "AMT",
+      "manufacturing_year": 2026,
+      "location": "Pune Central Stockyard",
+      "yard_bay": "Bay A-4",
+      "status": "FAILED",
+      "odometer_reading": 28,
+      "battery_voltage": 12.5,
+      "inspector_name": "Vikram Malhotra",
+      "created_at": "2026-09-22T20:04:58.253Z"
+    },
+    {
+      "id": "veh-008",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "branch_id": "44444444-4444-4444-4444-444444444442",
+      "stockyard_id": "44444444-4444-4444-4444-444444444442",
+      "vin": "MAT612345S9988778",
+      "chassis_no": "CH-NEX-8878",
+      "engine_no": "ENG-EV-8878",
+      "brand": "TATA",
+      "model": "Tata Nexon.ev",
+      "variant": "Empowered Plus 45",
+      "color": "Empowered Oxide",
+      "fuel_type": "EV",
+      "transmission": "Automatic",
+      "manufacturing_year": 2026,
+      "location": "In Transit",
+      "yard_bay": "Carrier MH-12-TR-4421",
+      "status": "YARD_RECEIVING_PENDING",
+      "odometer_reading": 5,
+      "battery_voltage": 12.9,
+      "inspector_name": "Suresh Patil",
+      "created_at": "2026-09-23T08:04:58.253Z"
+    }
+  ],
+  "bookings": [
+    {
+      "id": "bkg-001",
+      "receipt_no": "BK-TATA-801",
+      "order_no": "ORD-2026-001",
+      "customer_name": "Sanjay Deshmukh",
+      "mobile": "9822114401",
+      "brand": "TATA",
+      "model": "Tata Safari",
+      "variant": "Accomplished Plus 6S (Dark Edition)",
+      "color": "Oberon Black",
+      "booking_amount": 51000,
+      "payment_mode": "NEFT",
+      "status": "PENDING_ALLOCATION",
+      "sale_consultant": "Anita Joshi",
+      "financier_name": "HDFC Bank Auto Loans",
+      "booking_date": "2026-09-20T10:04:58.253Z",
+      "created_at": "2026-09-23T10:04:58.253Z"
+    },
+    {
+      "id": "bkg-002",
+      "receipt_no": "BK-TATA-802",
+      "order_no": "ORD-2026-002",
+      "customer_name": "Pooja Kulkarni",
+      "mobile": "9822114402",
+      "brand": "TATA",
+      "model": "Tata Curvv.ev",
+      "variant": "Empowered Plus 55",
+      "color": "Virtual Sunrise",
+      "booking_amount": 25000,
+      "payment_mode": "UPI",
+      "status": "VIN_ALLOCATED",
+      "allocated_vin_no": "MAT612345S9988773",
+      "allocated_at": "2026-09-22T10:04:58.253Z",
+      "sale_consultant": "Anita Joshi",
+      "financier_name": "Tata Capital Financial Services",
+      "booking_date": "2026-09-18T10:04:58.253Z",
+      "created_at": "2026-09-23T10:04:58.253Z"
+    },
+    {
+      "id": "bkg-003",
+      "receipt_no": "BK-HYUN-803",
+      "order_no": "ORD-2026-003",
+      "customer_name": "Rohan Mehta",
+      "mobile": "9822114403",
+      "brand": "HYUNDAI",
+      "model": "Hyundai Creta",
+      "variant": "SX(O) Turbo DCT",
+      "color": "Titan Grey",
+      "booking_amount": 50000,
+      "payment_mode": "NetBanking",
+      "status": "PENDING_ALLOCATION",
+      "sale_consultant": "Sunil Jani",
+      "financier_name": "State Bank of India",
+      "booking_date": "2026-09-21T10:04:58.253Z",
+      "created_at": "2026-09-23T10:04:58.253Z"
+    },
+    {
+      "id": "bkg-004",
+      "receipt_no": "BK-TATA-804",
+      "order_no": "ORD-2026-004",
+      "customer_name": "Deepak Joshi",
+      "mobile": "9822114404",
+      "brand": "TATA",
+      "model": "Tata Nexon",
+      "variant": "Fearless Plus S",
+      "color": "Daytona Grey",
+      "booking_amount": 21000,
+      "payment_mode": "Credit Card",
+      "status": "VIN_ALLOCATED",
+      "allocated_vin_no": "MAT612345S9988774",
+      "allocated_at": "2026-09-22T22:04:58.253Z",
+      "sale_consultant": "Anita Joshi",
+      "financier_name": "ICICI Bank Car Loans",
+      "booking_date": "2026-09-19T10:04:58.253Z",
+      "created_at": "2026-09-23T10:04:58.253Z"
+    }
+  ],
+  "challan_invoices": [
+    {
+      "id": "chl-001",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "branch_id": "33333333-3333-3333-3333-333333333331",
+      "booking_id": "bkg-002",
+      "challan_no": "CHL-2026-0091",
+      "invoice_no": "INV-TATA-2026-0412",
+      "challan_type": "TAX_INVOICE_DELIVERY",
+      "vin_no": "MAT612345S9988773",
+      "customer_name": "Pooja Kulkarni",
+      "mobile_no": "9822114402",
+      "city": "Pune",
+      "model": "Tata Curvv.ev",
+      "variant": "Empowered Plus 55",
+      "colour": "Virtual Sunrise",
+      "sale_consultant": "Anita Joshi",
+      "team_leader": "Amit Shinde",
+      "financier_name": "Tata Capital Financial Services",
+      "ex_showroom": 1749000,
+      "corporate": 15000,
+      "exchange": 35000,
+      "discount": 20000,
+      "net": 1679000,
+      "challan_date": "2026-09-23",
+      "delivery_date": "2026-09-24",
+      "created_at": "2026-09-23T10:04:58.253Z"
+    },
+    {
+      "id": "chl-002",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "branch_id": "33333333-3333-3333-3333-333333333331",
+      "booking_id": "bkg-004",
+      "challan_no": "CHL-2026-0092",
+      "invoice_no": "INV-TATA-2026-0413",
+      "challan_type": "DELIVERY_GATE_PASS",
+      "vin_no": "MAT612345S9988774",
+      "customer_name": "Deepak Joshi",
+      "mobile_no": "9822114404",
+      "city": "Pune",
+      "model": "Tata Nexon",
+      "variant": "Fearless Plus S",
+      "colour": "Daytona Grey",
+      "sale_consultant": "Anita Joshi",
+      "team_leader": "Amit Shinde",
+      "financier_name": "ICICI Bank Car Loans",
+      "ex_showroom": 1399000,
+      "corporate": 10000,
+      "exchange": 25000,
+      "discount": 15000,
+      "net": 1349000,
+      "challan_date": "2026-09-23",
+      "delivery_date": "2026-09-23",
+      "created_at": "2026-09-23T10:04:58.253Z"
+    }
+  ],
+  "repair_tickets": [
+    {
+      "id": "tkt-001",
+      "vehicle_id": "veh-007",
+      "vin": "MAT612345S9988777",
+      "model": "Tata Punch",
+      "area": "Front Bumper Lip Scratch",
+      "severity": "CRITICAL",
+      "description": "8cm scratch on front bumper lower lip with primer exposure. Minor touch-up & polish needed.",
+      "status": "OPEN",
+      "assigned_to": "Rakesh Pawar",
+      "bay": "Bay 1 — Paint Shop",
+      "created_at": "2026-09-22T20:04:58.253Z"
+    },
+    {
+      "id": "tkt-002",
+      "vehicle_id": "veh-002",
+      "vin": "MAT612345S9988772",
+      "model": "Tata Harrier",
+      "area": "Right DRL Illumination Level",
+      "severity": "MAJOR",
+      "description": "Flicker observed on right daytime running lamp strip during high beam cycle. Re-secure connector pin.",
+      "status": "IN_PROGRESS",
+      "assigned_to": "Rakesh Pawar",
+      "bay": "Bay 3 — Electrical",
+      "created_at": "2026-09-23T04:04:58.253Z"
+    }
+  ],
+  "pdi_certificates": [
+    {
+      "id": "cert-001",
+      "certificate_number": "CERT-TATA-88773",
+      "vehicle_id": "veh-003",
+      "vin": "MAT612345S9988773",
+      "branch_id": "33333333-3333-3333-3333-333333333331",
+      "issued_by": "a0000000-0000-0000-0000-000000000003",
+      "verification_qr_token": "QR-CRV-88773-VERIFIED",
+      "issued_at": "2026-09-22T10:04:58.253Z"
+    },
+    {
+      "id": "cert-002",
+      "certificate_number": "CERT-TATA-88774",
+      "vehicle_id": "veh-004",
+      "vin": "MAT612345S9988774",
+      "branch_id": "33333333-3333-3333-3333-333333333331",
+      "issued_by": "a0000000-0000-0000-0000-000000000003",
+      "verification_qr_token": "QR-NEX-88774-VERIFIED",
+      "issued_at": "2026-09-21T10:04:58.253Z"
+    }
+  ],
+  "qa_reviews": [],
+  "pdi_sessions": [],
+  "yard_inward_entries": []
+}

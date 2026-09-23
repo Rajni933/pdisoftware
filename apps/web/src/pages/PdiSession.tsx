@@ -5,6 +5,9 @@ import {
   Camera, Video, Upload, Trash2, StopCircle, FolderOpen, AlertCircle
 } from 'lucide-react';
 import { Panel, Badge, Bar } from '../components/ui/primitives';
+import { supabase } from '../lib/supabase';
+import { fetchVehicles } from '../services/dataService';
+import { useAuth } from '../context/AuthContext';
 
 interface ChecklistItem {
   id: string;
@@ -64,10 +67,37 @@ const compressImage = async (file: File): Promise<string> => {
 };
 
 export const PdiSessionPage: React.FC = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const [vehicle, setVehicle] = useState<any | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [filterMode, setFilterMode] = useState<'ALL' | 'PENDING' | 'FAILED'>('ALL');
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadVehicle = async () => {
+      try {
+        const cleanId = (id || '').trim();
+        const { data: dbData } = await supabase
+          .from('vehicles')
+          .select('*')
+          .or(`id.eq.${cleanId},vin.eq.${cleanId}`);
+        if (dbData && dbData.length > 0) {
+          if (isMounted) setVehicle(dbData[0]);
+          return;
+        }
+        const allVehicles = await fetchVehicles();
+        const found = allVehicles.find(v => v.id === cleanId || v.vin === cleanId);
+        if (isMounted) setVehicle(found || null);
+      } catch (e) {
+        console.warn('Error loading vehicle for PDI session:', e);
+      }
+    };
+    loadVehicle();
+    return () => { isMounted = false; };
+  }, [id]);
 
   // Camera & Video Capture Modal State
   const [mediaModal, setMediaModal] = useState<{
@@ -510,6 +540,64 @@ export const PdiSessionPage: React.FC = () => {
     );
   }
 
+  const handleSubmitPdi = async () => {
+    if (answeredCount < totalCount) {
+      const confirmSubmit = window.confirm(`You have completed ${answeredCount} of ${totalCount} checkpoints. Do you want to submit anyway?`);
+      if (!confirmSubmit) return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const targetVin = vehicle?.vin || id;
+      const targetVehicleId = vehicle?.id || id;
+      const targetStatus = failedCount > 0 ? 'DEFECTS_FLAGGED' : 'QA_PENDING';
+
+      // 1. Update vehicle status in Supabase
+      await supabase
+        .from('vehicles')
+        .update({ 
+          status: targetStatus,
+          pdi_date: new Date().toISOString()
+        })
+        .eq('vin', targetVin);
+
+      // 2. Insert any defects into repair_tickets
+      const failedItems = Object.entries(responses).filter(([_, r]) => r.status === 'FAIL');
+      for (const [itemId, r] of failedItems) {
+        const matchingItem = allItems.find(i => i.id === itemId);
+        try {
+          await supabase.from('repair_tickets').insert({
+            vehicle_id: targetVehicleId,
+            vin: targetVin,
+            model: vehicle?.model || 'Vehicle',
+            area: matchingItem?.title || 'General Checkpoint',
+            severity: r.severity || 'MINOR',
+            description: r.defectNote || 'Defect flagged during PDI inspection',
+            status: 'OPEN',
+            assigned_to: 'Workshop Technician',
+            bay: vehicle?.location || 'Bay 1'
+          });
+        } catch (e) {}
+      }
+
+      // 3. Dispatch stock update for instant UI reactivity
+      window.dispatchEvent(new Event('stock-updated'));
+      setIsSubmitted(true);
+    } catch (e) {
+      console.error('Error submitting PDI session:', e);
+      setIsSubmitted(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const brandName = vehicle?.brand || (vehicle?.vin?.startsWith('MAL') ? 'HYUNDAI' : 'TATA');
+  const vehicleVin = vehicle?.vin || id || 'VIN-PENDING';
+  const vehicleModel = vehicle?.model || 'OEM Vehicle';
+  const vehicleVariant = vehicle?.variant || 'Standard Variant';
+  const vehicleYard = vehicle?.location || 'Central Yard • Bay 1';
+  const inspectorDisplay = user?.userName ? `${user.userName} (${user.employeeId || 'STAFF'})` : 'PDI Quality Inspector';
+
   return (
     <div className="max-w-[1400px] mx-auto space-y-4 pb-20 select-none">
       
@@ -527,14 +615,14 @@ export const PdiSessionPage: React.FC = () => {
 
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge tone="accent">Tata PDI Sheet</Badge>
-                <span className="text-xs font-mono text-ink-3 font-medium">VIN: MAT612345S9988776</span>
+                <Badge tone="accent">{brandName} PDI Sheet</Badge>
+                <span className="text-xs font-mono text-ink-3 font-medium">VIN: {vehicleVin}</span>
               </div>
               <h1 className="text-base sm:text-lg font-semibold tracking-[-0.011em] text-ink">
-                Tata Safari Accomplished Plus 6S (Dark Edition)
+                {vehicleModel} {vehicleVariant}
               </h1>
               <p className="text-xs text-ink-3">
-                Stockyard: Pune Yard (Bay 4) • Inspector: Vikram Malhotra (DG002)
+                Stockyard: {vehicleYard} • Inspector: {inspectorDisplay}
               </p>
             </div>
           </div>
@@ -550,11 +638,12 @@ export const PdiSessionPage: React.FC = () => {
             </div>
 
             <button
-              onClick={() => setIsSubmitted(true)}
-              className="h-8 px-3.5 bg-accent hover:bg-accent-600 text-white text-xs font-semibold rounded shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+              onClick={handleSubmitPdi}
+              disabled={isSubmitting}
+              className="h-8 px-3.5 bg-accent hover:bg-accent-600 text-white text-xs font-semibold rounded shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-white/90" />
-              <span>Submit for QA</span>
+              <span>{isSubmitting ? 'Submitting...' : 'Submit for QA'}</span>
             </button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-﻿import { z } from 'zod';
+import { z } from 'zod';
 
 export const UserRoleSchema = z.enum([
   'SUPER_ADMIN',
@@ -117,3 +117,32 @@ export const PaginationQuerySchema = z.object({
   status: VehicleStatusSchema.optional(),
   model: z.string().optional(),
 });
+
+export const CreateBookingSchema = z.object({
+  receiptNo: z.string().min(1, 'Receipt number is required'),
+  customerName: z.string().min(1, 'Customer name is required'),
+  mobileNumber: z.string().min(10, 'Mobile number must be at least 10 digits'),
+  city: z.string().optional(),
+  brand: z.string().default('Tata Motors'),
+  model: z.string().min(1, 'Model is required'),
+  variant: z.string().min(1, 'Variant is required'),
+  colour: z.string().min(1, 'Colour is required'),
+  salesConsultant: z.string().optional(),
+  financierName: z.string().optional(),
+  exShowroom: z.number().nonnegative().default(0),
+  net: z.number().nonnegative().default(0),
+  total: z.number().nonnegative().default(0),
+  allocatedVinNo: z.string().optional().nullable(),
+});
+
+export const CreateChallanSchema = z.object({
+  challanNo: z.string().min(1, 'Challan number is required'),
+  vinNo: z.string().min(1, 'VIN number is required'),
+  customerName: z.string().min(1, 'Customer name is required'),
+  mobileNo: z.string().optional(),
+  model: z.string().min(1, 'Model is required'),
+  variant: z.string().min(1, 'Variant is required'),
+  colour: z.string().min(1, 'Colour is required'),
+  total: z.number().nonnegative().default(0),
+});
+

@@ -77,19 +77,6 @@ export interface AuthUser {
   hasDualBrandAccess?: boolean;
 }
 
-const DEFAULT_ADMIN: AuthUser = {
-  id: '00000000-0000-0000-0000-000000000001',
-  employeeId: 'DG001',
-  userCode: 'DG001',
-  userName: 'System Administrator',
-  email: 'admin@dhootgroup.com',
-  role: 'SYSTEM_ADMIN',
-  designation: 'General Manager',
-  organizationId: 'ALL',
-  brand: 'ALL',
-  hasDualBrandAccess: true,
-};
-
 interface AuthContextType {
   user: AuthUser | null;
   token: string | null;

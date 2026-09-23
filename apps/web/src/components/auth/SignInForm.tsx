@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { TextField, PasswordField, OtpInput, Countdown, Button, Banner } from '@autoprime/ui';
-import { Lock, Smartphone, Fingerprint, HelpCircle, X } from 'lucide-react';
+import { Lock, Smartphone, Fingerprint, HelpCircle, X, User, ArrowRight } from 'lucide-react';
 import { getApiUrl } from '../../utils/apiConfig';
 import { supabase } from '../../lib/supabase';
 
@@ -13,6 +13,7 @@ export interface SignInFormProps {
   fieldSize?: 'sm' | 'md' | 'lg';
   sessionExpired?: boolean;
   onSuccess?: (user: any) => void;
+  onErrorChange?: (err: string | null) => void;
   adminContact?: {
     name: string;
     designation: string;
@@ -25,6 +26,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
   fieldSize = 'sm',
   sessionExpired = false,
   onSuccess,
+  onErrorChange,
   adminContact = {
     name: 'Sunil Jani',
     designation: 'System Administrator',
@@ -35,10 +37,15 @@ export const SignInForm: React.FC<SignInFormProps> = ({
   const { login } = useAuth();
 
   const [mode, setMode] = useState<AuthMode>(initialMode);
-  const [employeeId, setEmployeeId] = useState('100482');
-  const [password, setPassword] = useState('pdi123456');
+  const [employeeId, setEmployeeId] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const setAuthError = (err: string | null) => {
+    setError(err);
+    onErrorChange?.(err);
+  };
   const [attemptsLeft, setAttemptsLeft] = useState(5);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -84,7 +91,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
     if (!employeeId.trim() || !password || isOffline || loading) return;
 
     setLoading(true);
-    setError(null);
+    setAuthError(null);
 
     const cleanUser = employeeId.trim();
 
@@ -92,26 +99,45 @@ export const SignInForm: React.FC<SignInFormProps> = ({
       let authUser: any = null;
       let token = '';
 
-      // 1. Try API Worker login endpoint
+      // 1. Direct PostgreSQL Database RPC Authentication
       try {
-        const res = await fetch(getApiUrl('/api/v1/auth/login'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: cleanUser, password }),
+        const { data: rpcRes, error: rpcErr } = await (supabase as any).rpc('authenticate_user', {
+          p_identifier: cleanUser,
+          p_password: password
         });
 
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && json.data) {
-            authUser = json.data.user;
-            token = json.data.token;
-          }
+        if (!rpcErr && rpcRes && rpcRes.success && rpcRes.user) {
+          authUser = rpcRes.user;
+          token = rpcRes.token;
+        } else if (rpcRes && !rpcRes.success && rpcRes.message) {
+          console.warn('Database auth rejected:', rpcRes.message);
         }
-      } catch {
-        // Fallback to direct supabase DB
+      } catch (rpcErr) {
+        console.warn('Database RPC notice:', rpcErr);
       }
 
-      // 2. Direct Supabase query fallback
+      // 2. Try API Worker login endpoint if worker is active
+      if (!authUser) {
+        try {
+          const res = await fetch(getApiUrl('/api/v1/auth/login'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: cleanUser, password }),
+          });
+
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.data) {
+              authUser = json.data.user;
+              token = json.data.token;
+            }
+          }
+        } catch {
+          // Worker offline
+        }
+      }
+
+      // 3. Direct Supabase query fallback (only if user record has matching password)
       if (!authUser) {
         const { data: users, error: dbErr } = await supabase
           .from('users')
@@ -121,8 +147,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
 
         if (!dbErr && users && users.length > 0) {
           const user = users[0];
-          const validPassword = user.password_hash || 'Dhootgroup@123';
-          if (password === validPassword || password === 'Dhootgroup@123') {
+          if (user.password_hash && password === user.password_hash) {
             authUser = {
               id: user.id,
               userCode: user.user_code || user.employee_id,
@@ -139,50 +164,6 @@ export const SignInForm: React.FC<SignInFormProps> = ({
         }
       }
 
-      // 3. Fallback demo mock credentials for verification testing
-      if (!authUser) {
-        if (cleanUser === '100482' && (password === 'Pass1234' || password === 'Dhootgroup@123' || password === 'pdi123456')) {
-          authUser = {
-            id: 'demo-user-100482',
-            userCode: '100482',
-            employeeId: '100482',
-            userName: 'R. Meena',
-            email: 'r.meena@autoprime.in',
-            role: 'PDI_ENGINEER',
-            organizationId: '11111111-1111-1111-1111-111111111111',
-            brand: 'DHOOT-TATA',
-            phone: '9876544821',
-          };
-          token = `jwt_demo_100482_${Date.now()}`;
-        } else if ((cleanUser === 'QA-MANAGER' || cleanUser === 'QA-01') && (password === 'Pass1234' || password === 'Dhootgroup@123')) {
-          authUser = {
-            id: 'demo-qa-manager',
-            userCode: 'QA-01',
-            employeeId: 'QA-MANAGER',
-            userName: 'Sunil Jani',
-            email: 's.jani@autoprime.in',
-            role: 'QA_MANAGER',
-            organizationId: '11111111-1111-1111-1111-111111111111',
-            brand: 'DHOOT-TATA',
-            phone: '9876544821',
-          };
-          token = `jwt_demo_qa_${Date.now()}`;
-        } else if ((cleanUser === 'ADMIN' || cleanUser === 'ADMIN-01') && (password === 'Pass1234' || password === 'Dhootgroup@123')) {
-          authUser = {
-            id: 'demo-admin-01',
-            userCode: 'ADMIN-01',
-            employeeId: 'ADMIN-01',
-            userName: 'Vikram Dhoot',
-            email: 'v.dhoot@autoprime.in',
-            role: 'BRANCH_MANAGER',
-            organizationId: '11111111-1111-1111-1111-111111111111',
-            brand: 'DHOOT-TATA',
-            phone: '9876544821',
-          };
-          token = `jwt_demo_admin_${Date.now()}`;
-        }
-      }
-
       if (!authUser) {
         // Failed credentials — real attempt counter decrement
         const nextAttempts = attemptsLeft - 1;
@@ -193,7 +174,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           return;
         }
 
-        setError(`Employee ID or password is incorrect. ${nextAttempts} attempts left before the account locks.`);
+        setAuthError(`Employee ID or password is incorrect. ${nextAttempts} attempts left before the account locks.`);
         return;
       }
 
@@ -223,7 +204,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
       onSuccess?.(authUser);
       navigate('/dashboard');
     } catch {
-      setError('Connection error. Could not verify credentials. Check connection and try again.');
+      setAuthError('Connection error. Could not verify credentials. Check connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -496,30 +477,38 @@ export const SignInForm: React.FC<SignInFormProps> = ({
         </div>
       )}
 
-      {error && (
-        <div className="mb-[var(--space-4,16px)]" role="alert">
-          <Banner
-            variant="danger"
-            title="Authentication failed"
-            description={error}
-          />
+      {error && !onErrorChange && (
+        <div
+          role="alert"
+          style={{
+            background: 'var(--auth-error-bg)',
+            border: '1px solid var(--auth-error-border)',
+            color: 'var(--auth-error-fg)',
+            padding: '8px 12px',
+            borderRadius: '6px',
+            fontSize: '13px',
+            lineHeight: '18px',
+            marginBottom: '16px',
+          }}
+        >
+          {error}
         </div>
       )}
 
       <form onSubmit={handleSignInSubmit} noValidate>
         <TextField
           id="signin-employee-id"
-          label="Employee ID"
+          label="Employee ID / User Code"
           name="username"
           value={employeeId}
           onChange={(e) => setEmployeeId(e.target.value)}
-          placeholder="100482"
+          placeholder="e.g. ADMIN01, PDI01"
           autoComplete="username"
-          inputMode="numeric"
           isMono={true}
           autoFocus={fieldSize !== 'lg'}
-          fieldSize={fieldSize}
+          fieldSize="md"
           disabled={loading}
+          startAdornment={<User className="w-[18px] h-[18px] text-[rgba(255,255,255,0.7)]" strokeWidth={1.5} />}
         />
 
         <PasswordField
@@ -528,9 +517,20 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           name="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          fieldSize={fieldSize}
+          fieldSize="md"
           disabled={loading}
+          startAdornment={<Lock className="w-[18px] h-[18px] text-[rgba(255,255,255,0.7)]" strokeWidth={1.5} />}
         />
+
+        <div className="flex items-center justify-end -mt-[var(--space-2,8px)] mb-[var(--space-4,16px)]">
+          <button
+            type="button"
+            onClick={() => setShowForgotModal(true)}
+            className="text-[13px] font-[var(--fw-medium,500)] text-[var(--auth-brand-link)] hover:underline bg-transparent border-0 cursor-pointer p-0 auth-forgot-link"
+          >
+            Forgot password?
+          </button>
+        </div>
 
         {isOffline && (
           <p className="text-[var(--t-caption-size,0.75rem)] leading-[var(--t-caption-lh,18px)] text-[var(--color-warning)] mb-[var(--space-3,12px)]" role="status">
@@ -538,24 +538,15 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           </p>
         )}
 
-        <div className="flex items-center justify-start mt-[var(--space-2,8px)] mb-[var(--space-3,12px)]">
-          <button
-            type="button"
-            onClick={() => setShowForgotModal(true)}
-            className="text-[13px] font-[var(--fw-medium,500)] text-[var(--color-action)] hover:underline bg-transparent border-0 cursor-pointer p-0 auth-forgot-link"
-          >
-            Forgot password?
-          </button>
-        </div>
-
         <Button
           type="submit"
           variant="primary"
-          size={fieldSize === 'lg' ? 'xl' : fieldSize === 'md' ? 'lg' : 'md'}
+          size="lg"
           isLoading={loading}
           loadingText="Signing in…"
           disabled={loading || !employeeId.trim() || !password || isOffline}
-          className="w-full mt-[var(--space-1,4px)]"
+          rightIcon={<ArrowRight className="w-[18px] h-[18px]" strokeWidth={2} />}
+          className="w-full mt-[var(--space-1,4px)] auth-submit-btn"
         >
           Sign in
         </Button>

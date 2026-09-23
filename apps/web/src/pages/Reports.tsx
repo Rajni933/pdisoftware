@@ -1,150 +1,276 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
-import { PageHeader } from '../components/ui/primitives';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getBookingsForBrand } from '../data/seedData';
+import { 
+  TrendingUp, BookOpen, ShoppingCart, FileText, Car, Ban, Store, Fuel 
+} from 'lucide-react';
 
-// --- TABLE COMPONENTS ---
+/* -------------------------------------------------------------------------- */
+/* Theme Styling Configuration for Colored Report Cards                       */
+/* -------------------------------------------------------------------------- */
+const THEME_CONFIG = {
+  blue: {
+    headerBg: 'bg-blue-600',
+    headerText: 'text-white',
+    cardBorder: 'border-blue-200/70',
+    tableHeaderBg: 'bg-blue-50/70',
+    tableHeaderText: 'text-blue-950 font-bold',
+    totalBg: 'bg-blue-50/30 font-bold text-ink',
+  },
+  green: {
+    headerBg: 'bg-emerald-600',
+    headerText: 'text-white',
+    cardBorder: 'border-emerald-200/70',
+    tableHeaderBg: 'bg-emerald-50/70',
+    tableHeaderText: 'text-emerald-950 font-bold',
+    totalBg: 'bg-emerald-50/30 font-bold text-ink',
+  },
+  purple: {
+    headerBg: 'bg-purple-600',
+    headerText: 'text-white',
+    cardBorder: 'border-purple-200/70',
+    tableHeaderBg: 'bg-purple-50/70',
+    tableHeaderText: 'text-purple-950 font-bold',
+    totalBg: 'bg-purple-50/30 font-bold text-ink',
+  },
+  orange: {
+    headerBg: 'bg-amber-600',
+    headerText: 'text-white',
+    cardBorder: 'border-amber-200/70',
+    tableHeaderBg: 'bg-amber-50/70',
+    tableHeaderText: 'text-amber-950 font-bold',
+    totalBg: 'bg-amber-50/30 font-bold text-ink',
+  },
+  teal: {
+    headerBg: 'bg-teal-700',
+    headerText: 'text-white',
+    cardBorder: 'border-teal-200/70',
+    tableHeaderBg: 'bg-teal-50/70',
+    tableHeaderText: 'text-teal-950 font-bold',
+    totalBg: 'bg-teal-50/30 font-bold text-ink',
+  },
+};
 
-const BaseTable = ({ title, headers, rows, renderRow, totalRow, headerColor = 'bg-warn-soft' }) => (
-  <div className="border border-accent-line overflow-hidden mb-6">
-    <div className="bg-ok-soft text-ok text-center font-bold text-sm py-1 border-b border-accent-line">
-      {title}
-    </div>
-    <div className="overflow-x-auto">
-      <table className="w-full text-center border-collapse whitespace-nowrap">
-        <thead>
-          <tr className={`${headerColor} border-b border-accent-line text-xs`}>
-            {headers.map((h, i) => (
-              <th key={i} className={`py-1 px-2 ${i !== headers.length - 1 ? 'border-r border-accent-line' : ''}`}>{h}</th>
+/* -------------------------------------------------------------------------- */
+/* CM vs LM + CM vs LYSM Comparison Table Card                                */
+/* -------------------------------------------------------------------------- */
+interface CmLmLysmCardProps {
+  title: string;
+  type: string;
+  theme: 'blue' | 'green' | 'purple' | 'orange';
+  icon: React.ReactNode;
+  badgeText: string;
+  badgeIcon: React.ReactNode;
+  data: any[];
+  total: any;
+}
+
+const CmLmLysmCard: React.FC<CmLmLysmCardProps> = ({
+  title,
+  type,
+  theme,
+  icon,
+  badgeText,
+  badgeIcon,
+  data,
+  total,
+}) => {
+  const cfg = THEME_CONFIG[theme];
+  const typeHeaderColor = theme === 'orange' ? 'text-amber-700 font-bold' : cfg.tableHeaderText;
+
+  return (
+    <div className={`bg-surface border ${cfg.cardBorder} rounded-xl overflow-hidden shadow-xs flex flex-col`}>
+      {/* Top Colored Banner */}
+      <div className={`${cfg.headerBg} px-4 py-2.5 flex items-center justify-between gap-3 text-white`}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white shrink-0">
+            {icon}
+          </div>
+          <h2 className="text-xs sm:text-sm font-bold tracking-tight">{title}</h2>
+        </div>
+        <div className="px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-semibold flex items-center gap-1.5 shrink-0">
+          {badgeIcon}
+          <span>{badgeText}</span>
+        </div>
+      </div>
+
+      {/* Table Content */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-center border-collapse text-xs whitespace-nowrap">
+          <thead>
+            <tr className={`${cfg.tableHeaderBg} border-b border-line text-xs`}>
+              <th className={`py-2 px-3 border-r border-line font-bold ${typeHeaderColor}`}>{type}</th>
+              <th className={`py-2 px-3 border-r border-line font-bold ${cfg.tableHeaderText}`}>LM</th>
+              <th className={`py-2 px-3 border-r border-line font-bold ${cfg.tableHeaderText}`}>CM</th>
+              <th className={`py-2 px-3 border-r border-line font-bold ${cfg.tableHeaderText}`}>%</th>
+              <th className={`py-2 px-3 border-r border-line font-bold ${cfg.tableHeaderText}`}>LYSM</th>
+              <th className={`py-2 px-3 border-r border-line font-bold ${cfg.tableHeaderText}`}>CM</th>
+              <th className={`py-2 px-3 font-bold ${cfg.tableHeaderText}`}>%</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line text-ink-2">
+            {data.map((row, idx) => (
+              <tr key={idx} className="hover:bg-canvas/80 bg-white transition-colors">
+                <td className="py-2 px-3 border-r border-line text-ink font-semibold">{row.name}</td>
+                <td className="py-2 px-3 border-r border-line font-mono tnum">{row.lm}</td>
+                <td className="py-2 px-3 border-r border-line font-mono tnum">{row.cm1}</td>
+                <td className="py-2 px-3 border-r border-line font-mono tnum">{row.pct1}</td>
+                <td className="py-2 px-3 border-r border-line font-mono tnum">{row.lysm}</td>
+                <td className="py-2 px-3 border-r border-line font-mono tnum">{row.cm2}</td>
+                <td className="py-2 px-3 font-mono tnum">{row.pct2}</td>
+              </tr>
             ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, idx) => renderRow(row, idx))}
-          {totalRow}
-        </tbody>
-      </table>
+            {/* Total Row */}
+            <tr className={`${cfg.totalBg} border-t border-line`}>
+              <td className="py-2 px-3 border-r border-line text-ink font-bold">{total?.name || 'Total'}</td>
+              <td className="py-2 px-3 border-r border-line font-mono font-bold tnum">{total?.lm ?? 0}</td>
+              <td className="py-2 px-3 border-r border-line font-mono font-bold tnum">{total?.cm1 ?? 0}</td>
+              <td className="py-2 px-3 border-r border-line font-mono font-bold tnum">{total?.pct1 ?? '0%'}</td>
+              <td className="py-2 px-3 border-r border-line font-mono font-bold tnum">{total?.lysm ?? 0}</td>
+              <td className="py-2 px-3 border-r border-line font-mono font-bold tnum">{total?.cm2 ?? 0}</td>
+              <td className="py-2 px-3 font-mono font-bold tnum">{total?.pct2 ?? '0%'}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
-const CmLmLysmTable = ({ title, type, data, total }) => (
-  <BaseTable
-    title={title}
-    headers={[type, 'LM', 'CM', '%', 'LYSM', 'CM', '%']}
-    rows={data}
-    renderRow={(row, idx) => (
-      <tr key={idx} className="border-b border-accent-line bg-white text-xs">
-        <td className="py-1 px-2 border-r border-accent-line">{row.name}</td>
-        <td className="py-1 px-2 border-r border-accent-line">{row.lm}</td>
-        <td className="py-1 px-2 border-r border-accent-line">{row.cm1}</td>
-        <td className="py-1 px-2 border-r border-accent-line">{row.pct1}</td>
-        <td className="py-1 px-2 border-r border-accent-line">{row.lysm}</td>
-        <td className="py-1 px-2 border-r border-accent-line">{row.cm2}</td>
-        <td className="py-1 px-2">{row.pct2}</td>
-      </tr>
-    )}
-    totalRow={
-      <tr className="bg-warn-soft font-bold text-xs">
-        <td className="py-1 px-2 border-r border-accent-line">{total.name}</td>
-        <td className="py-1 px-2 border-r border-accent-line">{total.lm}</td>
-        <td className="py-1 px-2 border-r border-accent-line">{total.cm1}</td>
-        <td className="py-1 px-2 border-r border-accent-line">{total.pct1}</td>
-        <td className="py-1 px-2 border-r border-accent-line">{total.lysm}</td>
-        <td className="py-1 px-2 border-r border-accent-line">{total.cm2}</td>
-        <td className="py-1 px-2">{total.pct2}</td>
-      </tr>
-    }
-  />
-);
+/* -------------------------------------------------------------------------- */
+/* Fuel & Product Wise Sub-Card Component                                     */
+/* -------------------------------------------------------------------------- */
+interface FuelSubCardProps {
+  title: string;
+  rowLabel: string;
+  theme: 'teal' | 'blue';
+  data: any[];
+  total: any;
+  includeAmt?: boolean;
+}
 
-const FuelTable = ({ title, rowLabel, data, total, includeAmt = true }) => (
-  <BaseTable
-    title={title}
-    headers={includeAmt ? [rowLabel, 'CNG', 'CNG AMT', 'Diesel', 'EV', 'Petrol', 'Total'] : [rowLabel, 'CNG', 'Diesel', 'EV', 'Petrol', 'Total']}
-    rows={data}
-    renderRow={(row, idx) => (
-      <tr key={idx} className="border-b border-accent-line bg-white text-xs">
-        <td className="py-1 px-2 border-r border-accent-line">{row.name}</td>
-        <td className="py-1 px-2 border-r border-accent-line">{row.cng || ''}</td>
-        {includeAmt && <td className="py-1 px-2 border-r border-accent-line">{row.cngAmt || ''}</td>}
-        <td className="py-1 px-2 border-r border-accent-line">{row.diesel || ''}</td>
-        <td className="py-1 px-2 border-r border-accent-line">{row.ev || ''}</td>
-        <td className="py-1 px-2 border-r border-accent-line">{row.petrol || ''}</td>
-        <td className="py-1 px-2 bg-warn-soft font-bold">{row.total || ''}</td>
-      </tr>
-    )}
-    totalRow={
-      <tr className="bg-warn-soft font-bold text-xs border-t-2 border-accent-line">
-        <td className="py-1 px-2 border-r border-accent-line">{total.name}</td>
-        <td className="py-1 px-2 border-r border-accent-line">{total.cng || ''}</td>
-        {includeAmt && <td className="py-1 px-2 border-r border-accent-line">{total.cngAmt || ''}</td>}
-        <td className="py-1 px-2 border-r border-accent-line">{total.diesel || ''}</td>
-        <td className="py-1 px-2 border-r border-accent-line">{total.ev || ''}</td>
-        <td className="py-1 px-2 border-r border-accent-line">{total.petrol || ''}</td>
-        <td className="py-1 px-2">{total.total || ''}</td>
-      </tr>
-    }
-  />
-);
+const FuelSubCard: React.FC<FuelSubCardProps> = ({
+  title,
+  rowLabel,
+  theme,
+  data,
+  total,
+  includeAmt = true,
+}) => {
+  const cfg = THEME_CONFIG[theme];
 
-const EbrTeamTable = ({ title, branchName, groups, isEv = false }) => {
+  return (
+    <div className={`bg-surface border ${cfg.cardBorder} rounded-xl overflow-hidden shadow-xs flex flex-col`}>
+      {/* Sub Header */}
+      <div className={`${cfg.headerBg} px-4 py-2 flex items-center gap-2.5 text-white`}>
+        <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white shrink-0">
+          <Fuel className="w-3.5 h-3.5" />
+        </div>
+        <h3 className="text-xs font-bold tracking-tight">{title}</h3>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-center border-collapse text-xs whitespace-nowrap">
+          <thead>
+            <tr className={`${cfg.tableHeaderBg} border-b border-line text-xs font-bold ${cfg.tableHeaderText}`}>
+              <th className="py-2 px-3 border-r border-line">{rowLabel}</th>
+              <th className="py-2 px-3 border-r border-line">CNG</th>
+              {includeAmt && <th className="py-2 px-3 border-r border-line">CNG AMT</th>}
+              <th className="py-2 px-3 border-r border-line">Diesel</th>
+              <th className="py-2 px-3 border-r border-line">EV</th>
+              <th className="py-2 px-3 border-r border-line">Petrol</th>
+              <th className="py-2 px-3">Total</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line text-ink-2">
+            {data.map((row, idx) => (
+              <tr key={idx} className="hover:bg-canvas/80 bg-white transition-colors">
+                <td className="py-2 px-3 border-r border-line text-ink font-semibold">{row.name}</td>
+                <td className="py-2 px-3 border-r border-line font-mono tnum">{row.cng || ''}</td>
+                {includeAmt && <td className="py-2 px-3 border-r border-line font-mono tnum">{row.cngAmt || ''}</td>}
+                <td className="py-2 px-3 border-r border-line font-mono tnum">{row.diesel || ''}</td>
+                <td className="py-2 px-3 border-r border-line font-mono tnum">{row.ev || ''}</td>
+                <td className="py-2 px-3 border-r border-line font-mono tnum">{row.petrol || ''}</td>
+                <td className="py-2 px-3 font-mono font-bold text-ink tnum">{row.total || ''}</td>
+              </tr>
+            ))}
+            {/* Total Row */}
+            <tr className={`${cfg.totalBg} border-t border-line`}>
+              <td className="py-2 px-3 border-r border-line text-ink font-bold">{total?.name || 'Total'}</td>
+              <td className="py-2 px-3 border-r border-line font-mono tnum">{total?.cng || ''}</td>
+              {includeAmt && <td className="py-2 px-3 border-r border-line font-mono tnum">{total?.cngAmt || ''}</td>}
+              <td className="py-2 px-3 border-r border-line font-mono tnum">{total?.diesel || ''}</td>
+              <td className="py-2 px-3 border-r border-line font-mono tnum">{total?.ev || ''}</td>
+              <td className="py-2 px-3 border-r border-line font-mono tnum">{total?.petrol || ''}</td>
+              <td className="py-2 px-3 font-mono font-bold text-ink tnum">{total?.total || ''}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+/* -------------------------------------------------------------------------- */
+/* EBR Team Table Component                                                   */
+/* -------------------------------------------------------------------------- */
+const EbrTeamTable = ({ title, branchName, groups, isEv = false }: { title: string; branchName: string; groups: any[]; isEv?: boolean }) => {
   let grandEnq = 0, grandBk = 0, grandRt = 0;
   groups.forEach(g => {
     grandEnq += g.enquiries;
     grandBk += g.bookings;
     grandRt += g.retail;
   });
-  const grandEb = grandEnq ? Math.round((grandBk/grandEnq)*100)+'%' : '0%';
-  const grandBr = grandBk ? Math.round((grandRt/grandBk)*100)+'%' : '0%';
+  const grandEb = grandEnq ? Math.round((grandBk / grandEnq) * 100) + '%' : '0%';
+  const grandBr = grandBk ? Math.round((grandRt / grandBk) * 100) + '%' : '0%';
 
-  const topHeaderColor = isEv ? 'bg-accent text-white' : 'bg-warn-soft text-black';
-  const subHeaderColor = isEv ? 'bg-accent-soft text-accent' : 'bg-accent-soft text-accent';
+  const topHeaderColor = isEv ? 'bg-teal-700 text-white' : 'bg-blue-600 text-white';
 
   return (
-    <div className="border border-accent-line overflow-hidden mb-6">
-      <div className={`${topHeaderColor} text-center font-bold text-sm py-1 border-b border-accent-line`}>
+    <div className="bg-surface border border-line rounded-xl overflow-hidden shadow-xs mb-6">
+      <div className={`${topHeaderColor} text-center font-bold text-xs sm:text-sm py-2 px-4 border-b border-line`}>
         {title}
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-center border-collapse whitespace-nowrap">
+        <table className="w-full text-center border-collapse text-xs whitespace-nowrap">
           <thead>
-            <tr className={`${subHeaderColor} border-b border-accent-line text-xs font-bold`}>
-              <th className="py-1 px-2 border-r border-accent-line">Team</th>
-              <th className="py-1 px-2 border-r border-accent-line">Enquiries</th>
-              <th className="py-1 px-2 border-r border-accent-line">Bookings</th>
-              <th className="py-1 px-2 border-r border-accent-line">Retail</th>
-              <th className="py-1 px-2 border-r border-accent-line">EB%</th>
-              <th className="py-1 px-2">BR%</th>
+            <tr className="bg-slate-50 text-ink border-b border-line text-xs font-bold">
+              <th className="py-2 px-3 border-r border-line">Team</th>
+              <th className="py-2 px-3 border-r border-line">Enquiries</th>
+              <th className="py-2 px-3 border-r border-line">Bookings</th>
+              <th className="py-2 px-3 border-r border-line">Retail</th>
+              <th className="py-2 px-3 border-r border-line">EB%</th>
+              <th className="py-2 px-3">BR%</th>
             </tr>
           </thead>
-          <tbody>
-            <tr className="bg-warn-soft font-bold text-xs border-b border-accent-line">
-              <td className="py-1 px-2 border-r border-accent-line">{branchName}</td>
-              <td className="py-1 px-2 border-r border-accent-line">{grandEnq}</td>
-              <td className="py-1 px-2 border-r border-accent-line">{grandBk}</td>
-              <td className="py-1 px-2 border-r border-accent-line">{grandRt}</td>
-              <td className="py-1 px-2 border-r border-accent-line">{grandEb}</td>
-              <td className="py-1 px-2">{grandBr}</td>
+          <tbody className="divide-y divide-line text-ink-2">
+            <tr className="bg-blue-50/50 font-bold text-xs border-b border-line text-ink">
+              <td className="py-2 px-3 border-r border-line">{branchName}</td>
+              <td className="py-2 px-3 border-r border-line font-mono tnum">{grandEnq}</td>
+              <td className="py-2 px-3 border-r border-line font-mono tnum">{grandBk}</td>
+              <td className="py-2 px-3 border-r border-line font-mono tnum">{grandRt}</td>
+              <td className="py-2 px-3 border-r border-line font-mono tnum">{grandEb}</td>
+              <td className="py-2 px-3 font-mono tnum">{grandBr}</td>
             </tr>
             {groups.map((g, i) => (
               <React.Fragment key={i}>
-                <tr className="bg-gray-100 font-bold text-xs border-b border-accent-line">
-                  <td className="py-1 px-2 border-r border-accent-line text-left pl-4">{g.leaderName} Total</td>
-                  <td className="py-1 px-2 border-r border-accent-line">{g.enquiries}</td>
-                  <td className="py-1 px-2 border-r border-accent-line">{g.bookings}</td>
-                  <td className="py-1 px-2 border-r border-accent-line">{g.retail}</td>
-                  <td className="py-1 px-2 border-r border-accent-line">{g.enquiries ? Math.round((g.bookings/g.enquiries)*100)+'%' : '0%'}</td>
-                  <td className="py-1 px-2">{g.bookings ? Math.round((g.retail/g.bookings)*100)+'%' : '0%'}</td>
+                <tr className="bg-slate-50/80 font-semibold text-xs border-b border-line text-ink">
+                  <td className="py-2 px-3 border-r border-line text-left pl-4">{g.leaderName} Total</td>
+                  <td className="py-2 px-3 border-r border-line font-mono tnum">{g.enquiries}</td>
+                  <td className="py-2 px-3 border-r border-line font-mono tnum">{g.bookings}</td>
+                  <td className="py-2 px-3 border-r border-line font-mono tnum">{g.retail}</td>
+                  <td className="py-2 px-3 border-r border-line font-mono tnum">{g.enquiries ? Math.round((g.bookings / g.enquiries) * 100) + '%' : '0%'}</td>
+                  <td className="py-2 px-3 font-mono tnum">{g.bookings ? Math.round((g.retail / g.bookings) * 100) + '%' : '0%'}</td>
                 </tr>
-                {g.members.map((m, j) => (
-                  <tr key={j} className="bg-white text-xs border-b border-accent-line uppercase">
-                    <td className="py-1 px-2 border-r border-accent-line text-left pl-8">{m.name}</td>
-                    <td className="py-1 px-2 border-r border-accent-line">{m.enquiries}</td>
-                    <td className="py-1 px-2 border-r border-accent-line">{m.bookings}</td>
-                    <td className="py-1 px-2 border-r border-accent-line">{m.retail}</td>
-                    <td className="py-1 px-2 border-r border-accent-line">{m.enquiries ? Math.round((m.bookings/m.enquiries)*100)+'%' : '0%'}</td>
-                    <td className="py-1 px-2">{m.bookings ? Math.round((m.retail/m.bookings)*100)+'%' : '0%'}</td>
+                {g.members.map((m: any, j: number) => (
+                  <tr key={j} className="bg-white text-xs border-b border-line hover:bg-canvas/80">
+                    <td className="py-2 px-3 border-r border-line text-left pl-8 text-ink">{m.name}</td>
+                    <td className="py-2 px-3 border-r border-line font-mono tnum">{m.enquiries}</td>
+                    <td className="py-2 px-3 border-r border-line font-mono tnum">{m.bookings}</td>
+                    <td className="py-2 px-3 border-r border-line font-mono tnum">{m.retail}</td>
+                    <td className="py-2 px-3 border-r border-line font-mono tnum">{m.enquiries ? Math.round((m.bookings / m.enquiries) * 100) + '%' : '0%'}</td>
+                    <td className="py-2 px-3 font-mono tnum">{m.bookings ? Math.round((m.retail / m.bookings) * 100) + '%' : '0%'}</td>
                   </tr>
                 ))}
               </React.Fragment>
@@ -312,87 +438,277 @@ export const ReportsPage: React.FC = () => {
   }, [bookings]);
 
   return (
-    <div className="flex flex-col h-full bg-canvas overflow-y-auto">
-      <div className="p-4 md:p-6 lg:p-8 flex-1">
-        <PageHeader title="Reports" subtitle="View comprehensive business performance reports" />
+    <div className="flex flex-col h-full bg-canvas overflow-y-auto select-none">
+      <div className="p-4 md:p-6 lg:p-6 max-w-[1600px] mx-auto w-full flex-1 pb-20">
         
-        <div className="flex gap-4 border-b border-line mb-6 overflow-x-auto">
-          {['bookings', 'retail', 'ebr', 'ebr_ev'].map(tab => (
+        {/* =================================================================== */}
+        {/* 1. TOP HEADER BANNER (DARK NAVY WITH 4 NAVIGATION PILLS)            */}
+        {/* =================================================================== */}
+        <div className="rounded-xl bg-slate-900 text-white px-5 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-600/30 border border-blue-400/30 flex items-center justify-center text-blue-400 shrink-0">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-white tracking-tight">Reports</h1>
+              <p className="text-xs text-slate-300">View comprehensive business performance reports</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {/* Booking Reports Tab */}
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
-                activeTab === tab ? 'border-accent text-accent' : 'border-transparent text-ink-3 hover:text-ink'
+              type="button"
+              onClick={() => setActiveTab('bookings')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === 'bookings'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-300 hover:text-white hover:bg-white/10'
               }`}
             >
-              {tab === 'bookings' ? 'Booking Reports' : tab === 'retail' ? 'Retail Reports' : tab === 'ebr' ? 'EBR Reports' : 'EV EBR Reports'}
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Booking Reports</span>
             </button>
-          ))}
+
+            {/* Retail Reports Tab */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('retail')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === 'retail'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-300 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <ShoppingCart className="w-3.5 h-3.5" />
+              <span>Retail Reports</span>
+            </button>
+
+            {/* EBR Reports Tab */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('ebr')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === 'ebr'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-300 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>EBR Reports</span>
+            </button>
+
+            {/* EV EBR Reports Tab */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('ebr_ev')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === 'ebr_ev'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-300 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Car className="w-3.5 h-3.5" />
+              <span>EV EBR Reports</span>
+            </button>
+          </div>
         </div>
 
+        {/* =================================================================== */}
+        {/* 2. TAB CONTENT: BOOKING REPORTS                                    */}
+        {/* =================================================================== */}
         {activeTab === 'bookings' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <CmLmLysmTable title="Booking Report - Outlet Wise (CM Vs LM + CM Vs LYSM)" type="Branch" data={stats.branchBookingData} total={stats.branchBookingTotal} />
-              <CmLmLysmTable title="Booking Report - Model Wise (CM Vs LM + CM Vs LYSM)" type="Model" data={stats.modelBookingData} total={stats.modelBookingTotal} />
+          <div className="space-y-5">
+            {/* Row 1: Outlet Wise (Blue) & Model Wise (Green) */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+              <CmLmLysmCard
+                title="Booking Report - Outlet Wise (CM Vs LM + CM Vs LYSM)"
+                type="Branch"
+                theme="blue"
+                icon={<Car className="w-4 h-4" />}
+                badgeText="Outlet Wise"
+                badgeIcon={<Store className="w-3 h-3" />}
+                data={stats.branchBookingData}
+                total={stats.branchBookingTotal}
+              />
+              <CmLmLysmCard
+                title="Booking Report - Model Wise (CM Vs LM + CM Vs LYSM)"
+                type="Model"
+                theme="green"
+                icon={<Car className="w-4 h-4" />}
+                badgeText="Model Wise"
+                badgeIcon={<Car className="w-3 h-3" />}
+                data={stats.modelBookingData}
+                total={stats.modelBookingTotal}
+              />
             </div>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <CmLmLysmTable title="Booking Report - Outlet Wise (Excluding Cancellation)" type="Branch" data={stats.branchBookingNoCancelData} total={stats.branchBookingNoCancelTotal} />
-              <CmLmLysmTable title="Booking Report - Model Wise (Excluding Cancellation)" type="Model" data={stats.modelBookingNoCancelData} total={stats.modelBookingNoCancelTotal} />
+
+            {/* Row 2: Outlet Wise No Cancel (Purple) & Model Wise No Cancel (Orange) */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+              <CmLmLysmCard
+                title="Booking Report - Outlet Wise (Excluding Cancellation)"
+                type="Branch"
+                theme="purple"
+                icon={<Ban className="w-4 h-4" />}
+                badgeText="Outlet Wise"
+                badgeIcon={<Store className="w-3 h-3" />}
+                data={stats.branchBookingNoCancelData}
+                total={stats.branchBookingNoCancelTotal}
+              />
+              <CmLmLysmCard
+                title="Booking Report - Model Wise (Excluding Cancellation)"
+                type="Model"
+                theme="orange"
+                icon={<Ban className="w-4 h-4" />}
+                badgeText="Model Wise"
+                badgeIcon={<Car className="w-3 h-3" />}
+                data={stats.modelBookingNoCancelData}
+                total={stats.modelBookingNoCancelTotal}
+              />
             </div>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <FuelTable title="Outlet Wise & Fuel Wise Booking Report" rowLabel="Branch" data={stats.outletFuelData} total={stats.outletFuelTotal} />
-              <FuelTable title="Product & Fuel Wise Booking Report" rowLabel="Model" data={stats.productFuelData} total={stats.productFuelTotal} />
-            </div>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <FuelTable title="SM - Outlet Wise & Fuel Wise Booking Report" rowLabel="Branch" data={stats.smFuelData} total={stats.smFuelTotal} includeAmt={false} />
-              <FuelTable title="SG - Outlet Wise & Fuel Wise Booking Report" rowLabel="Branch" data={stats.sgFuelData} total={stats.sgFuelTotal} />
+
+            {/* Row 3: Fuel & Product Wise Booking Report (Teal Outer Container) */}
+            <div className="bg-surface border border-teal-200/70 rounded-xl overflow-hidden shadow-xs">
+              {/* Outer Header */}
+              <div className="bg-teal-700 px-4 py-2.5 flex items-center justify-between gap-3 text-white">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white shrink-0">
+                    <Fuel className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-xs sm:text-sm font-bold tracking-tight">Fuel &amp; Product Wise Booking Report</h2>
+                </div>
+                <div className="px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-semibold flex items-center gap-1.5 shrink-0">
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Performance Overview</span>
+                </div>
+              </div>
+
+              {/* Outer Body: 2 Sub-Cards Side by Side */}
+              <div className="p-4 bg-canvas/30 grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <FuelSubCard
+                  title="Outlet Wise & Fuel Wise Booking Report"
+                  rowLabel="Branch"
+                  theme="teal"
+                  data={stats.outletFuelData}
+                  total={stats.outletFuelTotal}
+                />
+                <FuelSubCard
+                  title="Model Wise & Fuel Wise Booking Report"
+                  rowLabel="Model"
+                  theme="blue"
+                  data={stats.productFuelData}
+                  total={stats.productFuelTotal}
+                />
+              </div>
             </div>
           </div>
         )}
 
+        {/* =================================================================== */}
+        {/* 3. TAB CONTENT: RETAIL REPORTS                                     */}
+        {/* =================================================================== */}
         {activeTab === 'retail' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <CmLmLysmTable title="Retail Report - Outlet Wise (CM Vs LM + CM Vs LYSM)" type="Branch" data={stats.branchRetailData} total={stats.branchRetailTotal} />
-              <CmLmLysmTable title="Retail Report - Model Wise (CM Vs LM + CM Vs LYSM)" type="Model" data={stats.modelRetailData} total={stats.modelRetailTotal} />
+          <div className="space-y-5">
+            {/* Row 1: Outlet Wise (Blue) & Model Wise (Green) */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+              <CmLmLysmCard
+                title="Retail Report - Outlet Wise (CM Vs LM + CM Vs LYSM)"
+                type="Branch"
+                theme="blue"
+                icon={<Car className="w-4 h-4" />}
+                badgeText="Outlet Wise"
+                badgeIcon={<Store className="w-3 h-3" />}
+                data={stats.branchRetailData}
+                total={stats.branchRetailTotal}
+              />
+              <CmLmLysmCard
+                title="Retail Report - Model Wise (CM Vs LM + CM Vs LYSM)"
+                type="Model"
+                theme="green"
+                icon={<Car className="w-4 h-4" />}
+                badgeText="Model Wise"
+                badgeIcon={<Car className="w-3 h-3" />}
+                data={stats.modelRetailData}
+                total={stats.modelRetailTotal}
+              />
             </div>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <FuelTable title="Fuel Wise Retail Report" rowLabel="Branch" data={stats.outletRetailFuelData} total={stats.outletRetailFuelTotal} includeAmt={false} />
-              <FuelTable title="Product & Fuel Wise Retail Report" rowLabel="Model" data={stats.productRetailFuelData} total={stats.productRetailFuelTotal} includeAmt={false} />
+
+            {/* Row 2: Fuel & Product Wise Retail Report */}
+            <div className="bg-surface border border-teal-200/70 rounded-xl overflow-hidden shadow-xs">
+              <div className="bg-teal-700 px-4 py-2.5 flex items-center justify-between gap-3 text-white">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white shrink-0">
+                    <Fuel className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-xs sm:text-sm font-bold tracking-tight">Fuel &amp; Product Wise Retail Report</h2>
+                </div>
+                <div className="px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-semibold flex items-center gap-1.5 shrink-0">
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Performance Overview</span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-canvas/30 grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <FuelSubCard
+                  title="Outlet Wise & Fuel Wise Retail Report"
+                  rowLabel="Branch"
+                  theme="teal"
+                  data={stats.outletRetailFuelData}
+                  total={stats.outletRetailFuelTotal}
+                  includeAmt={false}
+                />
+                <FuelSubCard
+                  title="Model Wise & Fuel Wise Retail Report"
+                  rowLabel="Model"
+                  theme="blue"
+                  data={stats.productRetailFuelData}
+                  total={stats.productRetailFuelTotal}
+                  includeAmt={false}
+                />
+              </div>
             </div>
           </div>
         )}
 
+        {/* =================================================================== */}
+        {/* 4. TAB CONTENT: EBR REPORTS                                        */}
+        {/* =================================================================== */}
         {activeTab === 'ebr' && (
-          <div className="space-y-6">
-            
+          <div className="space-y-5">
             {/* Simple EBR Outlet Wise */}
-            <div className="border border-accent-line overflow-hidden mb-6">
-              <div className="bg-warn-soft text-center font-bold text-sm py-1 border-b border-accent-line">
-                EBR Report - Outlet Wise (Simple)
+            <div className="bg-surface border border-blue-200/70 rounded-xl overflow-hidden shadow-xs">
+              <div className="bg-blue-600 px-4 py-2.5 flex items-center justify-between text-white">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white shrink-0">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-xs sm:text-sm font-bold tracking-tight">EBR Report - Outlet Wise (Simple)</h2>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-semibold">
+                  Summary
+                </span>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-center border-collapse whitespace-nowrap">
+                <table className="w-full text-center border-collapse text-xs whitespace-nowrap">
                   <thead>
-                    <tr className="bg-accent-soft text-accent border-b border-accent-line text-xs font-bold">
-                      <th className="py-1 px-2 border-r border-accent-line">Branch</th>
-                      <th className="py-1 px-2 border-r border-accent-line">Enquiries</th>
-                      <th className="py-1 px-2 border-r border-accent-line">Bookings</th>
-                      <th className="py-1 px-2 border-r border-accent-line">Retail</th>
-                      <th className="py-1 px-2 border-r border-accent-line">EB%</th>
-                      <th className="py-1 px-2">BR%</th>
+                    <tr className="bg-blue-50/70 text-blue-950 border-b border-line text-xs font-bold">
+                      <th className="py-2 px-3 border-r border-line">Branch</th>
+                      <th className="py-2 px-3 border-r border-line">Enquiries</th>
+                      <th className="py-2 px-3 border-r border-line">Bookings</th>
+                      <th className="py-2 px-3 border-r border-line">Retail</th>
+                      <th className="py-2 px-3 border-r border-line">EB%</th>
+                      <th className="py-2 px-3">BR%</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-line text-ink-2">
                     {stats.branchEbrSummary.map((br, i) => (
-                      <tr key={i} className="bg-white border-b border-accent-line text-xs font-bold">
-                        <td className="py-1 px-2 border-r border-accent-line text-left">{br.branch}</td>
-                        <td className="py-1 px-2 border-r border-accent-line">{br.enq}</td>
-                        <td className="py-1 px-2 border-r border-accent-line">{br.bk}</td>
-                        <td className="py-1 px-2 border-r border-accent-line">{br.rt}</td>
-                        <td className="py-1 px-2 border-r border-accent-line">{br.enq ? Math.round((br.bk/br.enq)*100)+'%' : '0%'}</td>
-                        <td className="py-1 px-2">{br.bk ? Math.round((br.rt/br.bk)*100)+'%' : '0%'}</td>
+                      <tr key={i} className="bg-white hover:bg-canvas/80 text-xs font-medium">
+                        <td className="py-2 px-3 border-r border-line text-ink font-semibold text-left pl-4">{br.branch}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.enq}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.bk}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.rt}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.enq ? Math.round((br.bk / br.enq) * 100) + '%' : '0%'}</td>
+                        <td className="py-2 px-3 font-mono tnum">{br.bk ? Math.round((br.rt / br.bk) * 100) + '%' : '0%'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -401,58 +717,62 @@ export const ReportsPage: React.FC = () => {
             </div>
 
             {/* EBR PV/EV Detail */}
-            <div className="border border-accent-line overflow-hidden mb-6">
-              <div className="bg-warn-soft text-center font-bold text-sm py-1 border-b border-accent-line">
-                EBR Report - Outlet Wise (PV / EV Split)
+            <div className="bg-surface border border-purple-200/70 rounded-xl overflow-hidden shadow-xs">
+              <div className="bg-purple-600 px-4 py-2.5 flex items-center justify-between text-white">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white shrink-0">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-xs sm:text-sm font-bold tracking-tight">EBR Report - Outlet Wise (PV / EV Split)</h2>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-semibold">
+                  Detailed Segment
+                </span>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-center border-collapse whitespace-nowrap">
+                <table className="w-full text-center border-collapse text-xs whitespace-nowrap">
                   <thead>
-                    <tr className="bg-accent-soft text-accent border-b border-accent-line text-xs font-bold">
-                      <th className="py-1 px-2 border-r border-accent-line" rowSpan={2}>Branch</th>
-                      <th className="py-1 px-2 border-r border-accent-line" colSpan={3}>Enquiries</th>
-                      <th className="py-1 px-2 border-r border-accent-line" colSpan={3}>Bookings</th>
-                      <th className="py-1 px-2 border-r border-accent-line" colSpan={3}>Retail</th>
-                      <th className="py-1 px-2 border-r border-accent-line" colSpan={2}>EB%</th>
-                      <th className="py-1 px-2" colSpan={2}>BR%</th>
+                    <tr className="bg-purple-50/70 text-purple-950 border-b border-line text-xs font-bold">
+                      <th className="py-2 px-3 border-r border-line" rowSpan={2}>Branch</th>
+                      <th className="py-2 px-3 border-r border-line" colSpan={3}>Enquiries</th>
+                      <th className="py-2 px-3 border-r border-line" colSpan={3}>Bookings</th>
+                      <th className="py-2 px-3 border-r border-line" colSpan={3}>Retail</th>
+                      <th className="py-2 px-3 border-r border-line" colSpan={2}>EB%</th>
+                      <th className="py-2 px-3" colSpan={2}>BR%</th>
                     </tr>
-                    <tr className="bg-accent-soft text-accent border-b border-accent-line text-xs font-bold">
-                      <th className="py-1 px-2 border-r border-accent-line border-l">PV</th>
-                      <th className="py-1 px-2 border-r border-accent-line">EV</th>
-                      <th className="py-1 px-2 border-r border-accent-line">Total</th>
-                      <th className="py-1 px-2 border-r border-accent-line">PV</th>
-                      <th className="py-1 px-2 border-r border-accent-line">EV</th>
-                      <th className="py-1 px-2 border-r border-accent-line">Total</th>
-                      <th className="py-1 px-2 border-r border-accent-line">PV</th>
-                      <th className="py-1 px-2 border-r border-accent-line">EV</th>
-                      <th className="py-1 px-2 border-r border-accent-line">Total</th>
-                      <th className="py-1 px-2 border-r border-accent-line">PV</th>
-                      <th className="py-1 px-2 border-r border-accent-line">EV</th>
-                      <th className="py-1 px-2 border-r border-accent-line">PV</th>
+                    <tr className="bg-purple-50/70 text-purple-950 border-b border-line text-xs font-bold">
+                      <th className="py-1 px-2 border-r border-line">PV</th>
+                      <th className="py-1 px-2 border-r border-line">EV</th>
+                      <th className="py-1 px-2 border-r border-line">Total</th>
+                      <th className="py-1 px-2 border-r border-line">PV</th>
+                      <th className="py-1 px-2 border-r border-line">EV</th>
+                      <th className="py-1 px-2 border-r border-line">Total</th>
+                      <th className="py-1 px-2 border-r border-line">PV</th>
+                      <th className="py-1 px-2 border-r border-line">EV</th>
+                      <th className="py-1 px-2 border-r border-line">Total</th>
+                      <th className="py-1 px-2 border-r border-line">PV</th>
+                      <th className="py-1 px-2 border-r border-line">EV</th>
+                      <th className="py-1 px-2 border-r border-line">PV</th>
                       <th className="py-1 px-2">EV</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-line text-ink-2">
                     {stats.branchEbrSummary.map((br, i) => (
-                      <tr key={i} className="bg-white border-b border-accent-line text-xs font-bold">
-                        <td className="py-1 px-2 border-r border-accent-line text-left">{br.branch}</td>
-                        <td className="py-1 px-2 border-r border-accent-line">{br.pvEnq}</td>
-                        <td className="py-1 px-2 border-r border-accent-line">{br.evEnq}</td>
-                        <td className="py-1 px-2 border-r border-accent-line">{br.enq}</td>
-                        
-                        <td className="py-1 px-2 border-r border-accent-line">{br.pvBk}</td>
-                        <td className="py-1 px-2 border-r border-accent-line">{br.evBk}</td>
-                        <td className="py-1 px-2 border-r border-accent-line">{br.bk}</td>
-                        
-                        <td className="py-1 px-2 border-r border-accent-line">{br.pvRt}</td>
-                        <td className="py-1 px-2 border-r border-accent-line">{br.evRt}</td>
-                        <td className="py-1 px-2 border-r border-accent-line">{br.rt}</td>
-
-                        <td className="py-1 px-2 border-r border-accent-line">{br.pvEnq ? Math.round((br.pvBk/br.pvEnq)*100)+'%' : '0%'}</td>
-                        <td className="py-1 px-2 border-r border-accent-line">{br.evEnq ? Math.round((br.evBk/br.evEnq)*100)+'%' : '0%'}</td>
-                        
-                        <td className="py-1 px-2 border-r border-accent-line">{br.pvBk ? Math.round((br.pvRt/br.pvBk)*100)+'%' : '0%'}</td>
-                        <td className="py-1 px-2">{br.evBk ? Math.round((br.evRt/br.evBk)*100)+'%' : '0%'}</td>
+                      <tr key={i} className="bg-white hover:bg-canvas/80 text-xs font-medium">
+                        <td className="py-2 px-3 border-r border-line text-ink font-semibold text-left pl-4">{br.branch}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.pvEnq}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.evEnq}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum font-bold text-ink">{br.enq}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.pvBk}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.evBk}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum font-bold text-ink">{br.bk}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.pvRt}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.evRt}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum font-bold text-ink">{br.rt}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.pvEnq ? Math.round((br.pvBk / br.pvEnq) * 100) + '%' : '0%'}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.evEnq ? Math.round((br.evBk / br.evEnq) * 100) + '%' : '0%'}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.pvBk ? Math.round((br.pvRt / br.pvBk) * 100) + '%' : '0%'}</td>
+                        <td className="py-2 px-3 font-mono tnum">{br.evBk ? Math.round((br.evRt / br.evBk) * 100) + '%' : '0%'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -466,49 +786,62 @@ export const ReportsPage: React.FC = () => {
             ))}
 
             {stats.availableBranches.length === 0 && (
-              <div className="text-center py-10 text-ink-3">No EBR data available. Please add bookings.</div>
+              <div className="text-center py-10 text-ink-3 bg-surface border border-line rounded-xl">
+                No EBR data available. Please add bookings.
+              </div>
             )}
           </div>
         )}
 
+        {/* =================================================================== */}
+        {/* 5. TAB CONTENT: EV EBR REPORTS                                     */}
+        {/* =================================================================== */}
         {activeTab === 'ebr_ev' && (
-          <div className="space-y-6">
-            <div className="border border-accent-line overflow-hidden mb-6">
-              <div className="bg-accent text-white text-center font-bold text-sm py-1 border-b border-accent-line">
-                EV&gt;&gt;EBR Report - Outlet Wise
+          <div className="space-y-5">
+            <div className="bg-surface border border-teal-200/70 rounded-xl overflow-hidden shadow-xs mb-5">
+              <div className="bg-teal-700 px-4 py-2.5 flex items-center justify-between text-white">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white shrink-0">
+                    <Car className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-xs sm:text-sm font-bold tracking-tight">EV &gt;&gt; EBR Report - Outlet Wise</h2>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-semibold">
+                  Electric Vehicles Only
+                </span>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-center border-collapse whitespace-nowrap">
+                <table className="w-full text-center border-collapse text-xs whitespace-nowrap">
                   <thead>
-                    <tr className="bg-accent-soft text-accent border-b border-accent-line text-xs font-bold">
-                      <th className="py-1 px-2 border-r border-accent-line">Branch</th>
-                      <th className="py-1 px-2 border-r border-accent-line">Enquiries</th>
-                      <th className="py-1 px-2 border-r border-accent-line">Bookings</th>
-                      <th className="py-1 px-2 border-r border-accent-line">Retail</th>
-                      <th className="py-1 px-2 border-r border-accent-line">EB%</th>
-                      <th className="py-1 px-2">BR%</th>
+                    <tr className="bg-teal-50/70 text-teal-950 border-b border-line text-xs font-bold">
+                      <th className="py-2 px-3 border-r border-line">Branch</th>
+                      <th className="py-2 px-3 border-r border-line">Enquiries</th>
+                      <th className="py-2 px-3 border-r border-line">Bookings</th>
+                      <th className="py-2 px-3 border-r border-line">Retail</th>
+                      <th className="py-2 px-3 border-r border-line">EB%</th>
+                      <th className="py-2 px-3">BR%</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-line text-ink-2">
                     {stats.branchEbrSummary.map((br, i) => (
-                      <tr key={i} className="bg-white border-b border-accent-line text-xs font-bold">
-                        <td className="py-1 px-2 border-r border-accent-line text-left">{br.branch}</td>
-                        <td className="py-1 px-2 border-r border-accent-line">{br.evEnq}</td>
-                        <td className="py-1 px-2 border-r border-accent-line">{br.evBk}</td>
-                        <td className="py-1 px-2 border-r border-accent-line">{br.evRt}</td>
-                        <td className="py-1 px-2 border-r border-accent-line">{br.evEnq ? Math.round((br.evBk/br.evEnq)*100)+'%' : '0%'}</td>
-                        <td className="py-1 px-2">{br.evBk ? Math.round((br.evRt/br.evBk)*100)+'%' : '0%'}</td>
+                      <tr key={i} className="bg-white hover:bg-canvas/80 text-xs font-medium">
+                        <td className="py-2 px-3 border-r border-line text-ink font-semibold text-left pl-4">{br.branch}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.evEnq}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.evBk}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.evRt}</td>
+                        <td className="py-2 px-3 border-r border-line font-mono tnum">{br.evEnq ? Math.round((br.evBk / br.evEnq) * 100) + '%' : '0%'}</td>
+                        <td className="py-2 px-3 font-mono tnum">{br.evBk ? Math.round((br.evRt / br.evBk) * 100) + '%' : '0%'}</td>
                       </tr>
                     ))}
-                    <tr className="bg-warn-soft font-bold text-xs border-t-2 border-accent-line">
-                      <td className="py-1 px-2 border-r border-accent-line">Total</td>
-                      <td className="py-1 px-2 border-r border-accent-line">{stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evEnq, 0)}</td>
-                      <td className="py-1 px-2 border-r border-accent-line">{stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evBk, 0)}</td>
-                      <td className="py-1 px-2 border-r border-accent-line">{stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evRt, 0)}</td>
-                      <td className="py-1 px-2 border-r border-accent-line">
+                    <tr className="bg-teal-50/50 font-bold text-xs border-t-2 border-line text-ink">
+                      <td className="py-2 px-3 border-r border-line">Total</td>
+                      <td className="py-2 px-3 border-r border-line font-mono tnum">{stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evEnq, 0)}</td>
+                      <td className="py-2 px-3 border-r border-line font-mono tnum">{stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evBk, 0)}</td>
+                      <td className="py-2 px-3 border-r border-line font-mono tnum">{stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evRt, 0)}</td>
+                      <td className="py-2 px-3 border-r border-line font-mono tnum">
                         {stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evEnq, 0) ? Math.round((stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evBk, 0) / stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evEnq, 0)) * 100) + '%' : '0%'}
                       </td>
-                      <td className="py-1 px-2">
+                      <td className="py-2 px-3 font-mono tnum">
                         {stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evBk, 0) ? Math.round((stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evRt, 0) / stats.branchEbrSummary.reduce((acc, curr) => acc + curr.evBk, 0)) * 100) + '%' : '0%'}
                       </td>
                     </tr>
@@ -523,7 +856,9 @@ export const ReportsPage: React.FC = () => {
             ))}
 
             {stats.availableBranches.length === 0 && (
-              <div className="text-center py-10 text-ink-3">No EV data available. Please add EV bookings.</div>
+              <div className="text-center py-10 text-ink-3 bg-surface border border-line rounded-xl">
+                No EV data available. Please add EV bookings.
+              </div>
             )}
           </div>
         )}

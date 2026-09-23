@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autoprime Tata — Sign in (Locked Reference)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --auth-stage: radial-gradient(circle at 50% 45%, #EFEFEF 0%, #DCDCDC 100%);
+  --auth-field: linear-gradient(160deg, #1F4B8F 0%, #1A3A6B 55%, #0F2445 100%);
+  --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  width: 100%;
+  font-family: var(--font-sans);
+  background: #121A23;
+  -webkit-font-smoothing: antialiased;
+}
+@media (min-width: 1024px) {
+  body { overflow: hidden; }
+}
+
+/* Shell: CSS grid, 52% 48%, height: 100vh */
+.auth-shell {
+  display: grid;
+  grid-template-columns: 52% 48%;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Left — brand stage */
+.auth-left {
+  background: var(--auth-stage);
+  padding: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+.brand-block {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.video-box {
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 16/9;
+  background: var(--auth-stage);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.video-box video, .video-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.brand-caption {
+  margin-top: 40px;
+  text-align: center;
+}
+.brand-caption-line1 {
+  font-size: 13px;
+  line-height: 19px;
+  font-weight: 600;
+  color: #121A23;
+}
+.brand-caption-line2 {
+  font-size: 13px;
+  line-height: 19px;
+  font-weight: 400;
+  color: #667487;
+  margin-top: 2px;
+}
+
+/* Right — panel */
+.auth-right {
+  background: var(--auth-field);
+  padding: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+}
+.auth-card-block {
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Card */
+.auth-card {
+  width: 400px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  box-shadow: 0 24px 60px -20px rgba(10, 25, 48, 0.55);
+  padding: 32px;
+  color: #FFFFFF;
+}
+.auth-header {
+  margin-bottom: 20px;
+  text-align: left;
+}
+.auth-header-sub {
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.72);
+}
+.auth-header-title {
+  font-size: 19px;
+  line-height: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+/* Form */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.auth-field label {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.78);
+  text-align: left;
+}
+.auth-input-wrap {
+  position: relative;
+  width: 100%;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border-radius: 6px;
+  border: none;
+}
+.auth-input-wrap input {
+  width: 100%;
+  height: 36px;
+  border: none;
+  background: transparent;
+  padding: 0 12px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: #121A23;
+  outline: none;
+}
+.auth-input-wrap.has-toggle input {
+  padding-right: 48px;
+}
+.auth-input-wrap:focus-within {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+}
+.auth-show-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: #1A3A6B;
+  cursor: pointer;
+  padding: 0;
+}
+.auth-forgot-row {
+  margin-top: -8px;
+  text-align: left;
+}
+.auth-forgot-link {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: #9FC0F0;
+  text-decoration: none;
+  cursor: pointer;
+}
+.auth-forgot-link:hover {
+  text-decoration: underline;
+}
+.auth-submit-btn {
+  width: 100%;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  background: #0F2445;
+  color: #FFFFFF;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms ease;
+}
+.auth-submit-btn:hover {
+  background: #0A1930;
+}
+
+/* Meta row below card */
+.auth-meta-row {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.staging-chip {
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #F0CE8A;
+  background: rgba(240, 206, 138, 0.14);
+  border: 1px solid rgba(240, 206, 138, 0.35);
+  display: inline-flex;
+  align-items: center;
+}
+.auth-meta-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 16px;
+  color: rgba(255, 255, 255, 0.60);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Error Banner */
+.auth-error-banner {
+  background: rgba(238, 123, 114, 0.14);
+  border: 1px solid rgba(238, 123, 114, 0.38);
+  color: #FFD9D6;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 18px;
+  margin-bottom: 16px;
+}
+</style>
+</head>
+<body>
+
+<div class="auth-shell">
+  <!-- Left Panel: Brand Presentation (52%) -->
+  <section class="auth-left" aria-label="Brand Presentation">
+    <div class="brand-block">
+      <div class="video-box" role="img" aria-label="Dhoot Group">
+        <video
+          id="brand-video"
+          src="/brand/dhoot-logo-reveal.mp4"
+          poster="/brand/dhoot-logo-poster.webp"
+          autoplay
+          muted
+          playsinline
+          preload="metadata"
+          tabindex="-1"
+          aria-hidden="true"
+        ></video>
+      </div>
+      <div class="brand-caption">
+        <div class="brand-caption-line1">Autoprime Tata · Pre-delivery inspection</div>
+        <div class="brand-caption-line2">Jodhpur · Pali · Barmer</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Right Panel: Account Authentication (48%) -->
+  <section class="auth-right" aria-label="Account Authentication">
+    <div class="auth-card-block">
+      <!-- Glass Card (400px width) -->
+      <div class="auth-card">
+        <div class="auth-header">
+          <div class="auth-header-sub">Autoprime Tata</div>
+          <h1 class="auth-header-title">Sign in</h1>
+        </div>
+
+        <form class="auth-form" onsubmit="event.preventDefault()">
+          <div class="auth-field">
+            <label for="employee-id">Employee ID</label>
+            <div class="auth-input-wrap">
+              <input
+                id="employee-id"
+                name="username"
+                type="text"
+                value="100482"
+                autocomplete="username"
+                inputmode="numeric"
+              />
+            </div>
+          </div>
+
+          <div class="auth-field">
+            <label for="password">Password</label>
+            <div class="auth-input-wrap has-toggle">
+              <input
+                id="password"
+                name="password"
+                type="password"
+                value="pdi123456"
+                autocomplete="current-password"
+              />
+              <button
+                type="button"
+                id="toggle-pwd"
+                class="auth-show-toggle"
+                aria-label="Show password"
+              >Show</button>
+            </div>
+          </div>
+
+          <div class="auth-forgot-row">
+            <a href="#forgot" class="auth-forgot-link">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="auth-submit-btn">Sign in</button>
+        </form>
+      </div>
+
+      <!-- Centered Meta Row (Together with Card) -->
+      <div class="auth-meta-row">
+        <span class="staging-chip">Staging</span>
+        <span class="auth-meta-text">v1.0.3 (412) · Support 1800 000 000</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const vid = document.getElementById('brand-video');
+if (vid) {
+  vid.addEventListener('ended', () => { vid.pause(); });
+}
+const toggleBtn = document.getElementById('toggle-pwd');
+const pwdInput = document.getElementById('password');
+if (toggleBtn && pwdInput) {
+  toggleBtn.addEventListener('click', () => {
+    const isText = pwdInput.type === 'text';
+    pwdInput.type = isText ? 'password' : 'text';
+    toggleBtn.textContent = isText ? 'Show' : 'Hide';
+  });
+}
+</script>
+
+</body>
+</html>

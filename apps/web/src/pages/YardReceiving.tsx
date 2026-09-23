@@ -2,15 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Truck, CheckCircle2, Camera, Video, Upload, Trash2, 
-  Search, ArrowRight, Clock, FileText, Check, ShieldCheck,
-  AlertCircle, X, StopCircle, FolderOpen, Calendar, MapPin,
-  RefreshCw, Hash
+  Search, ArrowRight, FileText, Check, Package, Warehouse,
+  ClipboardCheck, X, StopCircle, FolderOpen
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getApiUrl } from '../utils/apiConfig';
 import { getVehiclesForBrand, saveStockInventory, getActiveStockyards } from '../data/seedData';
+import { fetchVehicles, inwardVehicleGate } from '../services/dataService';
+import { Empty } from '../components/ui/primitives';
 import { formatDate } from '../utils/dateUtils';
-import { Panel, Stat, Badge, Empty, PageHeader } from '../components/ui/primitives';
 
 interface IncomingVehicle {
   id: string;
@@ -150,8 +149,13 @@ export const YardReceivingPage: React.FC = () => {
   const fetchIncomingStock = async () => {
     setLoading(true);
     try {
-      const localRows = getVehiclesForBrand(currentBrand.code);
-      setVehicles(mapVehicles(localRows));
+      const liveStock = await fetchVehicles(currentBrand?.code);
+      if (liveStock && liveStock.length > 0) {
+        setVehicles(mapVehicles(liveStock));
+      } else {
+        const localRows = getVehiclesForBrand(currentBrand?.code || '');
+        setVehicles(mapVehicles(localRows));
+      }
     } catch (e) {
       console.warn('Yard stock load note:', e);
       setVehicles([]);
@@ -315,7 +319,13 @@ export const YardReceivingPage: React.FC = () => {
       return v;
     }));
 
-    // 2. Synchronize with localStorage stock sheet
+    // 2. Synchronize with Supabase and local cache
+    inwardVehicleGate(selectedVehicle.vin, {
+      location: yardBay,
+      odometer: Number(odometer) || 8,
+      bay: yardBay
+    }).catch(console.error);
+
     try {
       const saved = localStorage.getItem('dhoot_stock_inventory');
       if (saved) {
@@ -329,8 +339,8 @@ export const YardReceivingPage: React.FC = () => {
                 vehicle_status: 'RECEIVED',
                 location: yardBay,
                 odometer: Number(odometer) || 8,
-                paper_pdi_photo: paperPdiPhoto,
-                unloading_video: unloadingVideo,
+                paper_pdi_photo: paperPdiPhoto ? (paperPdiPhoto.length > 500 ? '[Photo Evidence Captured]' : paperPdiPhoto) : undefined,
+                unloading_video: unloadingVideo ? '[Video Evidence Captured]' : undefined,
                 receiving_notes: receivingNotes,
                 received_at: new Date().toISOString()
               };
@@ -378,130 +388,244 @@ export const YardReceivingPage: React.FC = () => {
   return (
     <div className="space-y-4 max-w-[1600px] mx-auto select-none pb-20">
       
-      {/* Top Banner */}
-      <PageHeader
-        title="Gate Inward Receiving"
-        subtitle="Carrier Arrival Protocol • Fast VIN 5-Digit Search • Stock Sheet Auto-Sync & Staging"
-        action={
-          <Link
-            to="/stock"
-            className="h-8 px-3 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink transition-colors flex items-center gap-1.5 shadow-xs"
-          >
-            <FileText className="w-3.5 h-3.5 text-accent" />
-            <span>View Stock Ledger</span>
-          </Link>
-        }
-      />
+      {/* ========================================================================= */}
+      {/* 1. TOP HEADER BANNER                                                      */}
+      {/* ========================================================================= */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Truck className="w-5 h-5 stroke-[2.2]" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-ink tracking-tight">Gate Inward Receiving</h1>
+            <p className="text-xs text-ink-3">
+              Carrier Arrival Protocol • Fast VIN 5-Digit Search • Stock Sheet Auto-Sync &amp; Staging
+            </p>
+          </div>
+        </div>
 
-      {/* Yard Gate KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Stat label="Total Inward Fleet" value={vehicles.length} note="Units in Stock Ledger" />
-        <Stat label="Pending In-Transit" value={pendingCount} note="Pending Gate Inward" tone={pendingCount > 0 ? "warn" : "default"} />
-        <Stat label="Received in Yard" value={receivedCount} note="Staged in Yard Bays" tone="ok" />
-        <Stat label="Ready for PDI" value={receivedCount} note="Available in PDI Queue" />
+        <Link
+          to="/vehicles"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-blue-200 bg-white hover:bg-blue-50/60 text-blue-600 text-xs font-semibold shadow-xs transition-colors self-start sm:self-auto"
+        >
+          <FileText className="w-3.5 h-3.5 text-blue-600" />
+          <span>View Stock Ledger</span>
+        </Link>
       </div>
 
-      {/* High-Speed VIN Search & Quick Filter Bar */}
-      <div className="p-3 bg-canvas border border-line rounded flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2 flex-1 min-w-[280px]">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-accent absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Type Last 5 Digits of VIN (e.g. 88776), Full Chassis, Model, or Trailer No..."
-              value={searchVin}
-              onChange={(e) => setSearchVin(e.target.value)}
-              className="w-full h-8 pl-9 pr-3 text-xs bg-surface border border-line rounded text-ink placeholder:text-ink-3 focus:outline-none focus:border-accent font-medium shadow-xs"
-            />
+      {/* ========================================================================= */}
+      {/* 2. TOP 4 KPI METRIC SUMMARY CARDS                                         */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {/* TOTAL INWARD FLEET */}
+        <div className="bg-white rounded-xl border border-blue-100/90 p-4 shadow-xs flex flex-col justify-between gap-2.5">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+              <Truck className="w-5 h-5 stroke-[2]" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold tracking-wider text-ink-3 uppercase">
+                TOTAL INWARD FLEET
+              </span>
+              <span className="text-2xl font-bold font-mono text-ink tracking-tight tnum mt-0.5">
+                {vehicles.length}
+              </span>
+            </div>
           </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold font-mono text-blue-600 tnum">{vehicles.length}</span>
+            <span className="text-xs text-ink-3">Units in Stock Ledger</span>
+          </div>
+        </div>
+
+        {/* PENDING IN-TRANSIT */}
+        <div className="bg-white rounded-xl border border-emerald-100/90 p-4 shadow-xs flex flex-col justify-between gap-2.5">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+              <Package className="w-5 h-5 stroke-[2]" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold tracking-wider text-ink-3 uppercase">
+                PENDING IN-TRANSIT
+              </span>
+              <span className="text-2xl font-bold font-mono text-ink tracking-tight tnum mt-0.5">
+                {pendingCount}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold font-mono text-emerald-600 tnum">{pendingCount}</span>
+            <span className="text-xs text-ink-3">Pending Gate Inward</span>
+          </div>
+        </div>
+
+        {/* RECEIVED IN YARD */}
+        <div className="bg-white rounded-xl border border-amber-100/90 p-4 shadow-xs flex flex-col justify-between gap-2.5">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+              <Warehouse className="w-5 h-5 stroke-[2]" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold tracking-wider text-ink-3 uppercase">
+                RECEIVED IN YARD
+              </span>
+              <span className="text-2xl font-bold font-mono text-ink tracking-tight tnum mt-0.5">
+                {receivedCount}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold font-mono text-amber-600 tnum">{receivedCount}</span>
+            <span className="text-xs text-ink-3">Staged in Yard Bays</span>
+          </div>
+        </div>
+
+        {/* READY FOR PDI */}
+        <div className="bg-white rounded-xl border border-purple-100/90 p-4 shadow-xs flex flex-col justify-between gap-2.5">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+              <ClipboardCheck className="w-5 h-5 stroke-[2]" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold tracking-wider text-ink-3 uppercase">
+                READY FOR PDI
+              </span>
+              <span className="text-2xl font-bold font-mono text-ink tracking-tight tnum mt-0.5">
+                {receivedCount}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold font-mono text-purple-600 tnum">{receivedCount}</span>
+            <span className="text-xs text-ink-3">Available in PDI Queue</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 3. FAST VIN SEARCH BAR                                                    */}
+      {/* ========================================================================= */}
+      <div className="bg-white rounded-xl border border-line p-3 flex items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-2 flex-1 min-w-[280px]">
+          <Search className="w-4 h-4 text-blue-600 shrink-0 ml-1" />
+          <input
+            type="text"
+            placeholder="Type Last 5 Digits of VIN (e.g. 88776), Full Chassis, Model, or Trailer No..."
+            value={searchVin}
+            onChange={(e) => setSearchVin(e.target.value)}
+            className="w-full text-xs text-ink placeholder:text-ink-3 bg-transparent outline-none font-medium"
+          />
           {searchVin && (
             <button
               onClick={() => setSearchVin('')}
-              className="h-8 px-2.5 bg-surface border border-line hover:bg-canvas text-xs font-medium text-ink-3 rounded transition-colors"
+              className="h-6 px-2 bg-canvas hover:bg-surface-sunken border border-line text-[11px] font-medium text-ink-3 rounded transition-colors cursor-pointer"
             >
               Clear
             </button>
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs text-ink-3">
-          <Hash className="w-3.5 h-3.5 text-accent" />
-          <span>Showing <strong>{displayedVehicles.length}</strong> matching vehicles</span>
+        <div className="text-xs font-semibold text-ink-3 whitespace-nowrap pr-2">
+          <span className="text-ink-3"># Showing </span>
+          <span className="font-bold text-ink font-mono tnum">{displayedVehicles.length}</span>
+          <span className="text-ink-3"> matching vehicles</span>
         </div>
       </div>
 
-      {/* Inward Ledger Panel */}
-      <Panel
-        title={
-          <div className="flex items-center gap-2">
-            <span>Inward Gate Manifest</span>
-            <Badge tone="accent">{displayedVehicles.length} Units</Badge>
+      {/* ========================================================================= */}
+      {/* 4. INWARD GATE MANIFEST CARD & DATA TABLE                                 */}
+      {/* ========================================================================= */}
+      <div className="bg-white rounded-xl border border-line shadow-xs overflow-hidden flex flex-col">
+        {/* Card Header with Unit Count & Segmented Tab Switcher */}
+        <div className="px-4 py-3 border-b border-line flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-sm font-bold text-ink">Inward Gate Manifest</h2>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-200">
+              {displayedVehicles.length} Units
+            </span>
           </div>
-        }
-        action={
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center bg-canvas border border-line rounded p-0.5 text-xs">
-              <button
-                onClick={() => setActiveTab('PENDING')}
-                className={
-                  activeTab === 'PENDING'
-                    ? 'h-7 px-3 rounded text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 bg-surface text-ink border border-line shadow-xs font-semibold'
-                    : 'h-7 px-3 rounded text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 text-ink-3 hover:text-ink-2'
-                }
-              >
-                <span>Pending In-Transit</span>
-                <span className="text-[10px] tnum font-semibold">({pendingCount})</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('RECEIVED')}
-                className={
-                  activeTab === 'RECEIVED'
-                    ? 'h-7 px-3 rounded text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 bg-surface text-ink border border-line shadow-xs font-semibold'
-                    : 'h-7 px-3 rounded text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 text-ink-3 hover:text-ink-2'
-                }
-              >
-                <span>Received in Yard</span>
-                <span className="text-[10px] tnum font-semibold">({receivedCount})</span>
-              </button>
-            </div>
+
+          {/* Segmented Switcher Tabs */}
+          <div className="inline-flex bg-slate-100/80 p-0.5 rounded-lg text-xs gap-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab('PENDING')}
+              className={
+                activeTab === 'PENDING'
+                  ? 'px-3 py-1.5 rounded-md text-xs font-semibold bg-blue-600 text-white shadow-xs transition-colors cursor-pointer'
+                  : 'px-3 py-1.5 rounded-md text-xs font-medium text-ink-3 hover:text-ink transition-colors cursor-pointer'
+              }
+            >
+              Pending In-Transit ({pendingCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('RECEIVED')}
+              className={
+                activeTab === 'RECEIVED'
+                  ? 'px-3 py-1.5 rounded-md text-xs font-semibold bg-blue-600 text-white shadow-xs transition-colors cursor-pointer'
+                  : 'px-3 py-1.5 rounded-md text-xs font-medium text-ink-3 hover:text-ink transition-colors cursor-pointer'
+              }
+            >
+              Received in Yard ({receivedCount})
+            </button>
           </div>
-        }
-      >
+        </div>
+
+        {/* Table Content */}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead className="bg-accent-soft border-b border-accent-line text-accent font-semibold uppercase tracking-[0.06em] text-label">
-              <tr>
-                <th className="py-2.5 px-3 w-10 text-center whitespace-nowrap">#</th>
-                <th className="py-2.5 px-3 whitespace-nowrap">Chassis / VIN (Last 5 Bold)</th>
-                <th className="py-2.5 px-3 whitespace-nowrap">Brand & Model</th>
-                <th className="py-2.5 px-3 whitespace-nowrap">Variant & Color</th>
-                <th className="py-2.5 px-3 whitespace-nowrap">Fuel</th>
-                <th className="py-2.5 px-3 whitespace-nowrap">Plant / Dealer</th>
-                <th className="py-2.5 px-3 whitespace-nowrap">Dispatch Date</th>
-                <th className="py-2.5 px-3 whitespace-nowrap">Staging Bay</th>
-                <th className="py-2.5 px-3 whitespace-nowrap">Inward Status</th>
-                <th className="py-2.5 px-3 text-center whitespace-nowrap">Action</th>
+            <thead>
+              <tr className="bg-blue-50/40 border-b border-line text-[11px] font-bold uppercase tracking-wider text-blue-900/70 whitespace-nowrap">
+                <th className="py-2.5 px-3 w-10 text-center">#</th>
+                <th className="py-2.5 px-3">CHASSIS / VIN (LAST 5 BOLD)</th>
+                <th className="py-2.5 px-3">BRAND &amp; MODEL</th>
+                <th className="py-2.5 px-3">VARIANT &amp; COLOR</th>
+                <th className="py-2.5 px-3">FUEL</th>
+                <th className="py-2.5 px-3">PLANT / DEALER</th>
+                <th className="py-2.5 px-3">DISPATCH DATE</th>
+                <th className="py-2.5 px-3">STAGING BAY</th>
+                <th className="py-2.5 px-3">INWARD STATUS</th>
+                <th className="py-2.5 px-3 text-center">ACTION</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-line text-ink-2 text-xs">
+            <tbody className="divide-y divide-line text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-ink-3">
-                    Loading inward consignments...
+                  <td colSpan={10} className="p-6">
+                    <div className="space-y-2.5">
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                    </div>
                   </td>
                 </tr>
               ) : displayedVehicles.length === 0 ? (
                 <tr>
-                  <td colSpan={10}>
-                    <div className="py-10 text-center space-y-2">
-                      <Truck className="w-8 h-8 text-ink-3 mx-auto" />
-                      <p className="font-semibold text-ink text-sm">
-                        {searchVin ? 'No vehicles match your VIN / model search.' : (activeTab === 'PENDING' ? 'No pending in-transit vehicles.' : 'No vehicles received in yard yet.')}
-                      </p>
-                      <p className="text-xs text-ink-3">
-                        {activeTab === 'PENDING' && 'Import stock from Stock page or clear search filter.'}
-                      </p>
-                    </div>
+                  <td colSpan={10} className="p-6">
+                    <Empty
+                      title={searchVin
+                        ? "No matching vehicles found"
+                        : activeTab === 'PENDING'
+                        ? "0 Pending In-Transit Vehicles"
+                        : "0 Vehicles Received in Yard"}
+                      hint={searchVin
+                        ? "Try clearing your VIN / model search query."
+                        : activeTab === 'PENDING'
+                        ? "No vehicles pending gate inward. Import your daily carrier manifest or dispatch lot from the Stock Inventory page."
+                        : "No vehicles recorded in yard yet. Inward in-transit vehicles from the Pending tab."}
+                      action={
+                        <div className="flex items-center justify-center gap-2 flex-wrap mt-2">
+                          <Link to="/vehicles" className="btn btn-primary text-xs h-8 px-3.5">
+                            <Package className="w-3.5 h-3.5 mr-1" /> View Stock Inventory
+                          </Link>
+                          <Link to="/dashboard" className="btn btn-secondary text-xs h-8 px-3.5">
+                            Go to Dashboard
+                          </Link>
+                        </div>
+                      }
+                    />
                   </td>
                 </tr>
               ) : (
@@ -510,37 +634,40 @@ export const YardReceivingPage: React.FC = () => {
                   const vinSuffix = v.vin.length > 5 ? v.vin.slice(-5) : v.vin;
 
                   return (
-                    <tr 
-                      key={v.id || idx} 
-                      className="hover:bg-canvas transition-colors"
-                    >
-                      <td className="py-2.5 px-3 text-center text-ink-3 tnum whitespace-nowrap">
+                    <tr key={v.id || idx} className="hover:bg-slate-50/70 transition-colors bg-white">
+                      <td className="py-2.5 px-3 text-center text-ink-3 font-mono tnum whitespace-nowrap">
                         {idx + 1}
                       </td>
 
-                      {/* VIN with highlighted last 5 digits */}
+                      {/* VIN with highlighted bold last 5 digits */}
                       <td className="py-2.5 px-3 font-mono whitespace-nowrap">
                         <span className="text-ink-3">{vinPrefix}</span>
-                        <span className="text-accent font-bold bg-accent-soft px-1 py-0.5 rounded border border-accent-line ml-0.5">
+                        <span className="text-blue-700 font-bold bg-blue-50 px-1 py-0.5 rounded border border-blue-200 ml-0.5">
                           {vinSuffix}
                         </span>
                       </td>
 
                       <td className="py-2.5 px-3 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          <Badge tone={v.brand === 'HYUNDAI' ? 'accent' : 'neutral'}>
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                              v.brand === 'HYUNDAI'
+                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                : 'bg-slate-100 text-slate-700 border border-slate-200'
+                            }`}
+                          >
                             {v.brand === 'HYUNDAI' ? 'Hyundai' : 'Tata'}
-                          </Badge>
-                          <span className="font-semibold text-ink">{v.model}</span>
+                          </span>
+                          <span className="font-bold text-ink">{v.model}</span>
                         </div>
                       </td>
 
                       <td className="py-2.5 px-3 whitespace-nowrap">
-                        <div className="text-ink">{v.variant}</div>
+                        <div className="text-ink font-medium">{v.variant}</div>
                         <div className="text-[11px] text-ink-3">{v.color}</div>
                       </td>
 
-                      <td className="py-2.5 px-3 uppercase text-ink-3 whitespace-nowrap">
+                      <td className="py-2.5 px-3 uppercase text-ink-3 font-medium whitespace-nowrap">
                         {v.fuel_type || 'PETROL'}
                       </td>
 
@@ -548,19 +675,23 @@ export const YardReceivingPage: React.FC = () => {
                         {v.plantCode} • {v.dealer_code}
                       </td>
 
-                      <td className="py-2.5 px-3 text-ink-3 tnum whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-ink-3 font-mono tnum whitespace-nowrap">
                         {formatDate(v.dispatchDate)}
                       </td>
 
-                      <td className="py-2.5 px-3 text-ink whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-ink font-medium whitespace-nowrap">
                         {v.yardBay || 'Bay 1 (Inspection Staging)'}
                       </td>
 
                       <td className="py-2.5 px-3 whitespace-nowrap">
                         {v.status === 'YARD_RECEIVING_PENDING' ? (
-                          <Badge tone="warn">Gate Inward Pending</Badge>
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                            Pending In-Transit
+                          </span>
                         ) : (
-                          <Badge tone="ok">Received in Yard</Badge>
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Received in Yard
+                          </span>
                         )}
                       </td>
 
@@ -569,15 +700,15 @@ export const YardReceivingPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => openReceivingModal(v)}
-                            className="h-7 px-3 rounded bg-accent hover:bg-accent-600 text-white text-xs font-semibold transition-colors inline-flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap"
+                            className="h-7 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors inline-flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap"
                           >
-                            <Truck className="w-3.5 h-3.5" />
+                            <Truck className="w-3.5 h-3.5 stroke-[2]" />
                             <span>Receive at Gate</span>
                           </button>
                         ) : (
                           <Link
                             to="/pdi"
-                            className="h-7 px-2.5 rounded bg-ok/10 text-ok border border-ok/20 hover:bg-ok hover:text-white text-xs font-semibold transition-colors inline-flex items-center gap-1 whitespace-nowrap"
+                            className="h-7 px-2.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 text-xs font-semibold transition-colors inline-flex items-center gap-1 whitespace-nowrap"
                           >
                             <span>Inspect in PDI</span>
                             <ArrowRight className="w-3 h-3" />
@@ -591,34 +722,34 @@ export const YardReceivingPage: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </Panel>
+      </div>
 
       {/* ========================================================================= */}
       {/* VEHICLE RECEIVING MODAL (PDI PAPER PHOTO + UNLOADING VIDEO)               */}
       {/* ========================================================================= */}
       {selectedVehicle && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 select-none">
-          <div className="bg-surface text-ink w-full max-w-2xl rounded-panel overflow-hidden border border-line shadow-pop flex flex-col max-h-[90vh]">
+          <div className="bg-surface text-ink w-full max-w-2xl rounded-2xl overflow-hidden border border-line shadow-pop flex flex-col max-h-[90vh]">
             
             {/* Modal Header */}
             <div className="px-5 py-4 border-b border-line flex items-center justify-between bg-canvas">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded bg-accent text-white flex items-center justify-center shadow-xs">
-                  <Truck className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
+                  <Truck className="w-4 h-4 stroke-[2]" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold text-ink">
+                  <h2 className="text-sm font-bold text-ink">
                     Gate Inward: Receive {selectedVehicle.model}
                   </h2>
                   <p className="text-xs text-ink-3 mt-0.5 font-mono">
-                    VIN: {selectedVehicle.vin} • Last 5: <strong className="text-accent">{selectedVehicle.vin.slice(-5)}</strong>
+                    VIN: {selectedVehicle.vin} • Last 5: <strong className="text-blue-600">{selectedVehicle.vin.slice(-5)}</strong>
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedVehicle(null)}
-                className="w-8 h-8 rounded hover:bg-canvas text-ink-3 hover:text-ink flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg hover:bg-canvas text-ink-3 hover:text-ink flex items-center justify-center transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -630,23 +761,23 @@ export const YardReceivingPage: React.FC = () => {
               {!isReceivingSuccess ? (
                 <>
                   {/* Vehicle Summary Banner */}
-                  <div className="p-3 bg-canvas rounded border border-line flex items-center justify-between">
+                  <div className="p-3 bg-canvas rounded-xl border border-line flex items-center justify-between">
                     <div>
-                      <h3 className="text-xs font-semibold text-ink">{selectedVehicle.model} {selectedVehicle.variant}</h3>
+                      <h3 className="text-xs font-bold text-ink">{selectedVehicle.model} {selectedVehicle.variant}</h3>
                       <p className="text-[11px] text-ink-2 mt-0.5">Color: {selectedVehicle.color} • Fuel: {selectedVehicle.fuel_type}</p>
-                      <p className="text-[11px] text-ink-3 mt-0.5">
+                      <p className="text-[11px] text-ink-3 mt-0.5 font-mono">
                         Plant: {selectedVehicle.plantCode} • Dealer: {selectedVehicle.dealer_code}
                       </p>
                     </div>
                     <div className="text-right font-mono text-xs">
                       <span className="eyebrow block">Chassis Stamp</span>
-                      <span className="font-bold text-accent">{selectedVehicle.vin.slice(-5)}</span>
+                      <span className="font-bold text-blue-600 text-sm">{selectedVehicle.vin.slice(-5)}</span>
                     </div>
                   </div>
 
                   {/* 1. MANDATORY PHYSICAL PDI SHEET PHOTO */}
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-ink">
+                    <label className="block text-xs font-bold text-ink">
                       1. OEM Physical PDI Sheet / Inward Gatepass Photo <span className="text-danger">*</span>
                     </label>
                     <p className="text-[11px] text-ink-3">
@@ -654,12 +785,12 @@ export const YardReceivingPage: React.FC = () => {
                     </p>
 
                     {paperPdiPhoto ? (
-                      <div className="relative rounded overflow-hidden aspect-video max-h-44 border border-line bg-black/5 flex items-center justify-center">
+                      <div className="relative rounded-xl overflow-hidden aspect-video max-h-44 border border-line bg-black/5 flex items-center justify-center">
                         <img src={paperPdiPhoto} alt="Paper PDI Sheet" className="w-full h-full object-cover" />
                         <button
                           type="button"
                           onClick={() => setPaperPdiPhoto(null)}
-                          className="absolute top-2 right-2 p-1.5 bg-danger text-white rounded transition-all cursor-pointer shadow-xs"
+                          className="absolute top-2 right-2 p-1.5 bg-danger text-white rounded-lg transition-all cursor-pointer shadow-xs"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -669,13 +800,13 @@ export const YardReceivingPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => openCamera('PHOTO')}
-                          className="p-3.5 border border-dashed border-line hover:border-accent rounded flex flex-col items-center justify-center gap-1 text-ink-2 hover:text-accent bg-canvas transition-all cursor-pointer"
+                          className="p-3.5 border border-dashed border-line hover:border-blue-500 rounded-xl flex flex-col items-center justify-center gap-1 text-ink-2 hover:text-blue-600 bg-canvas transition-all cursor-pointer"
                         >
                           <Camera className="w-4 h-4" />
                           <span className="text-xs font-semibold">Take Live Photo</span>
                         </button>
 
-                        <label className="p-3.5 border border-dashed border-line hover:border-accent rounded flex flex-col items-center justify-center gap-1 text-ink-2 hover:text-accent bg-canvas transition-all cursor-pointer">
+                        <label className="p-3.5 border border-dashed border-line hover:border-blue-500 rounded-xl flex flex-col items-center justify-center gap-1 text-ink-2 hover:text-blue-600 bg-canvas transition-all cursor-pointer">
                           <FolderOpen className="w-4 h-4" />
                           <span className="text-xs font-semibold">Upload Photo</span>
                           <input
@@ -691,7 +822,7 @@ export const YardReceivingPage: React.FC = () => {
 
                   {/* 2. MANDATORY UNLOADING WALKAROUND VIDEO */}
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-ink">
+                    <label className="block text-xs font-bold text-ink">
                       2. Carrier Unloading Walkaround Video (Optional/Max 30s)
                     </label>
                     <p className="text-[11px] text-ink-3">
@@ -699,12 +830,12 @@ export const YardReceivingPage: React.FC = () => {
                     </p>
 
                     {unloadingVideo ? (
-                      <div className="relative rounded overflow-hidden aspect-video max-h-44 border border-line bg-black flex items-center justify-center">
+                      <div className="relative rounded-xl overflow-hidden aspect-video max-h-44 border border-line bg-black flex items-center justify-center">
                         <video src={unloadingVideo} controls className="w-full h-full object-cover" />
                         <button
                           type="button"
                           onClick={() => setUnloadingVideo(null)}
-                          className="absolute top-2 right-2 p-1.5 bg-danger text-white rounded transition-all cursor-pointer shadow-xs z-10"
+                          className="absolute top-2 right-2 p-1.5 bg-danger text-white rounded-lg transition-all cursor-pointer shadow-xs z-10"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -714,13 +845,13 @@ export const YardReceivingPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => openCamera('VIDEO')}
-                          className="p-3.5 border border-dashed border-line hover:border-accent rounded flex flex-col items-center justify-center gap-1 text-ink-2 hover:text-accent bg-canvas transition-all cursor-pointer"
+                          className="p-3.5 border border-dashed border-line hover:border-blue-500 rounded-xl flex flex-col items-center justify-center gap-1 text-ink-2 hover:text-blue-600 bg-canvas transition-all cursor-pointer"
                         >
-                          <Video className="w-4 h-4 text-accent" />
+                          <Video className="w-4 h-4 text-blue-600" />
                           <span className="text-xs font-semibold">Record Live Video</span>
                         </button>
 
-                        <label className="p-3.5 border border-dashed border-line hover:border-accent rounded flex flex-col items-center justify-center gap-1 text-ink-2 hover:text-accent bg-canvas transition-all cursor-pointer">
+                        <label className="p-3.5 border border-dashed border-line hover:border-blue-500 rounded-xl flex flex-col items-center justify-center gap-1 text-ink-2 hover:text-blue-600 bg-canvas transition-all cursor-pointer">
                           <Upload className="w-4 h-4" />
                           <span className="text-xs font-semibold">Upload Video</span>
                           <input
@@ -744,7 +875,7 @@ export const YardReceivingPage: React.FC = () => {
                         type="number"
                         value={odometer}
                         onChange={(e) => setOdometer(e.target.value)}
-                        className="w-full p-2 bg-canvas border border-line rounded text-xs font-bold text-ink focus:outline-none focus:border-accent"
+                        className="w-full p-2 bg-canvas border border-line rounded-lg text-xs font-bold text-ink focus:outline-none focus:border-blue-500 font-mono tnum"
                       />
                     </div>
 
@@ -755,7 +886,7 @@ export const YardReceivingPage: React.FC = () => {
                       <select
                         value={yardBay}
                         onChange={(e) => setYardBay(e.target.value)}
-                        className="w-full p-2 bg-canvas border border-line rounded text-xs font-semibold text-ink focus:outline-none focus:border-accent"
+                        className="w-full p-2 bg-canvas border border-line rounded-lg text-xs font-semibold text-ink focus:outline-none focus:border-blue-500"
                       >
                         <optgroup label="Transit & Plant">
                           <option value="In Transit">In Transit</option>
@@ -777,21 +908,21 @@ export const YardReceivingPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleConfirmReceiving}
-                      className="w-full h-9 rounded text-xs font-semibold text-white bg-accent hover:bg-accent-600 shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
+                      className="w-full h-9 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
                     >
                       <Check className="w-4 h-4 stroke-[2.5]" />
-                      <span>Confirm Gate Receiving & Sync with Stock Sheet</span>
+                      <span>Confirm Gate Receiving &amp; Sync with Stock Sheet</span>
                     </button>
                   </div>
                 </>
               ) : (
                 /* Success Confirmation View */
                 <div className="py-6 text-center space-y-4">
-                  <div className="w-12 h-12 rounded-full bg-ok/10 text-ok flex items-center justify-center mx-auto border border-ok/20">
+                  <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-200">
                     <CheckCircle2 className="w-6 h-6 stroke-[2.2]" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-sm font-semibold text-ink">Vehicle Successfully Received in Yard!</h3>
+                    <h3 className="text-sm font-bold text-ink">Vehicle Successfully Received in Yard!</h3>
                     <p className="text-xs text-ink-3 max-w-md mx-auto leading-relaxed">
                       Vehicle <strong>{selectedVehicle.vin}</strong> has been received, staged in <strong>{yardBay}</strong>, and synced with Stock Ledger and PDI Queue.
                     </p>
@@ -800,13 +931,13 @@ export const YardReceivingPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setSelectedVehicle(null)}
-                      className="h-8 px-4 rounded text-xs font-semibold border border-line text-ink hover:bg-canvas cursor-pointer"
+                      className="h-8 px-4 rounded-lg text-xs font-semibold border border-line text-ink hover:bg-canvas cursor-pointer"
                     >
                       Close
                     </button>
                     <Link
                       to="/pdi"
-                      className="h-8 px-4 rounded text-xs font-semibold bg-accent hover:bg-accent-600 text-white shadow-xs cursor-pointer flex items-center gap-1.5"
+                      className="h-8 px-4 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs cursor-pointer flex items-center gap-1.5"
                     >
                       <span>Proceed to PDI Queue</span>
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -826,19 +957,19 @@ export const YardReceivingPage: React.FC = () => {
       {/* ========================================================================= */}
       {cameraModal.isOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 select-none">
-          <div className="bg-surface text-ink w-full max-w-lg rounded-panel overflow-hidden border border-line shadow-pop flex flex-col">
+          <div className="bg-surface text-ink w-full max-w-lg rounded-2xl overflow-hidden border border-line shadow-pop flex flex-col">
             
             <div className="px-4 py-3 border-b border-line flex items-center justify-between bg-canvas">
               <div className="flex items-center gap-2">
-                {cameraModal.mode === 'PHOTO' ? <Camera className="w-4 h-4 text-accent" /> : <Video className="w-4 h-4 text-warn" />}
-                <span className="text-xs font-semibold text-ink">
+                {cameraModal.mode === 'PHOTO' ? <Camera className="w-4 h-4 text-blue-600" /> : <Video className="w-4 h-4 text-amber-600" />}
+                <span className="text-xs font-bold text-ink">
                   {cameraModal.mode === 'PHOTO' ? 'Capture Paper PDI Sheet' : 'Record Carrier Unloading Video'}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={closeCamera}
-                className="w-8 h-8 rounded hover:bg-canvas text-ink-3 hover:text-ink flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg hover:bg-canvas text-ink-3 hover:text-ink flex items-center justify-center transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -866,7 +997,7 @@ export const YardReceivingPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={capturePhoto}
-                  className="h-8 px-6 bg-accent hover:bg-accent-600 text-white rounded font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                  className="h-8 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <Camera className="w-4 h-4" />
                   <span>Capture Photo</span>
@@ -877,7 +1008,7 @@ export const YardReceivingPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={startRecord}
-                      className="h-8 px-6 bg-danger hover:bg-danger/90 text-white rounded font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                      className="h-8 px-6 bg-danger hover:bg-danger/90 text-white rounded-lg font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
                       <div className="w-2.5 h-2.5 bg-white rounded-full" />
                       <span>Start Recording</span>
@@ -886,10 +1017,10 @@ export const YardReceivingPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={stopRecord}
-                      className="h-8 px-6 bg-accent hover:bg-accent-600 text-white rounded font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                      className="h-8 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
                       <StopCircle className="w-4 h-4" />
-                      <span>Stop & Save Video</span>
+                      <span>Stop &amp; Save Video</span>
                     </button>
                   )}
                 </>

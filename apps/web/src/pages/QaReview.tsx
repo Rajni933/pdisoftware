@@ -6,6 +6,8 @@ import {
   CircleAlert, Eye, Camera, ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
+import { fetchVehicles, approveQaInspection } from '../services/dataService';
 import {
   Button, Panel, SeverityTag, Chip, Modal,
   Banner, StatusRail
@@ -41,97 +43,100 @@ export const QaReviewPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [vin] = useState('MAT621AB1234567890');
-  const [model] = useState('Nexon EV Empowered+');
-  const [variant] = useState('Long Range Dual Tone');
-  const [inspectorName] = useState('R. Meena');
-  const [inspectorId] = useState('ENG-042');
-  const [submittedTime] = useState('Today, 14:02 (12 min ago)');
-
-  // Categories mock: Rule in Blueprint D: Categories with findings auto-expand
+  const [vehicle, setVehicle] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<InspectionCategory[]>([
-    {
-      id: 'exterior',
-      title: 'Exterior & Paint Finish',
-      completed: 12,
-      total: 12,
-      findings: [
-        {
-          id: 'f-1',
-          itemId: 'ext-bumper',
-          itemTitle: 'Front bumper alignment and finish',
-          severity: 'CRITICAL',
-          notes: '8cm scratch with primer exposure on lower bumper lip, left side.',
-          photos: [
-            '/mock-photo-1.jpg',
-            '/mock-photo-2.jpg',
-          ],
-        },
-      ],
-    },
-    {
-      id: 'interior',
-      title: 'Interior, Dashboard & Seats',
-      completed: 10,
-      total: 10,
-      findings: [],
-    },
-    {
-      id: 'electrical',
-      title: 'Electrical, Lamps & Infotainment',
-      completed: 8,
-      total: 8,
-      findings: [
-        {
-          id: 'f-2',
-          itemId: 'elec-drl',
-          itemTitle: 'Right DRL illumination and level',
-          severity: 'MAJOR',
-          notes: 'Flicker observed on right daytime running lamp strip during high beam cycle.',
-          photos: ['/mock-photo-3.jpg'],
-        },
-      ],
-    },
-    {
-      id: 'mechanical',
-      title: 'Underbody, Tyres & Suspension',
-      completed: 10,
-      total: 10,
-      findings: [
-        {
-          id: 'f-3',
-          itemId: 'mech-tyre-fl',
-          itemTitle: 'Front-left tyre tread and sidewall',
-          severity: 'MINOR',
-          notes: 'Mild surface scuff on sidewall lettering, no cord or structural damage.',
-          photos: ['/mock-photo-4.jpg'],
-        },
-      ],
-    },
-    {
-      id: 'documentation',
-      title: 'Documentation, Keys & Manuals',
-      completed: 6,
-      total: 6,
-      findings: [],
-    },
+    { id: 'exterior', title: 'Exterior & Paint Finish', completed: 12, total: 12, findings: [] },
+    { id: 'interior', title: 'Interior, Dashboard & Seats', completed: 10, total: 10, findings: [] },
+    { id: 'electrical', title: 'Electrical, Lamps & Infotainment', completed: 8, total: 8, findings: [] },
+    { id: 'mechanical', title: 'Underbody, Tyres & Suspension', completed: 10, total: 10, findings: [] },
+    { id: 'documentation', title: 'Documentation, Keys & Manuals', completed: 6, total: 6, findings: [] },
   ]);
-
-  // Collapsed state: collapsed by default EXCEPT any containing a finding (05-screen-blueprints §D)
-  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(() => {
-    const init: Record<string, boolean> = {};
-    categories.forEach((cat) => {
-      init[cat.id] = cat.findings.length > 0;
-    });
-    return init;
-  });
-
-  const toggleCategory = (catId: string) => {
-    setOpenCategories((prev) => ({ ...prev, [catId]: !prev[catId] }));
-  };
-
-  // Full-screen photo gallery state with keyboard arrow support
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   const [activePhoto, setActivePhoto] = useState<string | null>(null);
+
+  // Modal decision states
+  const [approveModalOpen, setApproveModalOpen] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const cleanId = (id || '').trim();
+        // 1. Fetch vehicle from Supabase
+        let targetVehicle: any = null;
+        const { data: dbData } = await supabase
+          .from('vehicles')
+          .select('*')
+          .or(`id.eq.${cleanId},vin.eq.${cleanId}`);
+        if (dbData && dbData.length > 0) {
+          targetVehicle = dbData[0];
+        } else {
+          const allVehicles = await fetchVehicles();
+          targetVehicle = allVehicles.find(v => v.id === cleanId || v.vin === cleanId || (v.vin && cleanId.endsWith(v.vin.slice(-6)))) || null;
+        }
+
+        if (targetVehicle && isMounted) {
+          setVehicle(targetVehicle);
+
+          // 2. Query repair_tickets or inspection findings for this vehicle
+          const { data: tickets } = await supabase
+            .from('repair_tickets')
+            .select('*')
+            .eq('vin', targetVehicle.vin);
+
+          const initialCats: InspectionCategory[] = [
+            { id: 'exterior', title: 'Exterior & Paint Finish', completed: 12, total: 12, findings: [] },
+            { id: 'interior', title: 'Interior, Dashboard & Seats', completed: 10, total: 10, findings: [] },
+            { id: 'electrical', title: 'Electrical, Lamps & Infotainment', completed: 8, total: 8, findings: [] },
+            { id: 'mechanical', title: 'Underbody, Tyres & Suspension', completed: 10, total: 10, findings: [] },
+            { id: 'documentation', title: 'Documentation, Keys & Manuals', completed: 6, total: 6, findings: [] },
+          ];
+
+          if (tickets && tickets.length > 0) {
+            tickets.forEach((t: any, idx: number) => {
+              const area = (t.area || '').toLowerCase();
+              let catId = 'exterior';
+              if (area.includes('interior') || area.includes('seat') || area.includes('dash')) catId = 'interior';
+              else if (area.includes('electric') || area.includes('lamp') || area.includes('light') || area.includes('battery')) catId = 'electrical';
+              else if (area.includes('tyre') || area.includes('suspension') || area.includes('underbody') || area.includes('brake')) catId = 'mechanical';
+              else if (area.includes('doc') || area.includes('manual') || area.includes('key')) catId = 'documentation';
+
+              const cat = initialCats.find(c => c.id === catId);
+              if (cat) {
+                cat.findings.push({
+                  id: t.id || `f-${idx + 1}`,
+                  itemId: `item-${idx + 1}`,
+                  itemTitle: t.area || 'Inspection Defect',
+                  severity: (t.severity || 'MINOR').toUpperCase() as any,
+                  notes: t.description || 'Defect flagged during quality audit.',
+                  photos: t.photos || []
+                });
+              }
+            });
+          }
+
+          setCategories(initialCats);
+          const initOpen: Record<string, boolean> = {};
+          initialCats.forEach(c => {
+            initOpen[c.id] = c.findings.length > 0;
+          });
+          setOpenCategories(initOpen);
+        }
+      } catch (e) {
+        console.warn('Error loading QA review data:', e);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadData();
+    return () => { isMounted = false; };
+  }, [id]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -141,14 +146,20 @@ export const QaReviewPage: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Modal decision states
-  const [approveModalOpen, setApproveModalOpen] = useState(false);
-  const [rejectModalOpen, setRejectModalOpen] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const toggleCategory = (catId: string) => {
+    setOpenCategories((prev) => ({ ...prev, [catId]: !prev[catId] }));
+  };
 
-  // Separation of duties rule (05-screen-blueprints §D):
-  // If the submitting engineer is the current user, both buttons are absent and a banner explains why
+  const vin = vehicle?.vin || id || 'VIN-PENDING';
+  const model = vehicle?.model || 'OEM Vehicle';
+  const variant = vehicle?.variant || 'Standard';
+  const inspectorName = vehicle?.inspector_name || 'Senior PDI Inspector';
+  const inspectorId = vehicle?.inspector_id || 'ENG-042';
+  const submittedTime = vehicle?.pdi_date 
+    ? new Date(vehicle.pdi_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : 'Recent Quality Submission';
+
+  // Separation of duties rule (05-screen-blueprints §D)
   const isSameUser = user?.employeeId === inspectorId || user?.userName === inspectorName;
 
   // Counts
@@ -159,24 +170,98 @@ export const QaReviewPage: React.FC = () => {
   const majorCount = allFindings.filter((f) => f.severity === 'MAJOR').length;
   const minorCount = allFindings.filter((f) => f.severity === 'MINOR').length;
 
-  const handleConfirmApprove = () => {
+  const handleConfirmApprove = async () => {
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const targetVin = vehicle?.vin || id;
+      await approveQaInspection(targetVin);
+
+      try {
+        await supabase.from('qa_reviews').insert({
+          vehicle_id: vehicle?.id || id,
+          vin: targetVin,
+          decision: 'APPROVED',
+          reviewer_id: user?.employeeId || user?.userName || 'QA_MANAGER',
+          notes: 'QA Sign-off complete. Vehicle certified delivery ready.'
+        });
+      } catch (e) {}
+
+      window.dispatchEvent(new Event('stock-updated'));
       setApproveModalOpen(false);
       navigate('/qa');
-    }, 800);
+    } catch (e) {
+      console.error('Error approving QA review:', e);
+      navigate('/qa');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleConfirmReject = () => {
+  const handleConfirmReject = async () => {
     if (rejectionReason.trim().length < 10) return;
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const targetVin = vehicle?.vin || id;
+      await supabase
+        .from('vehicles')
+        .update({ status: 'FAILED' })
+        .eq('vin', targetVin);
+
+      await supabase.from('repair_tickets').insert({
+        vehicle_id: vehicle?.id || id,
+        vin: targetVin,
+        model: vehicle?.model || 'Vehicle',
+        area: 'QA Manager Inspection Rejection',
+        severity: 'CRITICAL',
+        description: rejectionReason.trim(),
+        status: 'OPEN',
+        assigned_to: 'Senior Workshop Technician',
+        bay: vehicle?.location || 'Bay 1'
+      });
+
+      window.dispatchEvent(new Event('stock-updated'));
       setRejectModalOpen(false);
       navigate('/qa');
-    }, 800);
+    } catch (e) {
+      console.error('Error rejecting QA review:', e);
+      navigate('/qa');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-6 max-w-4xl mx-auto py-8 animate-pulse select-none">
+        <div className="h-6 w-32 bg-canvas rounded" />
+        <Panel className="p-8 h-80 flex items-center justify-center">
+          <div className="text-xs text-ink-3">Loading QA inspection docket from database...</div>
+        </Panel>
+      </div>
+    );
+  }
+
+  if (!vehicle) {
+    return (
+      <div className="max-w-md mx-auto my-12 bg-surface border border-line rounded-panel p-8 text-center space-y-4 select-none">
+        <div className="w-12 h-12 bg-warn/10 text-warn rounded-full flex items-center justify-center mx-auto border border-warn/20">
+          <AlertOctagon className="w-6 h-6 stroke-[2]" />
+        </div>
+        <h2 className="text-base font-semibold text-ink">Inspection Record Not Found</h2>
+        <p className="text-xs text-ink-3">
+          No matching vehicle or PDI docket was located for ID <span className="font-mono font-medium">{id}</span>.
+        </p>
+        <div className="pt-2">
+          <Link
+            to="/qa"
+            className="h-8 px-4 bg-accent hover:bg-accent-600 text-white text-xs font-semibold rounded inline-flex items-center justify-center transition-colors cursor-pointer"
+          >
+            Return to QA Queue
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 select-none">

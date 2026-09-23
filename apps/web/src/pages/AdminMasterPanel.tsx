@@ -2,71 +2,97 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
   Building2, Users, Car, ShieldCheck, CreditCard, 
-  Settings, Plus, Search, ChevronRight, CheckCircle2, 
+  Settings, Plus, Search, ChevronRight, ChevronLeft, CheckCircle2, 
   Briefcase, MapPin, DollarSign, Layers, Shield, Sparkles, 
   FileSpreadsheet, Activity, Wrench, X, Loader2, Camera,
   Video, Edit3, Trash2, Check, AlertTriangle, Sliders,
   Landmark, ShieldAlert, Phone, Mail, UserCheck, Warehouse,
-  ToggleLeft, ToggleRight, CheckCircle, XCircle
+  ToggleLeft, ToggleRight, CheckCircle, XCircle,
+  Boxes, Eye, Calendar, ArrowRight, MoreHorizontal, Database
 } from 'lucide-react';
 import { AdminUsersPage } from './AdminUsers';
 import { Panel, Stat, Badge, Empty, PageHeader } from '../components/ui/primitives';
 import { 
-  YardItem, BranchItem, 
-  getStockyards, saveStockyards, 
-  getBranches, saveBranches 
-} from '../data/seedData';
+  fetchStockyards, saveStockyard, deleteStockyard, toggleStockyardStatus,
+  fetchBranches, saveBranch, deleteBranch,
+  fetchCheckpoints, saveCheckpoint, deleteCheckpoint,
+  fetchMasterModels, saveMasterModel, deleteMasterModel,
+  fetchMasterFinanciers, saveMasterFinancier, deleteMasterFinancier,
+  fetchMasterInsurance, saveMasterInsurance, deleteMasterInsurance,
+  YardItem, BranchItem, PdiRuleItem, FinancierItem, InsuranceItem, VehicleModelItem
+} from '../services/dataService';
+import { DatabaseConfigModal } from '../components/common/DatabaseConfigModal';
 
-export interface PdiRuleItem {
-  id: string;
-  stage: 'Exterior' | 'Electricals' | 'Interior' | 'Engine Bay' | 'Underbody' | 'Road Test';
-  category?: string;
-  code?: string;
-  title: string;
-  description: string;
-  standardRemark?: string;
-  mandatory: boolean;
-  photosRequired: number;
-  videoRequired: boolean;
-  severity: 'CRITICAL' | 'MAJOR' | 'MINOR' | 'OBSERVATION';
-  toolRequired?: string;
-  status: 'ACTIVE' | 'INACTIVE';
-}
-
-export interface FinancierItem {
-  id: string;
-  name: string;
-  category: 'PRIVATE_BANK' | 'NATIONALISED_BANK' | 'OEM_CAPTIVE_NBFC' | 'NBFC';
-  code?: string;
-  contactPerson: string;
-  designation?: string;
-  phone: string;
-  email: string;
-  maxLtv?: number;
-  processingFee?: number;
-  activeStatus: string;
-}
-
-export interface InsuranceItem {
-  id: string;
-  name: string;
-  code?: string;
-  claimsHead: string;
-  surveyorName?: string;
-  surveyorContact: string;
-  cashlessTieUp: boolean;
-  discountPercentage: number;
-  policyTypes?: string;
-}
+export { type PdiRuleItem, type FinancierItem, type InsuranceItem };
 
 export const AdminMasterPanel: React.FC = () => {
   const { currentBrand } = useAuth();
   const [activeTab, setActiveTab] = useState<'PDI_RULES' | 'USERS' | 'MODELS' | 'YARDS' | 'BRANCHES' | 'FINANCE' | 'INSURANCE'>('YARDS');
+  const [loading, setLoading] = useState(true);
+  const [dbModalOpen, setDbModalOpen] = useState(false);
 
   // =========================================================================
-  // 1. Stockyards State & Handlers
+  // Master State from Live Database (Zero Mock Fallbacks)
   // =========================================================================
-  const [yards, setYards] = useState<YardItem[]>(() => getStockyards());
+  const [yards, setYards] = useState<YardItem[]>([]);
+  const [branches, setBranches] = useState<BranchItem[]>([]);
+  const [pdiRules, setPdiRules] = useState<PdiRuleItem[]>([]);
+  const [vehicleModels, setVehicleModels] = useState<VehicleModelItem[]>([]);
+  const [financiers, setFinanciers] = useState<FinancierItem[]>([]);
+  const [insuranceProviders, setInsuranceProviders] = useState<InsuranceItem[]>([]);
+
+  // Load all master catalogues from live PostgreSQL database
+  const loadAllMasters = async () => {
+    setLoading(true);
+    try {
+      const [y, b, r, m, f, i] = await Promise.all([
+        fetchStockyards(),
+        fetchBranches(),
+        fetchCheckpoints(),
+        fetchMasterModels(),
+        fetchMasterFinanciers(),
+        fetchMasterInsurance()
+      ]);
+      setYards(y);
+      setBranches(b);
+      setPdiRules(r);
+      setVehicleModels(m);
+      setFinanciers(f);
+      setInsuranceProviders(i);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAllMasters();
+
+    const handleUpdate = () => {
+      loadAllMasters();
+    };
+
+    window.addEventListener('stockyards-updated', handleUpdate);
+    window.addEventListener('branches-updated', handleUpdate);
+    window.addEventListener('pdi-rules-updated', handleUpdate);
+    window.addEventListener('models-updated', handleUpdate);
+    window.addEventListener('financiers-updated', handleUpdate);
+    window.addEventListener('insurance-updated', handleUpdate);
+    window.addEventListener('database-config-changed', handleUpdate);
+
+    return () => {
+      window.removeEventListener('stockyards-updated', handleUpdate);
+      window.removeEventListener('branches-updated', handleUpdate);
+      window.removeEventListener('pdi-rules-updated', handleUpdate);
+      window.removeEventListener('models-updated', handleUpdate);
+      window.removeEventListener('financiers-updated', handleUpdate);
+      window.removeEventListener('insurance-updated', handleUpdate);
+      window.removeEventListener('database-config-changed', handleUpdate);
+    };
+  }, []);
+
+  // =========================================================================
+  // 1. Stockyards Handlers
+  // =========================================================================
   const [yardBrandFilter, setYardBrandFilter] = useState<'ALL' | 'Tata Motors' | 'Hyundai'>('ALL');
   const [yardSearch, setYardSearch] = useState('');
   const [showYardModal, setShowYardModal] = useState(false);
@@ -84,16 +110,12 @@ export const AdminMasterPanel: React.FC = () => {
     status: 'ACTIVE'
   });
 
-  const handleToggleYardStatus = (id: string) => {
-    const updated = yards.map(y => {
-      if (y.id === id) {
-        const nextStatus = y.status === 'ACTIVE' ? ('INACTIVE' as const) : ('ACTIVE' as const);
-        return { ...y, status: nextStatus };
-      }
-      return y;
-    });
-    setYards(updated);
-    saveStockyards(updated);
+  const handleToggleYardStatus = async (id: string) => {
+    const target = yards.find(y => y.id === id);
+    if (!target) return;
+    const nextStatus = target.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    setYards(prev => prev.map(y => y.id === id ? { ...y, status: nextStatus } : y));
+    await toggleStockyardStatus(id, nextStatus);
   };
 
   const handleOpenAddYard = () => {
@@ -119,34 +141,26 @@ export const AdminMasterPanel: React.FC = () => {
     setShowYardModal(true);
   };
 
-  const handleSaveYard = (e: React.FormEvent) => {
+  const handleSaveYard = async (e: React.FormEvent) => {
     e.preventDefault();
-    let updated: YardItem[];
-    if (editingYard) {
-      updated = yards.map(y => y.id === editingYard.id ? { ...yardForm, id: editingYard.id } : y);
-    } else {
-      updated = [{ ...yardForm, id: `yrd-${Date.now()}` }, ...yards];
-    }
-    setYards(updated);
-    saveStockyards(updated);
+    await saveStockyard(yardForm);
     setShowYardModal(false);
     setEditingYard(null);
   };
 
-  const handleDeleteYard = (id: string) => {
+  const handleDeleteYard = async (id: string) => {
     if (confirm('Are you sure you want to remove this stockyard?')) {
-      const updated = yards.filter(y => y.id !== id);
-      setYards(updated);
-      saveStockyards(updated);
+      await deleteStockyard(id);
     }
   };
 
   // =========================================================================
-  // 2. Branches State & Handlers
+  // 2. Branches Handlers
   // =========================================================================
-  const [branches, setBranches] = useState<BranchItem[]>(() => getBranches());
   const [branchBrandFilter, setBranchBrandFilter] = useState<'ALL' | 'Tata Motors' | 'Hyundai'>('ALL');
   const [branchSearch, setBranchSearch] = useState('');
+  const [branchPage, setBranchPage] = useState(1);
+  const branchesPerPage = 6;
   const [showBranchModal, setShowBranchModal] = useState(false);
   const [editingBranch, setEditingBranch] = useState<BranchItem | null>(null);
   const [branchForm, setBranchForm] = useState<BranchItem>({
@@ -163,16 +177,12 @@ export const AdminMasterPanel: React.FC = () => {
     status: 'ACTIVE'
   });
 
-  const handleToggleBranchStatus = (id: string) => {
-    const updated = branches.map(b => {
-      if (b.id === id) {
-        const nextStatus = b.status === 'ACTIVE' ? ('INACTIVE' as const) : ('ACTIVE' as const);
-        return { ...b, status: nextStatus };
-      }
-      return b;
-    });
-    setBranches(updated);
-    saveBranches(updated);
+  const handleToggleBranchStatus = async (id: string) => {
+    const target = branches.find(b => b.id === id);
+    if (!target) return;
+    const nextStatus = target.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    setBranches(prev => prev.map(b => b.id === id ? { ...b, status: nextStatus } : b));
+    await saveBranch({ ...target, status: nextStatus });
   };
 
   const handleOpenAddBranch = () => {
@@ -199,50 +209,26 @@ export const AdminMasterPanel: React.FC = () => {
     setShowBranchModal(true);
   };
 
-  const handleSaveBranch = (e: React.FormEvent) => {
+  const handleSaveBranch = async (e: React.FormEvent) => {
     e.preventDefault();
-    let updated: BranchItem[];
-    if (editingBranch) {
-      updated = branches.map(b => b.id === editingBranch.id ? { ...branchForm, id: editingBranch.id } : b);
-    } else {
-      updated = [{ ...branchForm, id: `br-${Date.now()}` }, ...branches];
-    }
-    setBranches(updated);
-    saveBranches(updated);
+    await saveBranch(branchForm);
     setShowBranchModal(false);
     setEditingBranch(null);
   };
 
-  const handleDeleteBranch = (id: string) => {
+  const handleDeleteBranch = async (id: string) => {
     if (confirm('Are you sure you want to remove this branch/showroom?')) {
-      const updated = branches.filter(b => b.id !== id);
-      setBranches(updated);
-      saveBranches(updated);
+      await deleteBranch(id);
     }
   };
 
   // =========================================================================
-  // 3. PDI Rules State & Handlers
+  // 3. PDI Checkpoints Handlers
   // =========================================================================
-  const [pdiRules, setPdiRules] = useState<PdiRuleItem[]>(() => {
-    const saved = localStorage.getItem('autoprime_pdi_rules');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return [
-      { id: 'RULE-01', stage: 'Exterior', category: 'Body Panels', code: 'EXT-01', title: 'Body Panel Alignment & Gap Uniformity', description: 'Inspect hood, fenders, doors, and tailgate shutlines for uniform flushness (3.5mm ± 0.5mm)', standardRemark: 'All panel gaps uniform (3.5mm) & factory aligned', mandatory: true, photosRequired: 2, videoRequired: false, severity: 'CRITICAL', toolRequired: 'Feeler Gap Gauge', status: 'ACTIVE' },
-      { id: 'RULE-02', stage: 'Exterior', category: 'Paint Finish', code: 'EXT-02', title: 'Paint Gloss & Clear Coat Transit Inspection', description: '360° visual scan under diffused inspection lights for orange peel, dust nibs, transit scratches, or buffer swirl marks', standardRemark: 'High-gloss clear coat verified; zero transit scratches/swirls', mandatory: true, photosRequired: 4, videoRequired: true, severity: 'CRITICAL', toolRequired: 'Defect Marker Lamp', status: 'ACTIVE' },
-      { id: 'RULE-03', stage: 'Exterior', category: 'Glass & Seals', code: 'EXT-03', title: 'Windshield, Windows & Beading Weatherstrips', description: 'Inspect laminated windshield, side glasses for scratches/pits, and check perimeter rubber weatherstrip fitment', standardRemark: 'Glass manufacturing date stamps match; seals watertight', mandatory: true, photosRequired: 1, videoRequired: false, severity: 'MAJOR', toolRequired: 'Visual / Tactile', status: 'ACTIVE' },
-      { id: 'RULE-04', stage: 'Electricals', category: 'Lighting', code: 'ELE-01', title: 'Full LED Headlamps, DRLs & Connected Lightbars', description: 'Verify Bi-LED projectors high/low beam leveler, sequential turn indicators, and rear connected taillight animation', standardRemark: 'Bi-LED leveler & sequential animations verified functioning', mandatory: true, photosRequired: 2, videoRequired: false, severity: 'CRITICAL', toolRequired: 'Beam Tester', status: 'ACTIVE' },
-      { id: 'RULE-05', stage: 'Electricals', category: 'Infotainment', code: 'ELE-02', title: 'Digital Instrument Cluster & Infotainment Display', description: 'Check 10.25-inch instrument cluster dials, Harman touchscreen, wireless Android Auto / Apple CarPlay pairing', standardRemark: 'Display cluster responsive & smartphone projection connected', mandatory: true, photosRequired: 1, videoRequired: false, severity: 'MAJOR', toolRequired: 'System Diagnostic USB', status: 'ACTIVE' },
-      { id: 'RULE-06', stage: 'Interior', category: 'Cockpit', code: 'INT-01', title: 'Leatherette Upholstery, Stitching & Sunroof Operation', description: 'Check ventilated front seats, leatherette seat covers, panoramic sunroof open/close/tilt one-touch anti-pinch action', standardRemark: 'Seat ventilation active; sunroof anti-pinch calibrated', mandatory: true, photosRequired: 2, videoRequired: false, severity: 'MAJOR', toolRequired: 'Operation Test', status: 'ACTIVE' },
-      { id: 'RULE-07', stage: 'Engine Bay', category: 'Fluids', code: 'ENG-01', title: 'Engine Oil, Coolant, Brake Fluid & Battery SOC', description: 'Verify oil dipstick level, coolant reservoir MAX mark, DOT4 brake fluid, and 12V auxiliary battery terminal voltage (>12.6V)', standardRemark: 'Fluid levels at MAX line; 12V auxiliary battery at 12.8V', mandatory: true, photosRequired: 2, videoRequired: false, severity: 'CRITICAL', toolRequired: 'Multimeter & Refractometer', status: 'ACTIVE' },
-      { id: 'RULE-08', stage: 'Underbody', category: 'Chassis', code: 'UND-01', title: 'Floor Pan Anti-Rust Coating & Suspension Mounting', description: 'Inspect exhaust heat shields, catalytic converter shields, brake line routing, and check for hydraulic transit leaks', standardRemark: 'Underbody anti-rust intact; zero hydraulic leaks found', mandatory: true, photosRequired: 2, videoRequired: false, severity: 'CRITICAL', toolRequired: '2-Post Hydraulic Lift', status: 'ACTIVE' },
-      { id: 'RULE-09', stage: 'Road Test', category: 'Dynamics', code: 'ROA-01', title: 'Steering Centering, ABS Braking & ADAS Calibration', description: 'Conduct 2.5 km dynamic road test: steering wheel center tracking, emergency braking straightness, and Lane Keep Assist beep test', standardRemark: 'Zero pulling; straight-line ABS braking & ADAS beep tested OK', mandatory: true, photosRequired: 1, videoRequired: true, severity: 'CRITICAL', toolRequired: 'VCI Scanner', status: 'ACTIVE' },
-    ];
-  });
-
   const [pdiSearch, setPdiSearch] = useState('');
+  const [pdiBrandFilter, setPdiBrandFilter] = useState<'ALL' | 'Tata Motors' | 'Hyundai'>('ALL');
+  const [pdiPage, setPdiPage] = useState(1);
+  const pdiPerPage = 6;
   const [showPdiModal, setShowPdiModal] = useState(false);
   const [editingPdiRule, setEditingPdiRule] = useState<PdiRuleItem | null>(null);
   const [pdiForm, setPdiForm] = useState<PdiRuleItem>({
@@ -261,21 +247,12 @@ export const AdminMasterPanel: React.FC = () => {
     status: 'ACTIVE'
   });
 
-  const savePdiRules = (rules: PdiRuleItem[]) => {
-    setPdiRules(rules);
-    localStorage.setItem('autoprime_pdi_rules', JSON.stringify(rules));
-    window.dispatchEvent(new Event('pdi-rules-updated'));
-  };
-
-  const handleTogglePdiStatus = (id: string) => {
-    const updated = pdiRules.map(r => {
-      if (r.id === id) {
-        const nextStatus = r.status === 'ACTIVE' ? ('INACTIVE' as const) : ('ACTIVE' as const);
-        return { ...r, status: nextStatus };
-      }
-      return r;
-    });
-    savePdiRules(updated);
+  const handleTogglePdiStatus = async (id: string) => {
+    const target = pdiRules.find(r => r.id === id);
+    if (!target) return;
+    const nextStatus = target.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    setPdiRules(prev => prev.map(r => r.id === id ? { ...r, status: nextStatus } : r));
+    await saveCheckpoint({ ...target, status: nextStatus });
   };
 
   const handleOpenAddPdi = () => {
@@ -304,52 +281,27 @@ export const AdminMasterPanel: React.FC = () => {
     setShowPdiModal(true);
   };
 
-  const handleSavePdi = (e: React.FormEvent) => {
+  const handleSavePdi = async (e: React.FormEvent) => {
     e.preventDefault();
-    let updated: PdiRuleItem[];
-    if (editingPdiRule) {
-      updated = pdiRules.map(r => r.id === editingPdiRule.id ? { ...pdiForm, id: editingPdiRule.id } : r);
-    } else {
-      updated = [{ ...pdiForm, id: `RULE-${Date.now()}` }, ...pdiRules];
-    }
-    savePdiRules(updated);
+    await saveCheckpoint(pdiForm);
     setShowPdiModal(false);
     setEditingPdiRule(null);
   };
 
-  const handleDeletePdi = (id: string) => {
+  const handleDeletePdi = async (id: string) => {
     if (confirm('Are you sure you want to remove this PDI checkpoint?')) {
-      const updated = pdiRules.filter(r => r.id !== id);
-      savePdiRules(updated);
+      await deleteCheckpoint(id);
     }
   };
 
   // =========================================================================
-  // 4. Vehicle Models State & Handlers
+  // 4. Vehicle Models Handlers
   // =========================================================================
-  const [vehicleModels, setVehicleModels] = useState<any[]>(() => {
-    const saved = localStorage.getItem('autoprime_models');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return [
-      { id: 'm-1', brand: 'Tata Motors', model_name: 'Tata Safari', body_type: 'Flagship 6/7-Seater SUV', base_ex_showroom: 1619000, fuel_types: ['DIESEL'], transmission: '6MT / 6AT', seating_capacity: '6/7 Seater', variants: ['Smart', 'Pure', 'Adventure', 'Accomplished+'], colors: ['Oberon Black', 'Cosmic Gold', 'Stardust Ash'], gst_rate: 28 },
-      { id: 'm-2', brand: 'Tata Motors', model_name: 'Tata Harrier', body_type: 'Premium 5-Seater SUV', base_ex_showroom: 1549000, fuel_types: ['DIESEL'], transmission: '6MT / 6AT', seating_capacity: '5 Seater', variants: ['Smart', 'Pure', 'Adventure', 'Fearless+'], colors: ['Oberon Black', 'Sunlit Yellow', 'Pebble Grey'], gst_rate: 28 },
-      { id: 'm-3', brand: 'Tata Motors', model_name: 'Tata Nexon', body_type: 'Compact SUV', base_ex_showroom: 799000, fuel_types: ['PETROL', 'DIESEL', 'iCNG', 'EV'], transmission: '5MT / 6MT / 6AMT / 7DCA', seating_capacity: '5 Seater', variants: ['Smart', 'Pure', 'Creative', 'Fearless+'], colors: ['Daytona Grey', 'Fearless Purple', 'Pristine White'], gst_rate: 28 },
-      { id: 'm-4', brand: 'Tata Motors', model_name: 'Tata Curvv / Curvv.ev', body_type: 'SUV Coupe', base_ex_showroom: 999000, fuel_types: ['PETROL', 'DIESEL', 'EV'], transmission: '6MT / 7DCA / Electric Drive', seating_capacity: '5 Seater', variants: ['Smart', 'Pure+', 'Creative+', 'Accomplished+'], colors: ['Empowered Oxide', 'Flame Red', 'Opera Blue'], gst_rate: 28 },
-      { id: 'm-5', brand: 'Tata Motors', model_name: 'Tata Punch', body_type: 'Micro SUV', base_ex_showroom: 612000, fuel_types: ['PETROL', 'iCNG', 'EV'], transmission: '5MT / 5AMT', seating_capacity: '5 Seater', variants: ['Pure', 'Adventure', 'Accomplished', 'Creative'], colors: ['Calypso Red', 'Atomic Orange', 'Daytona Grey'], gst_rate: 28 },
-      { id: 'm-6', brand: 'Hyundai', model_name: 'Hyundai Creta', body_type: 'Midsize SUV', base_ex_showroom: 1099000, fuel_types: ['PETROL', 'DIESEL', 'TURBO'], transmission: '6MT / IVT / 6AT / 7DCT', seating_capacity: '5 Seater', variants: ['E', 'EX', 'S', 'SX', 'SX(O)'], colors: ['Ranger Khaki', 'Abyss Black', 'Atlas White'], gst_rate: 28 },
-      { id: 'm-7', brand: 'Hyundai', model_name: 'Hyundai Venue / N Line', body_type: 'Compact SUV', base_ex_showroom: 794000, fuel_types: ['PETROL', 'DIESEL', 'TURBO'], transmission: '5MT / 6MT / 7DCT', seating_capacity: '5 Seater', variants: ['E', 'S', 'S(O)', 'SX', 'SX(O)'], colors: ['Thunder Blue', 'Atlas White', 'Typhoon Silver'], gst_rate: 28 },
-      { id: 'm-8', brand: 'Hyundai', model_name: 'Hyundai Verna', body_type: 'Premium Sedan', base_ex_showroom: 1100000, fuel_types: ['PETROL', 'TURBO GDi'], transmission: '6MT / IVT / 7DCT', seating_capacity: '5 Seater', variants: ['EX', 'S', 'SX', 'SX(O)'], colors: ['Abyss Black', 'Titan Grey', 'Fiery Red'], gst_rate: 28 },
-      { id: 'm-9', brand: 'Hyundai', model_name: 'Hyundai Ioniq 5', body_type: 'Electric Crossover', base_ex_showroom: 4605000, fuel_types: ['EV (72.6 kWh)'], transmission: 'Single Speed Reduction', seating_capacity: '5 Seater', variants: ['RWD Long Range'], colors: ['Gravity Gold Matte', 'Optic White', 'Midnight Black'], gst_rate: 5 },
-    ];
-  });
-
   const [modelSearch, setModelSearch] = useState('');
   const [modelBrandFilter, setModelBrandFilter] = useState<'ALL' | 'Tata Motors' | 'Hyundai'>('ALL');
   const [showModelModal, setShowModelModal] = useState(false);
-  const [editingModel, setEditingModel] = useState<any | null>(null);
-  const [modelForm, setModelForm] = useState<any>({
+  const [editingModel, setEditingModel] = useState<VehicleModelItem | null>(null);
+  const [modelForm, setModelForm] = useState<VehicleModelItem>({
     id: '',
     brand: 'Tata Motors',
     model_name: '',
@@ -362,11 +314,6 @@ export const AdminMasterPanel: React.FC = () => {
     colors: ['White', 'Grey', 'Black'],
     gst_rate: 28
   });
-
-  const saveVehicleModels = (models: any[]) => {
-    setVehicleModels(models);
-    localStorage.setItem('autoprime_models', JSON.stringify(models));
-  };
 
   const handleOpenAddModel = () => {
     setEditingModel(null);
@@ -386,49 +333,28 @@ export const AdminMasterPanel: React.FC = () => {
     setShowModelModal(true);
   };
 
-  const handleOpenEditModel = (m: any) => {
+  const handleOpenEditModel = (m: VehicleModelItem) => {
     setEditingModel(m);
     setModelForm({ ...m });
     setShowModelModal(true);
   };
 
-  const handleSaveModel = (e: React.FormEvent) => {
+  const handleSaveModel = async (e: React.FormEvent) => {
     e.preventDefault();
-    let updated: any[];
-    if (editingModel) {
-      updated = vehicleModels.map(m => m.id === editingModel.id ? { ...modelForm, id: editingModel.id } : m);
-    } else {
-      updated = [{ ...modelForm, id: `m-${Date.now()}` }, ...vehicleModels];
-    }
-    saveVehicleModels(updated);
+    await saveMasterModel(modelForm);
     setShowModelModal(false);
     setEditingModel(null);
   };
 
-  const handleDeleteModel = (id: string) => {
+  const handleDeleteModel = async (id: string) => {
     if (confirm('Are you sure you want to remove this vehicle model?')) {
-      const updated = vehicleModels.filter(m => m.id !== id);
-      saveVehicleModels(updated);
+      await deleteMasterModel(id);
     }
   };
 
   // =========================================================================
-  // 5. Financiers State & Handlers
+  // 5. Financiers Handlers
   // =========================================================================
-  const [financiers, setFinanciers] = useState<FinancierItem[]>(() => {
-    const saved = localStorage.getItem('autoprime_financiers');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return [
-      { id: 'fin-1', name: 'State Bank of India (SBI Auto Loans)', category: 'NATIONALISED_BANK', code: 'FIN-SBI-01', contactPerson: 'Anil Kumar (Chief Manager)', designation: 'Chief Manager Auto Desk', phone: '+91 141 223 9011', email: 'autoloans.sbi@sbi.co.in', maxLtv: 90, processingFee: 0.25, activeStatus: 'Active Tie-Up' },
-      { id: 'fin-2', name: 'HDFC Bank Ltd', category: 'PRIVATE_BANK', code: 'FIN-HDFC-02', contactPerson: 'Pooja Verma (DSA Head)', designation: 'Zonal DSA Head', phone: '+91 20 6789 2200', email: 'auto.hdfc@hdfcbank.com', maxLtv: 95, processingFee: 0.50, activeStatus: 'Active Tie-Up' },
-      { id: 'fin-3', name: 'ICICI Bank Ltd', category: 'PRIVATE_BANK', code: 'FIN-ICICI-03', contactPerson: 'Rajesh Nair (Zonal Lead)', designation: 'Regional Retail Lead', phone: '+91 22 4567 1100', email: 'autodesk@icicibank.com', maxLtv: 90, processingFee: 0.50, activeStatus: 'Active Tie-Up' },
-      { id: 'fin-4', name: 'Tata Capital Financial Services', category: 'OEM_CAPTIVE_NBFC', code: 'FIN-TCF-04', contactPerson: 'Vikram Joshi (Zonal Head)', designation: 'Zonal Captive Head', phone: '+91 1800 209 6060', email: 'dealerdesk@tatacapital.com', maxLtv: 100, processingFee: 0.00, activeStatus: 'Active Tie-Up' },
-      { id: 'fin-5', name: 'Bajaj Finance Ltd', category: 'NBFC', code: 'FIN-BFL-05', contactPerson: 'Sunil Mehta (Regional Manager)', designation: 'Regional Manager Auto Loans', phone: '+91 20 7157 6064', email: 'auto@bajajfinserv.in', maxLtv: 85, processingFee: 0.75, activeStatus: 'Active Tie-Up' },
-    ];
-  });
-
   const [financeSearch, setFinanceSearch] = useState('');
   const [showFinanceModal, setShowFinanceModal] = useState(false);
   const [editingFinance, setEditingFinance] = useState<FinancierItem | null>(null);
@@ -443,13 +369,8 @@ export const AdminMasterPanel: React.FC = () => {
     email: '',
     maxLtv: 90,
     processingFee: 0.5,
-    activeStatus: 'Active Tie-Up'
+    activeStatus: 'ACTIVE'
   });
-
-  const saveFinanciers = (list: FinancierItem[]) => {
-    setFinanciers(list);
-    localStorage.setItem('autoprime_financiers', JSON.stringify(list));
-  };
 
   const handleOpenAddFinance = () => {
     setEditingFinance(null);
@@ -464,7 +385,7 @@ export const AdminMasterPanel: React.FC = () => {
       email: '',
       maxLtv: 90,
       processingFee: 0.5,
-      activeStatus: 'Active Tie-Up'
+      activeStatus: 'ACTIVE'
     });
     setShowFinanceModal(true);
   };
@@ -475,43 +396,22 @@ export const AdminMasterPanel: React.FC = () => {
     setShowFinanceModal(true);
   };
 
-  const handleSaveFinance = (e: React.FormEvent) => {
+  const handleSaveFinance = async (e: React.FormEvent) => {
     e.preventDefault();
-    let updated: FinancierItem[];
-    if (editingFinance) {
-      updated = financiers.map(f => f.id === editingFinance.id ? { ...financeForm, id: editingFinance.id } : f);
-    } else {
-      updated = [{ ...financeForm, id: `fin-${Date.now()}` }, ...financiers];
-    }
-    saveFinanciers(updated);
+    await saveMasterFinancier(financeForm);
     setShowFinanceModal(false);
     setEditingFinance(null);
   };
 
-  const handleDeleteFinance = (id: string) => {
+  const handleDeleteFinance = async (id: string) => {
     if (confirm('Are you sure you want to remove this banking partner?')) {
-      const updated = financiers.filter(f => f.id !== id);
-      saveFinanciers(updated);
+      await deleteMasterFinancier(id);
     }
   };
 
   // =========================================================================
-  // 6. Insurance Providers State & Handlers
+  // 6. Insurance Providers Handlers
   // =========================================================================
-  const [insuranceProviders, setInsuranceProviders] = useState<InsuranceItem[]>(() => {
-    const saved = localStorage.getItem('autoprime_insurance');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return [
-      { id: 'ins-1', name: 'Tata AIG General Insurance', code: 'INS-AIG-01', claimsHead: 'Kavita Sen (Zonal Claims Lead)', surveyorName: 'Vinod Sharma', surveyorContact: '+91 1800 266 7780', cashlessTieUp: true, discountPercentage: 65, policyTypes: 'Zero Dep, Engine Protect, RTI, Key Replacement' },
-      { id: 'ins-2', name: 'ICICI Lombard General Insurance', code: 'INS-LOM-02', claimsHead: 'Manoj Sharma (Surveyor Head)', surveyorName: 'Rajesh Gupta', surveyorContact: '+91 1800 2666', cashlessTieUp: true, discountPercentage: 60, policyTypes: 'Zero Dep, RTI, Consumables Cover' },
-      { id: 'ins-3', name: 'Bajaj Allianz General Insurance', code: 'INS-BAJ-03', claimsHead: 'Alok Gupta (Regional Claims Mgr)', surveyorName: 'Amit Verma', surveyorContact: '+91 1800 209 5858', cashlessTieUp: true, discountPercentage: 62, policyTypes: 'Zero Dep, Engine Protect, Tyre Protect' },
-      { id: 'ins-4', name: 'HDFC ERGO General Insurance', code: 'INS-ERG-04', claimsHead: 'Sneha Patel (Claims Desk)', surveyorName: 'Dinesh Joshi', surveyorContact: '+91 1800 266 6444', cashlessTieUp: true, discountPercentage: 58, policyTypes: 'Zero Dep, 24x7 Roadside Assistance' },
-      { id: 'ins-5', name: 'National Insurance Company Ltd', code: 'INS-NIC-05', claimsHead: 'R. K. Verma (Divisional Officer)', surveyorName: 'Prakash Rao', surveyorContact: '+91 1800 345 0330', cashlessTieUp: true, discountPercentage: 50, policyTypes: 'Comprehensive Standard Package' },
-    ];
-  });
-
   const [insuranceSearch, setInsuranceSearch] = useState('');
   const [showInsuranceModal, setShowInsuranceModal] = useState(false);
   const [editingInsurance, setEditingInsurance] = useState<InsuranceItem | null>(null);
@@ -526,11 +426,6 @@ export const AdminMasterPanel: React.FC = () => {
     discountPercentage: 60,
     policyTypes: 'Zero Dep, RTI, Engine Protect'
   });
-
-  const saveInsuranceProviders = (list: InsuranceItem[]) => {
-    setInsuranceProviders(list);
-    localStorage.setItem('autoprime_insurance', JSON.stringify(list));
-  };
 
   const handleOpenAddInsurance = () => {
     setEditingInsurance(null);
@@ -554,23 +449,16 @@ export const AdminMasterPanel: React.FC = () => {
     setShowInsuranceModal(true);
   };
 
-  const handleSaveInsurance = (e: React.FormEvent) => {
+  const handleSaveInsurance = async (e: React.FormEvent) => {
     e.preventDefault();
-    let updated: InsuranceItem[];
-    if (editingInsurance) {
-      updated = insuranceProviders.map(i => i.id === editingInsurance.id ? { ...insuranceForm, id: editingInsurance.id } : i);
-    } else {
-      updated = [{ ...insuranceForm, id: `ins-${Date.now()}` }, ...insuranceProviders];
-    }
-    saveInsuranceProviders(updated);
+    await saveMasterInsurance(insuranceForm);
     setShowInsuranceModal(false);
     setEditingInsurance(null);
   };
 
-  const handleDeleteInsurance = (id: string) => {
+  const handleDeleteInsurance = async (id: string) => {
     if (confirm('Are you sure you want to remove this insurance tie-up partner?')) {
-      const updated = insuranceProviders.filter(i => i.id !== id);
-      saveInsuranceProviders(updated);
+      await deleteMasterInsurance(id);
     }
   };
 
@@ -586,89 +474,289 @@ export const AdminMasterPanel: React.FC = () => {
     const matchesSearch = !branchSearch || b.name.toLowerCase().includes(branchSearch.toLowerCase()) || b.city.toLowerCase().includes(branchSearch.toLowerCase());
     return matchesBrand && matchesSearch;
   });
+  const totalBranchPages = Math.ceil(filteredBranches.length / branchesPerPage) || 1;
+  const paginatedBranches = filteredBranches.slice((branchPage - 1) * branchesPerPage, branchPage * branchesPerPage);
+
+  const filteredPdiRules = pdiRules.filter(r => {
+    const q = pdiSearch.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      r.title.toLowerCase().includes(q) ||
+      r.stage.toLowerCase().includes(q) ||
+      (r.code && r.code.toLowerCase().includes(q)) ||
+      r.severity.toLowerCase().includes(q) ||
+      r.description.toLowerCase().includes(q) ||
+      (r.standardRemark && r.standardRemark.toLowerCase().includes(q))
+    );
+  });
+  const totalPdiPages = Math.ceil(filteredPdiRules.length / pdiPerPage) || 1;
+  const paginatedPdiRules = filteredPdiRules.slice((pdiPage - 1) * pdiPerPage, pdiPage * pdiPerPage);
+
+  const renderBankLogo = (name: string) => {
+    const lower = name.toLowerCase();
+    if (lower.includes('sbi') || lower.includes('state bank')) {
+      return (
+        <svg className="w-7 h-7 shrink-0 text-blue-600" viewBox="0 0 32 32" fill="currentColor">
+          <circle cx="16" cy="16" r="16" fill="currentColor" />
+          <circle cx="16" cy="16" r="6.5" fill="white" />
+          <rect x="14.5" y="16" width="3" height="10" fill="currentColor" />
+        </svg>
+      );
+    }
+    if (lower.includes('hdfc')) {
+      return (
+        <div className="w-7 h-7 rounded-md bg-blue-900 flex items-center justify-center shrink-0 shadow-xs p-1">
+          <div className="w-full h-full border border-white/60 flex items-center justify-center bg-blue-900">
+            <div className="w-2.5 h-2.5 bg-red-600 flex items-center justify-center">
+              <div className="w-1 h-1 bg-blue-900" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (lower.includes('icici')) {
+      return (
+        <div className="w-7 h-7 rounded-full bg-amber-600 flex items-center justify-center shrink-0 shadow-xs text-white font-bold text-xs italic">
+          <span className="font-serif leading-none">i</span>
+        </div>
+      );
+    }
+    if (lower.includes('tata')) {
+      return (
+        <div className="w-7 h-7 rounded-md bg-sky-950 flex items-center justify-center shrink-0 shadow-xs text-white font-black text-[8px] tracking-tighter">
+          <span>TATA</span>
+        </div>
+      );
+    }
+    if (lower.includes('bajaj')) {
+      return (
+        <div className="w-7 h-7 rounded-full bg-blue-700 flex items-center justify-center shrink-0 shadow-xs text-white font-bold text-xs">
+          <span className="leading-none">B</span>
+        </div>
+      );
+    }
+    return (
+      <div className="w-7 h-7 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center shrink-0 text-blue-600">
+        <Landmark className="w-3.5 h-3.5" />
+      </div>
+    );
+  };
 
   const activeYardsCount = yards.filter(y => y.status === 'ACTIVE').length;
   const activeBranchesCount = branches.filter(b => b.status === 'ACTIVE').length;
+  const activeFinanciersCount = financiers.filter(f => f.activeStatus.toLowerCase().includes('active')).length;
+  const maxLtvVal = financiers.length > 0 ? Math.max(...financiers.map(f => f.maxLtv || 0)) : 100;
+
+  const filteredFinanciers = financiers.filter(f => {
+    const q = financeSearch.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      f.name.toLowerCase().includes(q) ||
+      f.contactPerson.toLowerCase().includes(q) ||
+      f.phone.toLowerCase().includes(q) ||
+      f.category.toLowerCase().includes(q) ||
+      (f.code && f.code.toLowerCase().includes(q))
+    );
+  });
+
+  const filteredInsuranceProviders = insuranceProviders.filter(i => {
+    const q = insuranceSearch.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      i.name.toLowerCase().includes(q) ||
+      i.claimsHead.toLowerCase().includes(q) ||
+      i.surveyorContact.toLowerCase().includes(q) ||
+      (i.surveyorName && i.surveyorName.toLowerCase().includes(q)) ||
+      (i.policyTypes && i.policyTypes.toLowerCase().includes(q))
+    );
+  });
+
+  const filteredModels = vehicleModels.filter(m => {
+    const q = modelSearch.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      m.model_name.toLowerCase().includes(q) ||
+      m.brand.toLowerCase().includes(q) ||
+      m.body_type.toLowerCase().includes(q) ||
+      m.transmission.toLowerCase().includes(q) ||
+      (m.fuel_types || []).some((f: string) => f.toLowerCase().includes(q)) ||
+      (m.variants || []).some((v: string) => v.toLowerCase().includes(q))
+    );
+  });
 
   return (
     <div className="space-y-4 max-w-[1600px] mx-auto select-none pb-20">
       
       {/* Top Header */}
-      <PageHeader
-        title="Master Data & Facility Management"
-        subtitle="Manage OEM Stockyards, Showroom Branches, Inspection Checkpoints, Vehicle Models & Financiers"
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-blue-950 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Building2 className="w-4.5 h-4.5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-ink tracking-tight">Master Data &amp; Facility Management</h1>
+            <p className="text-xs text-ink-3 mt-0.5">
+              Manage OEM Stockyards, Showroom Branches, Inspection Checkpoints, Vehicle Models &amp; Financiers
+            </p>
+          </div>
+        </div>
 
-      {/* Tabs Navigation Bar */}
-      <div className="flex items-center gap-1 overflow-x-auto bg-surface border border-line rounded p-1 text-xs">
+        <div className="self-start sm:self-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setDbModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface border border-line text-xs font-semibold text-ink hover:bg-surface-hover transition-colors shadow-xs cursor-pointer"
+          >
+            <Database className="w-3.5 h-3.5 text-accent" />
+            <span>Database Connection &amp; Seeder</span>
+          </button>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-line text-xs font-semibold text-ink shadow-xs">
+            <Calendar className="w-3.5 h-3.5 text-blue-600" />
+            <span>11 Sep 2025</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs Navigation Bar (7 Horizontal Cards matching screenshot) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+        {/* Card 1: Stockyards */}
         <button
+          type="button"
           onClick={() => setActiveTab('YARDS')}
-          className={`flex items-center gap-1.5 h-7 px-3 rounded text-xs font-medium transition-colors cursor-pointer ${
-            activeTab === 'YARDS' ? 'bg-accent text-white font-semibold shadow-xs' : 'text-ink-3 hover:text-ink-2'
+          className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+            activeTab === 'YARDS'
+              ? 'bg-blue-50/90 border-blue-500 ring-2 ring-blue-500/20 shadow-xs'
+              : 'bg-blue-50/40 border-blue-100/80 hover:bg-blue-50/70 hover:border-blue-200'
           }`}
         >
-          <Warehouse className="w-3.5 h-3.5" />
-          <span>Stockyards ({activeYardsCount} Active)</span>
+          <div className="w-7.5 h-7.5 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+            <Boxes className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs font-semibold text-slate-700 truncate">Stockyards</div>
+            <div className="text-lg font-bold font-mono text-slate-900 leading-tight mt-0.5">{yards.length}</div>
+            <div className="text-[10px] text-slate-400 font-medium">Total Partners</div>
+          </div>
         </button>
 
+        {/* Card 2: Branches & Showrooms */}
         <button
+          type="button"
           onClick={() => setActiveTab('BRANCHES')}
-          className={`flex items-center gap-1.5 h-7 px-3 rounded text-xs font-medium transition-colors cursor-pointer ${
-            activeTab === 'BRANCHES' ? 'bg-accent text-white font-semibold shadow-xs' : 'text-ink-3 hover:text-ink-2'
+          className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+            activeTab === 'BRANCHES'
+              ? 'bg-emerald-50/90 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
+              : 'bg-emerald-50/40 border-emerald-100/80 hover:bg-emerald-50/70 hover:border-emerald-200'
           }`}
         >
-          <Building2 className="w-3.5 h-3.5" />
-          <span>Branches & Showrooms ({activeBranchesCount} Active)</span>
+          <div className="w-7.5 h-7.5 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+            <Building2 className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs font-semibold text-slate-700 truncate">Branches &amp; Showrooms</div>
+            <div className="text-lg font-bold font-mono text-slate-900 leading-tight mt-0.5">{branches.length}</div>
+            <div className="text-[10px] text-slate-400 font-medium">Total Partners</div>
+          </div>
         </button>
 
+        {/* Card 3: Checkpoints */}
         <button
+          type="button"
           onClick={() => setActiveTab('PDI_RULES')}
-          className={`flex items-center gap-1.5 h-7 px-3 rounded text-xs font-medium transition-colors cursor-pointer ${
-            activeTab === 'PDI_RULES' ? 'bg-accent text-white font-semibold shadow-xs' : 'text-ink-3 hover:text-ink-2'
+          className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+            activeTab === 'PDI_RULES'
+              ? 'bg-amber-50/90 border-amber-500 ring-2 ring-amber-500/20 shadow-xs'
+              : 'bg-amber-50/40 border-amber-100/80 hover:bg-amber-50/70 hover:border-amber-200'
           }`}
         >
-          <Sliders className="w-3.5 h-3.5" />
-          <span>Checkpoints ({pdiRules.length})</span>
+          <div className="w-7.5 h-7.5 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+            <ShieldAlert className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs font-semibold text-slate-700 truncate">Checkpoints</div>
+            <div className="text-lg font-bold font-mono text-slate-900 leading-tight mt-0.5">{pdiRules.length}</div>
+            <div className="text-[10px] text-slate-400 font-medium">Total Partners</div>
+          </div>
         </button>
 
+        {/* Card 4: Users & Roles */}
         <button
+          type="button"
           onClick={() => setActiveTab('USERS')}
-          className={`flex items-center gap-1.5 h-7 px-3 rounded text-xs font-medium transition-colors cursor-pointer ${
-            activeTab === 'USERS' ? 'bg-accent text-white font-semibold shadow-xs' : 'text-ink-3 hover:text-ink-2'
+          className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+            activeTab === 'USERS'
+              ? 'bg-purple-50/90 border-purple-500 ring-2 ring-purple-500/20 shadow-xs'
+              : 'bg-purple-50/40 border-purple-100/80 hover:bg-purple-50/70 hover:border-purple-200'
           }`}
         >
-          <Users className="w-3.5 h-3.5" />
-          <span>Users & Roles</span>
+          <div className="w-7.5 h-7.5 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+            <Users className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs font-semibold text-slate-700 truncate">Users &amp; Roles</div>
+            <div className="text-lg font-bold font-mono text-slate-900 leading-tight mt-0.5">6</div>
+            <div className="text-[10px] text-slate-400 font-medium">Total Partners</div>
+          </div>
         </button>
 
+        {/* Card 5: Models */}
         <button
+          type="button"
           onClick={() => setActiveTab('MODELS')}
-          className={`flex items-center gap-1.5 h-7 px-3 rounded text-xs font-medium transition-colors cursor-pointer ${
-            activeTab === 'MODELS' ? 'bg-accent text-white font-semibold shadow-xs' : 'text-ink-3 hover:text-ink-2'
+          className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+            activeTab === 'MODELS'
+              ? 'bg-cyan-50/90 border-cyan-500 ring-2 ring-cyan-500/20 shadow-xs'
+              : 'bg-cyan-50/40 border-cyan-100/80 hover:bg-cyan-50/70 hover:border-cyan-200'
           }`}
         >
-          <Car className="w-3.5 h-3.5" />
-          <span>Models ({vehicleModels.length})</span>
+          <div className="w-7.5 h-7.5 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center shrink-0">
+            <Car className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs font-semibold text-slate-700 truncate">Models</div>
+            <div className="text-lg font-bold font-mono text-slate-900 leading-tight mt-0.5">{vehicleModels.length}</div>
+            <div className="text-[10px] text-slate-400 font-medium">Total Partners</div>
+          </div>
         </button>
 
+        {/* Card 6: Financiers */}
         <button
+          type="button"
           onClick={() => setActiveTab('FINANCE')}
-          className={`flex items-center gap-1.5 h-7 px-3 rounded text-xs font-medium transition-colors cursor-pointer ${
-            activeTab === 'FINANCE' ? 'bg-accent text-white font-semibold shadow-xs' : 'text-ink-3 hover:text-ink-2'
+          className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+            activeTab === 'FINANCE'
+              ? 'bg-rose-50/90 border-rose-500 ring-2 ring-rose-500/20 shadow-xs'
+              : 'bg-rose-50/40 border-rose-100/80 hover:bg-rose-50/70 hover:border-rose-200'
           }`}
         >
-          <Landmark className="w-3.5 h-3.5" />
-          <span>Financiers ({financiers.length})</span>
+          <div className="w-7.5 h-7.5 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+            <Landmark className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs font-semibold text-slate-700 truncate">Financiers</div>
+            <div className="text-lg font-bold font-mono text-slate-900 leading-tight mt-0.5">{financiers.length}</div>
+            <div className="text-[10px] text-slate-400 font-medium">Total Partners</div>
+          </div>
         </button>
 
+        {/* Card 7: Insurance */}
         <button
+          type="button"
           onClick={() => setActiveTab('INSURANCE')}
-          className={`flex items-center gap-1.5 h-7 px-3 rounded text-xs font-medium transition-colors cursor-pointer ${
-            activeTab === 'INSURANCE' ? 'bg-accent text-white font-semibold shadow-xs' : 'text-ink-3 hover:text-ink-2'
+          className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+            activeTab === 'INSURANCE'
+              ? 'bg-indigo-50/90 border-indigo-500 ring-2 ring-indigo-500/20 shadow-xs'
+              : 'bg-indigo-50/40 border-indigo-100/80 hover:bg-indigo-50/70 hover:border-indigo-200'
           }`}
         >
-          <Shield className="w-3.5 h-3.5" />
-          <span>Insurance ({insuranceProviders.length})</span>
+          <div className="w-7.5 h-7.5 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+            <Shield className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs font-semibold text-slate-700 truncate">Insurance</div>
+            <div className="text-lg font-bold font-mono text-slate-900 leading-tight mt-0.5">{insuranceProviders.length}</div>
+            <div className="text-[10px] text-slate-400 font-medium">Total Partners</div>
+          </div>
         </button>
       </div>
 
@@ -678,149 +766,282 @@ export const AdminMasterPanel: React.FC = () => {
       {activeTab === 'YARDS' && (
         <div className="space-y-4">
           
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Stat label="Total Stockyards" value={yards.length} note="Configured Yards" />
-            <Stat label="Active Stockyards" value={activeYardsCount} note="Visible in Dropdowns" tone="ok" />
-            <Stat label="Tata Stockyards" value={yards.filter(y => y.brand === 'Tata Motors').length} note="Tata Dealerships" />
-            <Stat label="Hyundai Stockyards" value={yards.filter(y => y.brand === 'Hyundai').length} note="Hyundai Dealerships" tone="accent" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            {/* TOTAL STOCKYARDS */}
+            <div className="bg-blue-50/40 border border-blue-100/90 rounded-lg p-2 shadow-xs flex flex-col justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-6.5 h-6.5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                  <Warehouse className="w-3.5 h-3.5 stroke-[2]" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[9.5px] font-bold tracking-wider text-blue-600 uppercase truncate leading-none">
+                    TOTAL STOCKYARDS
+                  </span>
+                  <span className="text-base font-bold font-mono text-ink tracking-tight tnum leading-tight mt-0.5">
+                    {yards.length}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-1 pt-1 border-t border-blue-100/50 flex items-center justify-between text-[10px] text-blue-600 font-medium">
+                <span>Configured Yards</span>
+                <ArrowRight className="w-2.5 h-2.5" />
+              </div>
+            </div>
+
+            {/* ACTIVE STOCKYARDS */}
+            <div className="bg-emerald-50/40 border border-emerald-100/90 rounded-lg p-2 shadow-xs flex flex-col justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-6.5 h-6.5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Eye className="w-3.5 h-3.5 stroke-[2]" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[9.5px] font-bold tracking-wider text-emerald-700 uppercase truncate leading-none">
+                    ACTIVE STOCKYARDS
+                  </span>
+                  <span className="text-base font-bold font-mono text-ink tracking-tight tnum leading-tight mt-0.5">
+                    {activeYardsCount}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-1 pt-1 border-t border-emerald-100/50 flex items-center justify-between text-[10px] text-emerald-700 font-medium">
+                <span>Visible in Dropdowns</span>
+                <ArrowRight className="w-2.5 h-2.5" />
+              </div>
+            </div>
+
+            {/* TATA STOCKYARDS */}
+            <div className="bg-indigo-50/40 border border-indigo-100/90 rounded-lg p-2 shadow-xs flex flex-col justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-6.5 h-6.5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M8 9h8M12 9v7" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[9.5px] font-bold tracking-wider text-indigo-700 uppercase truncate leading-none">
+                    TATA STOCKYARDS
+                  </span>
+                  <span className="text-base font-bold font-mono text-ink tracking-tight tnum leading-tight mt-0.5">
+                    {yards.filter(y => y.brand === 'Tata Motors').length}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-1 pt-1 border-t border-indigo-100/50 flex items-center justify-between text-[10px] text-indigo-700 font-medium">
+                <span>Tata Dealerships</span>
+                <ArrowRight className="w-2.5 h-2.5" />
+              </div>
+            </div>
+
+            {/* HYUNDAI STOCKYARDS */}
+            <div className="bg-rose-50/40 border border-rose-100/90 rounded-lg p-2 shadow-xs flex flex-col justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-6.5 h-6.5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <ellipse cx="12" cy="12" rx="9" ry="7" />
+                    <path d="M9 8v8M15 8v8M9 12h6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[9.5px] font-bold tracking-wider text-rose-700 uppercase truncate leading-none">
+                    HYUNDAI STOCKYARDS
+                  </span>
+                  <span className="text-base font-bold font-mono text-ink tracking-tight tnum leading-tight mt-0.5">
+                    {yards.filter(y => y.brand === 'Hyundai').length}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-1 pt-1 border-t border-rose-100/50 flex items-center justify-between text-[10px] text-rose-700 font-medium">
+                <span>Hyundai Dealerships</span>
+                <ArrowRight className="w-2.5 h-2.5" />
+              </div>
+            </div>
           </div>
 
-          <Panel
-            title={
-              <div className="flex items-center gap-2">
-                <span>Stockyard Facilities Ledger</span>
-                <Badge tone="accent">{filteredYards.length} Facilities</Badge>
+          <div className="bg-white rounded-xl border border-line shadow-xs overflow-hidden">
+            {/* Header */}
+            <div className="px-5 py-3.5 border-b border-line flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white">
+              <div className="flex items-center gap-2.5">
+                <Boxes className="w-5 h-5 text-blue-600" />
+                <h2 className="text-sm font-bold text-ink tracking-tight">Stockyard Facilities Ledger</h2>
+                <span className="bg-blue-100/70 text-blue-700 font-semibold text-xs px-2.5 py-0.5 rounded-full">
+                  {filteredYards.length} Facilities
+                </span>
               </div>
-            }
-            action={
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative">
+
+              <div className="flex items-center gap-2.5 flex-wrap self-start md:self-auto">
+                {/* Search Box */}
+                <div className="relative w-48 sm:w-64">
                   <Search className="w-3.5 h-3.5 text-ink-3 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
-                    placeholder="Search Yard Name or City..."
+                    placeholder="Search Yard Name or City"
                     value={yardSearch}
                     onChange={(e) => setYardSearch(e.target.value)}
-                    className="h-8 pl-8 pr-3 text-xs bg-canvas border border-line rounded text-ink placeholder:text-ink-3 focus:outline-none focus:border-accent"
+                    className="w-full h-8 pl-8 pr-3 text-xs bg-slate-50/80 border border-line rounded-lg text-ink placeholder:text-ink-3 focus:outline-none focus:border-blue-500 transition-colors"
                   />
                 </div>
 
+                {/* Brand Filter */}
                 <select
                   value={yardBrandFilter}
                   onChange={(e) => setYardBrandFilter(e.target.value as any)}
-                  className="h-8 text-xs bg-canvas border border-line rounded px-2 text-ink focus:outline-none focus:border-accent font-medium"
+                  className="h-8 text-xs bg-slate-50/80 border border-line rounded-lg px-3 text-ink focus:outline-none focus:border-blue-500 font-medium cursor-pointer"
                 >
                   <option value="ALL">All Brands</option>
                   <option value="Tata Motors">Tata Motors Yards</option>
                   <option value="Hyundai">Hyundai Yards</option>
                 </select>
 
+                {/* Add Stockyard Button */}
                 <button
                   type="button"
                   onClick={handleOpenAddYard}
-                  className="h-8 px-3 rounded bg-accent hover:bg-accent-600 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  className="h-8 px-3.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-3.5 h-3.5 stroke-[2.2]" />
                   <span>Add Stockyard</span>
                 </button>
               </div>
-            }
-          >
+            </div>
+
+            {/* Table Area */}
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
-                <thead className="bg-accent-soft border-b border-accent-line text-accent font-semibold uppercase tracking-[0.06em] text-label">
+                <thead className="bg-blue-50/40 border-b border-line text-[11px] font-bold uppercase tracking-wider text-slate-600">
                   <tr>
                     <th className="py-2.5 px-3 w-10 text-center whitespace-nowrap">#</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Stockyard Name</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Brand Dealership</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Location / City</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Yard In-Charge</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Contact Phone</th>
-                    <th className="py-2.5 px-3 text-center whitespace-nowrap">Status</th>
-                    <th className="py-2.5 px-3 text-center whitespace-nowrap">Actions</th>
+                    <th className="py-2.5 px-3 whitespace-nowrap">STOCKYARD NAME</th>
+                    <th className="py-2.5 px-3 whitespace-nowrap">BRAND DEALERSHIP</th>
+                    <th className="py-2.5 px-3 whitespace-nowrap">LOCATION / CITY</th>
+                    <th className="py-2.5 px-3 whitespace-nowrap">YARD IN-CHARGE</th>
+                    <th className="py-2.5 px-3 whitespace-nowrap">CONTACT PHONE</th>
+                    <th className="py-2.5 px-3 text-center whitespace-nowrap">STATUS</th>
+                    <th className="py-2.5 px-3 text-center whitespace-nowrap">ACTIONS</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line text-ink-2 text-xs">
-                  {filteredYards.map((y, idx) => {
-                    const isActive = y.status === 'ACTIVE';
-                    return (
-                      <tr key={y.id} className="hover:bg-canvas transition-colors">
-                        <td className="py-2.5 px-3 text-center text-ink-3 tnum whitespace-nowrap">
-                          {idx + 1}
-                        </td>
-                        <td className="py-2.5 px-3 font-semibold text-ink whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Warehouse className="w-3.5 h-3.5 text-accent shrink-0" />
-                            <span>{y.name}</span>
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-3 whitespace-nowrap">
-                          <Badge tone={y.brand === 'Hyundai' ? 'accent' : 'neutral'}>
-                            {y.brand}
-                          </Badge>
-                        </td>
-                        <td className="py-2.5 px-3 text-ink-2 whitespace-nowrap">
-                          {y.city}, {y.state}
-                        </td>
-                        <td className="py-2.5 px-3 text-ink whitespace-nowrap">
-                          {y.manager || 'Yard Supervisor'}
-                        </td>
-                        <td className="py-2.5 px-3 font-mono text-ink-3 whitespace-nowrap">
-                          {y.phone}
-                        </td>
-                        
-                        {/* 1-Click Status Toggle */}
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleYardStatus(y.id)}
-                            className={`h-6 px-2.5 rounded-chip text-[11px] font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer ${
-                              isActive
-                                ? 'bg-ok/10 text-ok border border-ok/30 hover:bg-ok/20'
-                                : 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20'
-                            }`}
-                          >
-                            {isActive ? (
-                              <>
-                                <CheckCircle2 className="w-3 h-3 text-ok" />
-                                <span>ACTIVE</span>
-                              </>
-                            ) : (
-                              <>
-                                <XCircle className="w-3 h-3 text-danger" />
-                                <span>INACTIVE</span>
-                              </>
-                            )}
-                          </button>
-                        </td>
+                <tbody className="divide-y divide-line/60 text-ink-2 text-xs">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={8} className="p-4">
+                        <div className="space-y-2">
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredYards.length === 0 ? (
+                    <tr>
+                      <td colSpan={8}>
+                        <Empty
+                          title="No stockyards configured"
+                          hint="Add your first stockyard facility or seed standard master catalogs."
+                          action={
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={handleOpenAddYard}
+                                className="btn btn-primary text-xs h-7 px-3"
+                              >
+                                <Plus className="w-3 h-3 mr-1" /> Add Stockyard
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDbModalOpen(true)}
+                                className="btn btn-secondary text-xs h-7 px-3"
+                              >
+                                <Database className="w-3 h-3 mr-1" /> Seed Master Data
+                              </button>
+                            </div>
+                          }
+                        />
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredYards.map((y, idx) => {
+                      const isActive = y.status === 'ACTIVE';
+                      return (
+                        <tr key={y.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3 px-3 text-center text-ink-3 tnum whitespace-nowrap font-mono">
+                            {idx + 1}.
+                          </td>
+                          <td className="py-3 px-3 font-bold text-ink whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded bg-blue-50 border border-blue-200/80 text-blue-600 flex items-center justify-center shrink-0">
+                                <Warehouse className="w-3.5 h-3.5" />
+                              </div>
+                              <span>{y.name}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 whitespace-nowrap">
+                            <span className="bg-slate-100 text-slate-700 border border-slate-200/80 px-2.5 py-0.5 rounded-md text-[11px] font-medium">
+                              {y.brand}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-ink-2 whitespace-nowrap">
+                            {y.city}, {y.state}
+                          </td>
+                          <td className="py-3 px-3 text-ink font-medium whitespace-nowrap">
+                            {y.manager || 'Yard Supervisor'}
+                          </td>
+                          <td className="py-3 px-3 font-mono text-ink-3 whitespace-nowrap">
+                            {y.phone}
+                          </td>
+                          
+                          {/* 1-Click Status Toggle */}
+                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleYardStatus(y.id)}
+                              className={`h-6 px-2.5 rounded-full text-[11px] font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer ${
+                                isActive
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80 hover:bg-emerald-100'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-200/80 hover:bg-rose-100'
+                              }`}
+                            >
+                              {isActive ? (
+                                <>
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>ACTIVE</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-3 h-3 text-rose-600" />
+                                  <span>INACTIVE</span>
+                                </>
+                              )}
+                            </button>
+                          </td>
 
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditYard(y)}
-                              className="p-1 rounded hover:bg-surface text-ink-3 hover:text-ink transition-colors cursor-pointer"
-                              title="Edit Stockyard"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteYard(y.id)}
-                              className="p-1 rounded hover:bg-danger/10 text-ink-3 hover:text-danger transition-colors cursor-pointer"
-                              title="Delete Stockyard"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditYard(y)}
+                                className="p-1 rounded text-ink-3 hover:text-blue-600 transition-colors cursor-pointer"
+                                title="Edit Stockyard"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteYard(y.id)}
+                                className="p-1 rounded text-ink-3 hover:text-rose-600 transition-colors cursor-pointer"
+                                title="Delete Stockyard"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
-          </Panel>
+          </div>
         </div>
       )}
 
@@ -829,156 +1050,246 @@ export const AdminMasterPanel: React.FC = () => {
       {/* ========================================================================= */}
       {activeTab === 'BRANCHES' && (
         <div className="space-y-4">
-          
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Stat label="Total Branches" value={branches.length} note="Showrooms & 3S Hubs" />
-            <Stat label="Active Branches" value={activeBranchesCount} note="Active Showrooms" tone="ok" />
-            <Stat label="Tata Branches" value={branches.filter(b => b.brand === 'Tata Motors').length} note="Tata Dealerships" />
-            <Stat label="Hyundai Branches" value={branches.filter(b => b.brand === 'Hyundai').length} note="Hyundai Dealerships" tone="accent" />
-          </div>
-
-          <Panel
-            title={
-              <div className="flex items-center gap-2">
-                <span>Branch & Showroom Directory</span>
-                <Badge tone="accent">{filteredBranches.length} Showrooms</Badge>
+          <div className="bg-white border border-line rounded-2xl shadow-xs overflow-hidden">
+            {/* Card Header */}
+            <div className="p-4 border-b border-line flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                  <Building2 className="w-4.5 h-4.5" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-bold text-slate-800">Branch &amp; Showroom Directory</h2>
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 text-xs font-semibold">
+                    {branches.length} Showrooms
+                  </span>
+                </div>
               </div>
-            }
-            action={
-              <div className="flex items-center gap-2 flex-wrap">
+
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-ink-3 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     placeholder="Search Branch Name or City..."
                     value={branchSearch}
-                    onChange={(e) => setBranchSearch(e.target.value)}
-                    className="h-8 pl-8 pr-3 text-xs bg-canvas border border-line rounded text-ink placeholder:text-ink-3 focus:outline-none focus:border-accent"
+                    onChange={(e) => {
+                      setBranchSearch(e.target.value);
+                      setBranchPage(1);
+                    }}
+                    className="h-8.5 pl-8.5 pr-3 text-xs bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 w-56 sm:w-64 transition-colors"
                   />
                 </div>
 
                 <select
                   value={branchBrandFilter}
-                  onChange={(e) => setBranchBrandFilter(e.target.value as any)}
-                  className="h-8 text-xs bg-canvas border border-line rounded px-2 text-ink focus:outline-none focus:border-accent font-medium"
+                  onChange={(e) => {
+                    setBranchBrandFilter(e.target.value as any);
+                    setBranchPage(1);
+                  }}
+                  className="h-8.5 text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 text-slate-700 focus:outline-none focus:border-blue-500 font-medium cursor-pointer"
                 >
                   <option value="ALL">All Brands</option>
-                  <option value="Tata Motors">Tata Motors Branches</option>
-                  <option value="Hyundai">Hyundai Branches</option>
+                  <option value="Tata Motors">Tata Motors</option>
+                  <option value="Hyundai">Hyundai</option>
                 </select>
 
                 <button
                   type="button"
                   onClick={handleOpenAddBranch}
-                  className="h-8 px-3 rounded bg-accent hover:bg-accent-600 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  className="h-8.5 px-3.5 rounded-lg bg-blue-950 hover:bg-blue-900 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Branch</span>
                 </button>
               </div>
-            }
-          >
+            </div>
+
+            {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
-                <thead className="bg-accent-soft border-b border-accent-line text-accent font-semibold uppercase tracking-[0.06em] text-label">
+                <thead className="bg-blue-50/40 border-b border-line text-[11px] font-bold uppercase tracking-wider text-slate-600">
                   <tr>
-                    <th className="py-2.5 px-3 w-10 text-center whitespace-nowrap">#</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Branch / Showroom Name</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Brand</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Type</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">City</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Branch Manager</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Contact Phone</th>
-                    <th className="py-2.5 px-3 text-center whitespace-nowrap">Status</th>
-                    <th className="py-2.5 px-3 text-center whitespace-nowrap">Actions</th>
+                    <th className="py-3 px-3.5 w-12 text-center whitespace-nowrap">#</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">Branch / Showroom Name</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">Brand</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">Type</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">City</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">Branch Manager</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">Contact Phone</th>
+                    <th className="py-3 px-3.5 text-center whitespace-nowrap">Status</th>
+                    <th className="py-3 px-3.5 text-center whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line text-ink-2 text-xs">
-                  {filteredBranches.map((b, idx) => {
-                    const isActive = b.status === 'ACTIVE';
-                    return (
-                      <tr key={b.id} className="hover:bg-canvas transition-colors">
-                        <td className="py-2.5 px-3 text-center text-ink-3 tnum whitespace-nowrap">
-                          {idx + 1}
-                        </td>
-                        <td className="py-2.5 px-3 font-semibold text-ink whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Building2 className="w-3.5 h-3.5 text-accent shrink-0" />
-                            <span>{b.name}</span>
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-3 whitespace-nowrap">
-                          <Badge tone={b.brand === 'Hyundai' ? 'accent' : 'neutral'}>
-                            {b.brand}
-                          </Badge>
-                        </td>
-                        <td className="py-2.5 px-3 whitespace-nowrap">
-                          <Badge tone={b.type === 'Main Showroom' ? 'accent' : 'neutral'}>
-                            {b.type}
-                          </Badge>
-                        </td>
-                        <td className="py-2.5 px-3 text-ink-2 whitespace-nowrap">
-                          {b.city}, {b.state}
-                        </td>
-                        <td className="py-2.5 px-3 text-ink whitespace-nowrap">
-                          {b.manager}
-                        </td>
-                        <td className="py-2.5 px-3 font-mono text-ink-3 whitespace-nowrap">
-                          {b.phone}
-                        </td>
-                        
-                        {/* 1-Click Status Toggle */}
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleBranchStatus(b.id)}
-                            className={`h-6 px-2.5 rounded-chip text-[11px] font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer ${
-                              isActive
-                                ? 'bg-ok/10 text-ok border border-ok/30 hover:bg-ok/20'
-                                : 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20'
-                            }`}
-                          >
-                            {isActive ? (
-                              <>
-                                <CheckCircle2 className="w-3 h-3 text-ok" />
-                                <span>ACTIVE</span>
-                              </>
-                            ) : (
-                              <>
-                                <XCircle className="w-3 h-3 text-danger" />
-                                <span>INACTIVE</span>
-                              </>
-                            )}
-                          </button>
-                        </td>
+                <tbody className="divide-y divide-line text-xs">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={9} className="p-4">
+                        <div className="space-y-2">
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredBranches.length === 0 ? (
+                    <tr>
+                      <td colSpan={9}>
+                        <Empty
+                          title="No showroom branches configured"
+                          hint="Add your first dealership branch or seed standard master catalogs."
+                          action={
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={handleOpenAddBranch}
+                                className="btn btn-primary text-xs h-7 px-3"
+                              >
+                                <Plus className="w-3 h-3 mr-1" /> Add Branch
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDbModalOpen(true)}
+                                className="btn btn-secondary text-xs h-7 px-3"
+                              >
+                                <Database className="w-3 h-3 mr-1" /> Seed Master Data
+                              </button>
+                            </div>
+                          }
+                        />
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedBranches.map((b, idx) => {
+                      const rowIdx = (branchPage - 1) * branchesPerPage + idx + 1;
+                      const isActive = b.status === 'ACTIVE';
+                      return (
+                        <tr key={b.id} className="hover:bg-slate-50/70 transition-colors">
+                          <td className="py-3 px-3.5 text-center text-slate-500 font-mono text-xs whitespace-nowrap">
+                            {rowIdx}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0">
+                                <Building2 className="w-3.5 h-3.5" />
+                              </div>
+                              <span className="font-semibold text-slate-800 text-xs">{b.name}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                              {b.brand}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              b.type === 'Main Showroom'
+                                ? 'bg-blue-50 text-blue-700 border border-blue-200/80'
+                                : 'bg-slate-100 text-slate-700 border border-slate-200'
+                            }`}>
+                              {b.type}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3.5 text-slate-600 whitespace-nowrap">
+                            {b.city}, {b.state}
+                          </td>
+                          <td className="py-3 px-3.5 text-slate-800 whitespace-nowrap font-medium">
+                            {b.manager}
+                          </td>
+                          <td className="py-3 px-3.5 font-mono text-slate-600 whitespace-nowrap text-xs">
+                            {b.phone}
+                          </td>
+                          
+                          <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleBranchStatus(b.id)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                                isActive
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
+                              }`}
+                            >
+                              {isActive ? (
+                                <>
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>ACTIVE</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-3 h-3 text-rose-600" />
+                                  <span>INACTIVE</span>
+                                </>
+                              )}
+                            </button>
+                          </td>
 
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditBranch(b)}
-                              className="p-1 rounded hover:bg-surface text-ink-3 hover:text-ink transition-colors cursor-pointer"
-                              title="Edit Branch"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteBranch(b.id)}
-                              className="p-1 rounded hover:bg-danger/10 text-ink-3 hover:text-danger transition-colors cursor-pointer"
-                              title="Delete Branch"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditBranch(b)}
+                                className="p-1 rounded text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                title="Edit Branch"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteBranch(b.id)}
+                                className="p-1 rounded text-rose-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                title="Delete Branch"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
-          </Panel>
+
+            {/* Pagination Footer */}
+            <div className="p-3 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3 bg-white text-xs">
+              <span className="text-slate-500 font-medium">
+                Showing {filteredBranches.length === 0 ? 0 : (branchPage - 1) * branchesPerPage + 1} - {Math.min(branchPage * branchesPerPage, filteredBranches.length)} of {filteredBranches.length} entries
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setBranchPage(p => Math.max(1, p - 1))}
+                  disabled={branchPage === 1}
+                  className="w-7 h-7 rounded-lg border border-line flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                {Array.from({ length: totalBranchPages }, (_, i) => i + 1).map((pg) => (
+                  <button
+                    key={pg}
+                    type="button"
+                    onClick={() => setBranchPage(pg)}
+                    className={`w-7 h-7 rounded-lg text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer ${
+                      branchPage === pg
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-white border border-line text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {pg}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setBranchPage(p => Math.min(totalBranchPages, p + 1))}
+                  disabled={branchPage === totalBranchPages || totalBranchPages === 0}
+                  className="w-7 h-7 rounded-lg border border-line flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -988,250 +1299,403 @@ export const AdminMasterPanel: React.FC = () => {
       {activeTab === 'USERS' && <AdminUsersPage />}
 
       {activeTab === 'PDI_RULES' && (
-        <div className="space-y-3">
-          <div className="p-3 bg-canvas border border-line rounded flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2 flex-1 min-w-[280px]">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-accent absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Search Checkpoint Title, Stage (e.g. Engine Bay), Code, or Severity..."
-                  value={pdiSearch}
-                  onChange={(e) => setPdiSearch(e.target.value)}
-                  className="w-full h-8 pl-9 pr-3 text-xs bg-surface border border-line rounded text-ink placeholder:text-ink-3 focus:outline-none focus:border-accent font-medium shadow-xs"
-                />
+        <div className="space-y-4">
+          <div className="bg-white border border-line rounded-2xl shadow-xs overflow-hidden">
+            {/* Card Header */}
+            <div className="p-4 border-b border-line flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                  <Sliders className="w-4.5 h-4.5" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-bold text-slate-800">PDI Checkpoints Master</h2>
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 text-xs font-semibold">
+                    {pdiRules.length} Checkpoints
+                  </span>
+                </div>
               </div>
-              {pdiSearch && (
-                <button
-                  onClick={() => setPdiSearch('')}
-                  className="h-8 px-2.5 bg-surface border border-line hover:bg-canvas text-xs font-medium text-ink-3 rounded transition-colors"
+
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search Checkpoint Title, Stage, Code..."
+                    value={pdiSearch}
+                    onChange={(e) => {
+                      setPdiSearch(e.target.value);
+                      setPdiPage(1);
+                    }}
+                    className="h-8.5 pl-8.5 pr-3 text-xs bg-slate-50 border border-slate-200 focus:bg-white rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 w-56 sm:w-64 transition-colors"
+                  />
+                </div>
+
+                <select
+                  value={pdiBrandFilter}
+                  onChange={(e) => {
+                    setPdiBrandFilter(e.target.value as any);
+                    setPdiPage(1);
+                  }}
+                  className="h-8.5 text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 text-slate-700 focus:outline-none focus:border-blue-500 font-medium cursor-pointer"
                 >
-                  Clear
+                  <option value="ALL">All Brands</option>
+                  <option value="Tata Motors">Tata Motors</option>
+                  <option value="Hyundai">Hyundai</option>
+                </select>
+
+                <button
+                  type="button"
+                  onClick={handleOpenAddPdi}
+                  className="h-8.5 px-3.5 rounded-lg bg-blue-950 hover:bg-blue-900 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Checkpoint</span>
                 </button>
-              )}
+              </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleOpenAddPdi}
-              className="h-8 px-3.5 rounded bg-accent hover:bg-accent-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add PDI Checkpoint</span>
-            </button>
-          </div>
-
-          <Panel
-            title={
-              <div className="flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-accent" />
-                <span>PDI Checkpoints Master</span>
-                <Badge tone="accent">{pdiRules.length} Checkpoints</Badge>
-              </div>
-            }
-          >
+            {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
-                <thead className="bg-accent-soft border-b border-accent-line text-accent font-semibold uppercase tracking-[0.06em] text-label">
+                <thead className="bg-blue-50/40 border-b border-line text-[11px] font-bold uppercase tracking-wider text-slate-600">
                   <tr>
-                    <th className="py-2.5 px-3 w-10 text-center whitespace-nowrap">#</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Checkpoint Title & Instructions</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Stage</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Code</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Default / Standard Remark</th>
-                    <th className="py-2.5 px-3 text-center whitespace-nowrap">Severity</th>
-                    <th className="py-2.5 px-3 text-center whitespace-nowrap">Evidence Req.</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Special Tool</th>
-                    <th className="py-2.5 px-3 text-center whitespace-nowrap">Status</th>
-                    <th className="py-2.5 px-3 text-center whitespace-nowrap">Actions</th>
+                    <th className="py-3 px-3.5 w-12 text-center whitespace-nowrap">#</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">Checkpoint Title &amp; Instructions</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">Stage</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">Code</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">Default / Standard Remark</th>
+                    <th className="py-3 px-3.5 text-center whitespace-nowrap">Severity</th>
+                    <th className="py-3 px-3.5 text-center whitespace-nowrap">Evidence Req.</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">Special Tool</th>
+                    <th className="py-3 px-3.5 text-center whitespace-nowrap">Status</th>
+                    <th className="py-3 px-3.5 text-center whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line text-ink-2 text-xs">
-                  {pdiRules
-                    .filter(r => {
-                      const q = pdiSearch.toLowerCase().trim();
-                      if (!q) return true;
+                <tbody className="divide-y divide-line text-xs">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={10} className="p-4">
+                        <div className="space-y-2">
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredPdiRules.length === 0 ? (
+                    <tr>
+                      <td colSpan={10}>
+                        <Empty
+                          title="No PDI checkpoints configured"
+                          hint="Add your first inspection checkpoint or seed standard master catalogs."
+                          action={
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={handleOpenAddPdi}
+                                className="btn btn-primary text-xs h-7 px-3"
+                              >
+                                <Plus className="w-3 h-3 mr-1" /> Add Checkpoint
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDbModalOpen(true)}
+                                className="btn btn-secondary text-xs h-7 px-3"
+                              >
+                                <Database className="w-3 h-3 mr-1" /> Seed Master Data
+                              </button>
+                            </div>
+                          }
+                        />
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedPdiRules.map((r, idx) => {
+                      const rowIdx = (pdiPage - 1) * pdiPerPage + idx + 1;
+                      const isActive = r.status === 'ACTIVE';
                       return (
-                        r.title.toLowerCase().includes(q) ||
-                        r.stage.toLowerCase().includes(q) ||
-                        (r.code && r.code.toLowerCase().includes(q)) ||
-                        r.severity.toLowerCase().includes(q) ||
-                        r.description.toLowerCase().includes(q) ||
-                        (r.standardRemark && r.standardRemark.toLowerCase().includes(q))
+                        <tr key={r.id || idx} className="hover:bg-slate-50/70 transition-colors">
+                          <td className="py-3 px-3.5 text-center text-slate-500 font-mono text-xs whitespace-nowrap">
+                            {rowIdx}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0">
+                                <ShieldCheck className="w-3.5 h-3.5" />
+                              </div>
+                              <span className="font-semibold text-slate-800 text-xs">{r.title}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap font-medium text-slate-800">
+                            {r.stage}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap font-mono text-slate-600 text-xs">
+                            {r.code || '—'}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap text-slate-500 text-xs max-w-xs truncate" title={r.standardRemark}>
+                            {r.standardRemark || 'Inspected and verified OK'}
+                          </td>
+                          <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${
+                              r.severity === 'CRITICAL'
+                                ? 'bg-rose-50 text-rose-600 border border-rose-200/80'
+                                : r.severity === 'MAJOR'
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
+                                : 'bg-blue-50 text-blue-600 border border-blue-200/80'
+                            }`}>
+                              {r.severity}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3.5 text-center whitespace-nowrap text-slate-600 text-xs">
+                            {r.photosRequired} {r.photosRequired === 1 ? 'Photo' : 'Photos'} {r.videoRequired ? '+ Video' : ''}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap text-slate-600 text-xs">
+                            {r.toolRequired || 'Visual'}
+                          </td>
+                          
+                          {/* Status Toggle */}
+                          <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePdiStatus(r.id)}
+                              className={`h-6 px-2.5 rounded-full text-[11px] font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer ${
+                                isActive
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80 hover:bg-emerald-100'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-200/80 hover:bg-rose-100'
+                              }`}
+                            >
+                              {isActive ? (
+                                <>
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>ACTIVE</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-3 h-3 text-rose-600" />
+                                  <span>INACTIVE</span>
+                                </>
+                              )}
+                            </button>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditPdi(r)}
+                                className="p-1 rounded text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                title="Edit Checkpoint"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePdi(r.id)}
+                                className="p-1 rounded text-rose-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                title="Delete Checkpoint"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
                       );
                     })
-                    .map((r, idx) => (
-                      <tr key={r.id || idx} className="hover:bg-canvas transition-colors">
-                        <td className="py-2.5 px-3 text-center text-ink-3 tnum whitespace-nowrap">{idx + 1}</td>
-                        <td className="py-2.5 px-3">
-                          <strong className="block text-ink">{r.title}</strong>
-                          <span className="text-[11px] text-ink-3 line-clamp-1">{r.description}</span>
-                        </td>
-                        <td className="py-2.5 px-3 font-medium text-ink whitespace-nowrap">{r.stage}</td>
-                        <td className="py-2.5 px-3 font-mono text-ink-3 whitespace-nowrap">{r.code || '—'}</td>
-                        <td className="py-2.5 px-3 text-ink-2">
-                          <span className="inline-block max-w-xs truncate text-[11px] font-mono bg-canvas px-1.5 py-0.5 rounded border border-line" title={r.standardRemark}>
-                            {r.standardRemark || 'Inspected and verified OK'}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                          <Badge tone={r.severity === 'CRITICAL' ? 'danger' : r.severity === 'MAJOR' ? 'warn' : 'neutral'}>
-                            {r.severity}
-                          </Badge>
-                        </td>
-                        <td className="py-2.5 px-3 text-center text-ink-3 whitespace-nowrap">
-                          {r.photosRequired} Photos {r.videoRequired ? '+ Video' : ''}
-                        </td>
-                        <td className="py-2.5 px-3 text-ink-2 whitespace-nowrap">{r.toolRequired || 'Visual'}</td>
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={() => handleTogglePdiStatus(r.id)}
-                            className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded border cursor-pointer transition-all ${
-                              r.status === 'ACTIVE'
-                                ? 'bg-ok/10 text-ok border-ok/30 hover:bg-ok/20'
-                                : 'bg-danger/10 text-danger border-danger/30 hover:bg-danger/20'
-                            }`}
-                          >
-                            {r.status === 'ACTIVE' ? (
-                              <>
-                                <CheckCircle2 className="w-3 h-3 text-ok" />
-                                <span>ACTIVE</span>
-                              </>
-                            ) : (
-                              <>
-                                <XCircle className="w-3 h-3 text-danger" />
-                                <span>INACTIVE</span>
-                              </>
-                            )}
-                          </button>
-                        </td>
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditPdi(r)}
-                              className="w-7 h-7 rounded hover:bg-canvas border border-line hover:border-line-strong text-ink flex items-center justify-center transition-colors cursor-pointer"
-                              title="Edit Checkpoint"
-                            >
-                              <Edit3 className="w-3.5 h-3.5 text-ink-2" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeletePdi(r.id)}
-                              className="w-7 h-7 rounded hover:bg-danger-soft border border-line hover:border-danger/40 text-danger flex items-center justify-center transition-colors cursor-pointer"
-                              title="Delete Checkpoint"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                  )}
                 </tbody>
               </table>
             </div>
-          </Panel>
+
+            {/* Pagination Footer */}
+            <div className="p-3 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3 bg-white text-xs">
+              <span className="text-slate-500 font-medium">
+                Showing {filteredPdiRules.length === 0 ? 0 : (pdiPage - 1) * pdiPerPage + 1} - {Math.min(pdiPage * pdiPerPage, filteredPdiRules.length)} of {filteredPdiRules.length} entries
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setPdiPage(p => Math.max(1, p - 1))}
+                  disabled={pdiPage === 1}
+                  className="w-7 h-7 rounded-lg border border-line flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                {Array.from({ length: totalPdiPages }, (_, i) => i + 1).map((pg) => (
+                  <button
+                    key={pg}
+                    type="button"
+                    onClick={() => setPdiPage(pg)}
+                    className={`w-7 h-7 rounded-lg text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer ${
+                      pdiPage === pg
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-white border border-line text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {pg}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setPdiPage(p => Math.min(totalPdiPages, p + 1))}
+                  disabled={pdiPage === totalPdiPages || totalPdiPages === 0}
+                  className="w-7 h-7 rounded-lg border border-line flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
       {activeTab === 'MODELS' && (
-        <div className="space-y-3">
-          <div className="p-3 bg-canvas border border-line rounded flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2 flex-1 min-w-[280px]">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-accent absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Search Model Name, Body Type, Transmission, Variants..."
-                  value={modelSearch}
-                  onChange={(e) => setModelSearch(e.target.value)}
-                  className="w-full h-8 pl-9 pr-3 text-xs bg-surface border border-line rounded text-ink placeholder:text-ink-3 focus:outline-none focus:border-accent font-medium shadow-xs"
+        <div className="space-y-4">
+          <div className="bg-white border border-line rounded-2xl shadow-xs overflow-hidden">
+            {/* Card Header with Banner */}
+            <div className="p-4 md:p-5 border-b border-line flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
+              {/* Left: Title, Badges, Add Button & Search */}
+              <div className="flex-1 max-w-2xl space-y-3">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h2 className="text-base font-bold text-slate-900 tracking-tight">
+                    Vehicle Models Catalog
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 text-xs font-semibold">
+                    {vehicleModels.length} Models
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleOpenAddModel}
+                    className="ml-1 h-7 px-3 rounded-lg bg-blue-950 hover:bg-blue-900 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Model</span>
+                  </button>
+                </div>
+
+                <div className="relative w-full max-w-xl">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search Model Name, Body Type, Transmission, Variants..."
+                    value={modelSearch}
+                    onChange={(e) => setModelSearch(e.target.value)}
+                    className="w-full h-9.5 pl-10 pr-3 text-xs bg-slate-50/70 border border-slate-200 focus:bg-white rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Right: Graphic Banner */}
+              <div className="shrink-0 self-center md:self-auto hidden sm:block">
+                <img
+                  src="/brand/models-banner.png"
+                  alt="More Models, More Choices, Better Journeys"
+                  className="h-20 w-auto rounded-xl object-cover shadow-2xs"
                 />
               </div>
-              <select
-                value={modelBrandFilter}
-                onChange={(e) => setModelBrandFilter(e.target.value as any)}
-                className="h-8 text-xs bg-surface border border-line rounded px-2.5 text-ink focus:outline-none focus:border-accent font-medium shadow-xs"
-              >
-                <option value="ALL">All Brands</option>
-                <option value="Tata Motors">Tata Motors</option>
-                <option value="Hyundai">Hyundai</option>
-              </select>
             </div>
 
-            <button
-              type="button"
-              onClick={handleOpenAddModel}
-              className="h-8 px-3.5 rounded bg-accent hover:bg-accent-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Vehicle Model</span>
-            </button>
-          </div>
-
-          <Panel
-            title={
-              <div className="flex items-center gap-2">
-                <Car className="w-4 h-4 text-accent" />
-                <span>Vehicle Models Catalog</span>
-                <Badge tone="accent">{vehicleModels.length} Models</Badge>
-              </div>
-            }
-          >
+            {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
-                <thead className="bg-accent-soft border-b border-accent-line text-accent font-semibold uppercase tracking-[0.06em] text-label">
+                <thead className="bg-blue-50/40 border-b border-line text-[11px] font-bold uppercase tracking-wider text-slate-600">
                   <tr>
-                    <th className="py-2.5 px-3 w-10 text-center whitespace-nowrap">#</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Model Name</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Brand</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Body Type</th>
-                    <th className="py-2.5 px-3 text-right whitespace-nowrap">Base Ex-Showroom</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Transmission</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Fuel Types</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Seating</th>
-                    <th className="py-2.5 px-3 text-center whitespace-nowrap">Actions</th>
+                    <th className="py-3 px-3.5 w-12 text-center whitespace-nowrap">#</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">MODEL NAME</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">BRAND</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">BODY TYPE</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">BASE EX-SHOWROOM</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">TRANSMISSION</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">FUEL TYPES</th>
+                    <th className="py-3 px-3.5 whitespace-nowrap">SEATING</th>
+                    <th className="py-3 px-3.5 text-center whitespace-nowrap">ACTIONS</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line text-ink-2 text-xs">
-                  {vehicleModels
-                    .filter(m => {
-                      const matchesBrand = modelBrandFilter === 'ALL' || m.brand === modelBrandFilter;
-                      const q = modelSearch.toLowerCase().trim();
-                      const matchesSearch = !q || m.model_name.toLowerCase().includes(q) || m.body_type.toLowerCase().includes(q) || m.transmission.toLowerCase().includes(q);
-                      return matchesBrand && matchesSearch;
-                    })
-                    .map((m, idx) => (
-                      <tr key={m.id || idx} className="hover:bg-canvas transition-colors">
-                        <td className="py-2.5 px-3 text-center text-ink-3 tnum whitespace-nowrap">{idx + 1}</td>
-                        <td className="py-2.5 px-3 font-semibold text-ink whitespace-nowrap">{m.model_name}</td>
-                        <td className="py-2.5 px-3 whitespace-nowrap">
-                          <Badge tone={m.brand === 'Tata Motors' ? 'neutral' : 'accent'}>{m.brand}</Badge>
+                <tbody className="divide-y divide-line text-xs">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={9} className="p-4">
+                        <div className="space-y-2">
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredModels.length === 0 ? (
+                    <tr>
+                      <td colSpan={9}>
+                        <Empty
+                          title="No vehicle models found"
+                          hint="Add a new vehicle model or seed master vehicle catalogs directly from the database seeder."
+                          action={
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={handleOpenAddModel}
+                                className="btn btn-primary text-xs h-7 px-3"
+                              >
+                                <Plus className="w-3 h-3 mr-1" /> Add Model
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDbModalOpen(true)}
+                                className="btn btn-secondary text-xs h-7 px-3"
+                              >
+                                <Database className="w-3 h-3 mr-1" /> Seed Master Data
+                              </button>
+                            </div>
+                          }
+                        />
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredModels.map((m, idx) => (
+                      <tr key={m.id || idx} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3.5 px-3.5 text-center text-slate-400 font-mono text-xs whitespace-nowrap">
+                          {idx + 1}
                         </td>
-                        <td className="py-2.5 px-3 text-ink-2 whitespace-nowrap">{m.body_type}</td>
-                        <td className="py-2.5 px-3 text-right font-bold text-ink tnum whitespace-nowrap">
+                        <td className="py-3.5 px-3.5 font-bold text-slate-900 text-xs whitespace-nowrap">
+                          {m.model_name}
+                        </td>
+                        <td className="py-3.5 px-3.5 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${
+                            m.brand === 'Hyundai'
+                              ? 'bg-blue-50 text-blue-700 border border-blue-200/80'
+                              : 'bg-slate-100 text-slate-700 border border-slate-200'
+                          }`}>
+                            {m.brand}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-3.5 text-slate-600 whitespace-nowrap text-xs">
+                          {m.body_type}
+                        </td>
+                        <td className="py-3.5 px-3.5 text-left font-bold text-slate-900 font-mono text-xs whitespace-nowrap">
                           ₹{Number(m.base_ex_showroom).toLocaleString('en-IN')}
                         </td>
-                        <td className="py-2.5 px-3 text-ink-2 whitespace-nowrap">{m.transmission}</td>
-                        <td className="py-2.5 px-3 text-ink-3 whitespace-nowrap">
+                        <td className="py-3.5 px-3.5 text-slate-600 font-mono text-xs whitespace-nowrap">
+                          {m.transmission}
+                        </td>
+                        <td className="py-3.5 px-3.5 text-slate-600 font-mono text-xs whitespace-nowrap uppercase">
                           {(m.fuel_types || []).join(', ')}
                         </td>
-                        <td className="py-2.5 px-3 text-ink-2 whitespace-nowrap">{m.seating_capacity}</td>
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1.5">
+                        <td className="py-3.5 px-3.5 text-slate-600 text-xs whitespace-nowrap">
+                          {m.seating_capacity}
+                        </td>
+                        <td className="py-3.5 px-3.5 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-2">
                             <button
                               type="button"
                               onClick={() => handleOpenEditModel(m)}
-                              className="w-7 h-7 rounded hover:bg-canvas border border-line hover:border-line-strong text-ink flex items-center justify-center transition-colors cursor-pointer"
+                              className="w-7 h-7 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-50 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
                               title="Edit Model"
                             >
-                              <Edit3 className="w-3.5 h-3.5 text-ink-2" />
+                              <Edit3 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDeleteModel(m.id)}
-                              className="w-7 h-7 rounded hover:bg-danger-soft border border-line hover:border-danger/40 text-danger flex items-center justify-center transition-colors cursor-pointer"
+                              className="w-7 h-7 rounded-lg border border-slate-200 hover:border-rose-200 hover:bg-rose-50 flex items-center justify-center text-rose-400 hover:text-rose-600 transition-colors cursor-pointer"
                               title="Delete Model"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1239,32 +1703,96 @@ export const AdminMasterPanel: React.FC = () => {
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
-          </Panel>
+          </div>
         </div>
       )}
 
       {activeTab === 'FINANCE' && (
-        <div className="space-y-3">
-          <div className="p-3 bg-canvas border border-line rounded flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2 flex-1 min-w-[280px]">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-accent absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Search Bank Name, Contact Officer, Phone or Category..."
-                  value={financeSearch}
-                  onChange={(e) => setFinanceSearch(e.target.value)}
-                  className="w-full h-8 pl-9 pr-3 text-xs bg-surface border border-line rounded text-ink placeholder:text-ink-3 focus:outline-none focus:border-accent font-medium shadow-xs"
-                />
+        <div className="space-y-4">
+          {/* Sub-header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">Banking &amp; Financier Partners</h2>
+              <p className="text-xs text-slate-500 mt-1">Manage and track your banking &amp; finance partners efficiently</p>
+            </div>
+          </div>
+
+          {/* 4 Stat Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Card 1: Total Partners */}
+            <div className="bg-blue-50/50 border border-blue-100/80 rounded-2xl p-4 flex items-center gap-3.5 shadow-xs">
+              <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                <Landmark className="w-5 h-5" />
               </div>
+              <div>
+                <div className="text-xs font-semibold text-slate-500 tracking-tight">Total Partners</div>
+                <div className="text-2xl font-bold font-mono text-slate-900 leading-none mt-1">
+                  {financiers.length}
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Active Tie-Ups */}
+            <div className="bg-emerald-50/50 border border-emerald-100/80 rounded-2xl p-4 flex items-center gap-3.5 shadow-xs">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-slate-500 tracking-tight">Active Tie-Ups</div>
+                <div className="text-2xl font-bold font-mono text-emerald-600 leading-none mt-1">
+                  {activeFinanciersCount}
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Max LTV */}
+            <div className="bg-purple-50/50 border border-purple-100/80 rounded-2xl p-4 flex items-center gap-3.5 shadow-xs">
+              <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+                <UserCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-slate-500 tracking-tight">Max LTV</div>
+                <div className="text-2xl font-bold font-mono text-purple-700 leading-none mt-1">
+                  {maxLtvVal}%
+                </div>
+              </div>
+            </div>
+
+            {/* Card 4: Processing Fee */}
+            <div className="bg-amber-50/50 border border-amber-100/80 rounded-2xl p-4 flex items-center gap-3.5 shadow-xs">
+              <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-slate-500 tracking-tight">Processing Fee</div>
+                <div className="text-2xl font-bold font-mono text-slate-900 leading-none mt-1">
+                  0.25%
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Search & Action Bar */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search Bank Name, Contact Officer, Phone or Category..."
+                value={financeSearch}
+                onChange={(e) => setFinanceSearch(e.target.value)}
+                className="w-full h-10 pl-10 pr-4 text-xs bg-white border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 shadow-xs transition-colors"
+              />
               {financeSearch && (
                 <button
+                  type="button"
                   onClick={() => setFinanceSearch('')}
-                  className="h-8 px-2.5 bg-surface border border-line hover:bg-canvas text-xs font-medium text-ink-3 rounded transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 font-medium cursor-pointer"
                 >
                   Clear
                 </button>
@@ -1274,84 +1802,116 @@ export const AdminMasterPanel: React.FC = () => {
             <button
               type="button"
               onClick={handleOpenAddFinance}
-              className="h-8 px-3.5 rounded bg-accent hover:bg-accent-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+              className="h-10 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors shrink-0"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
               <span>Add Banking Partner</span>
             </button>
           </div>
 
-          <Panel
-            title={
-              <div className="flex items-center gap-2">
-                <Landmark className="w-4 h-4 text-accent" />
-                <span>Banking & Financier Partners</span>
-                <Badge tone="accent">{financiers.length} Partners</Badge>
-              </div>
-            }
-          >
+          {/* Table Card */}
+          <div className="bg-white border border-line rounded-2xl shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
-                <thead className="bg-accent-soft border-b border-accent-line text-accent font-semibold uppercase tracking-[0.06em] text-label">
+                <thead className="bg-blue-50/50 border-b border-line text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                   <tr>
-                    <th className="py-2.5 px-3 w-10 text-center whitespace-nowrap">#</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Bank / Financier Name</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Category</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Contact Lead</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Phone Number</th>
-                    <th className="py-2.5 px-3 text-center whitespace-nowrap">Max LTV</th>
-                    <th className="py-2.5 px-3 text-center whitespace-nowrap">Processing Fee</th>
-                    <th className="py-2.5 px-3 text-center whitespace-nowrap">Status</th>
-                    <th className="py-2.5 px-3 text-center whitespace-nowrap">Actions</th>
+                    <th className="py-3 px-4 w-12 text-center whitespace-nowrap">#</th>
+                    <th className="py-3 px-4 whitespace-nowrap">BANK / FINANCIER NAME</th>
+                    <th className="py-3 px-4 whitespace-nowrap">CATEGORY</th>
+                    <th className="py-3 px-4 whitespace-nowrap">CONTACT LEAD</th>
+                    <th className="py-3 px-4 whitespace-nowrap">PHONE NUMBER</th>
+                    <th className="py-3 px-4 whitespace-nowrap">MAX LTV</th>
+                    <th className="py-3 px-4 whitespace-nowrap">PROCESSING FEE</th>
+                    <th className="py-3 px-4 text-center whitespace-nowrap">STATUS</th>
+                    <th className="py-3 px-4 text-center whitespace-nowrap">ACTIONS</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line text-ink-2 text-xs">
-                  {financiers
-                    .filter(f => {
-                      const q = financeSearch.toLowerCase().trim();
-                      if (!q) return true;
-                      return (
-                        f.name.toLowerCase().includes(q) ||
-                        f.contactPerson.toLowerCase().includes(q) ||
-                        f.phone.toLowerCase().includes(q) ||
-                        f.category.toLowerCase().includes(q)
-                      );
-                    })
-                    .map((f, idx) => (
-                      <tr key={f.id || idx} className="hover:bg-canvas transition-colors">
-                        <td className="py-2.5 px-3 text-center text-ink-3 tnum whitespace-nowrap">{idx + 1}</td>
-                        <td className="py-2.5 px-3 font-semibold text-ink whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Landmark className="w-3.5 h-3.5 text-accent" />
-                            <span>{f.name}</span>
+                <tbody className="divide-y divide-line text-slate-600 text-xs">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={9} className="p-4">
+                        <div className="space-y-2">
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredFinanciers.length === 0 ? (
+                    <tr>
+                      <td colSpan={9}>
+                        <Empty
+                          title="No banking partners found"
+                          hint="Add your first financier tie-up or seed standard banking partners from the database seeder."
+                          action={
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={handleOpenAddFinance}
+                                className="btn btn-primary text-xs h-7 px-3"
+                              >
+                                <Plus className="w-3 h-3 mr-1" /> Add Banking Partner
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDbModalOpen(true)}
+                                className="btn btn-secondary text-xs h-7 px-3"
+                              >
+                                <Database className="w-3 h-3 mr-1" /> Seed Master Data
+                              </button>
+                            </div>
+                          }
+                        />
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredFinanciers.map((f, idx) => (
+                      <tr key={f.id || idx} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-3.5 px-4 text-center text-slate-400 font-mono text-xs whitespace-nowrap">
+                          {idx + 1}.
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            {renderBankLogo(f.name)}
+                            <span className="font-bold text-slate-900 text-xs">{f.name}</span>
                           </div>
                         </td>
-                        <td className="py-2.5 px-3 text-ink-2 whitespace-nowrap">
-                          <Badge tone="neutral">{f.category.replace(/_/g, ' ')}</Badge>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80 uppercase tracking-wider">
+                            {f.category.replace(/_/g, ' ')}
+                          </span>
                         </td>
-                        <td className="py-2.5 px-3 text-ink whitespace-nowrap">{f.contactPerson}</td>
-                        <td className="py-2.5 px-3 font-mono text-ink-2 whitespace-nowrap">{f.phone}</td>
-                        <td className="py-2.5 px-3 text-center font-bold text-ink whitespace-nowrap">{f.maxLtv}%</td>
-                        <td className="py-2.5 px-3 text-center text-ink-3 whitespace-nowrap">{f.processingFee}%</td>
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                          <span className="text-ok font-semibold text-[11px] bg-ok/10 px-2 py-0.5 rounded border border-ok/20">
+                        <td className="py-3.5 px-4 text-slate-800 text-xs font-medium whitespace-nowrap">
+                          {f.contactPerson}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-slate-600 text-xs whitespace-nowrap">
+                          {f.phone}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono font-bold text-slate-900 text-xs whitespace-nowrap">
+                          {f.maxLtv}%
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-slate-600 text-xs whitespace-nowrap">
+                          {f.processingFee}%
+                        </td>
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
                             {f.activeStatus}
                           </span>
                         </td>
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               type="button"
                               onClick={() => handleOpenEditFinance(f)}
-                              className="w-7 h-7 rounded hover:bg-canvas border border-line hover:border-line-strong text-ink flex items-center justify-center transition-colors cursor-pointer"
+                              className="w-7 h-7 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
                               title="Edit Financier"
                             >
-                              <Edit3 className="w-3.5 h-3.5 text-ink-2" />
+                              <Edit3 className="w-3.5 h-3.5 text-slate-500" />
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDeleteFinance(f.id)}
-                              className="w-7 h-7 rounded hover:bg-danger-soft border border-line hover:border-danger/40 text-danger flex items-center justify-center transition-colors cursor-pointer"
+                              className="w-7 h-7 rounded-lg border border-slate-200 hover:bg-rose-50 hover:border-rose-200 text-rose-500 flex items-center justify-center transition-colors cursor-pointer"
                               title="Remove Partner"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1359,33 +1919,33 @@ export const AdminMasterPanel: React.FC = () => {
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
-          </Panel>
+          </div>
         </div>
       )}
 
       {activeTab === 'INSURANCE' && (
-        <div className="space-y-3">
-          {/* Action Bar */}
-          <div className="p-3 bg-canvas border border-line rounded flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2 flex-1 min-w-[280px]">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-accent absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Search Insurance Company, Claims Lead, Phone or Covers..."
-                  value={insuranceSearch}
-                  onChange={(e) => setInsuranceSearch(e.target.value)}
-                  className="w-full h-8 pl-9 pr-3 text-xs bg-surface border border-line rounded text-ink placeholder:text-ink-3 focus:outline-none focus:border-accent font-medium shadow-xs"
-                />
-              </div>
+        <div className="space-y-4">
+          {/* Search & Action Bar */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search Insurance Company, Claims Lead, Phone or Covers..."
+                value={insuranceSearch}
+                onChange={(e) => setInsuranceSearch(e.target.value)}
+                className="w-full h-10 pl-10 pr-4 text-xs bg-white border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 shadow-xs transition-colors"
+              />
               {insuranceSearch && (
                 <button
+                  type="button"
                   onClick={() => setInsuranceSearch('')}
-                  className="h-8 px-2.5 bg-surface border border-line hover:bg-canvas text-xs font-medium text-ink-3 rounded transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 font-medium cursor-pointer"
                 >
                   Clear
                 </button>
@@ -1395,112 +1955,141 @@ export const AdminMasterPanel: React.FC = () => {
             <button
               type="button"
               onClick={handleOpenAddInsurance}
-              className="h-8 px-3.5 rounded bg-accent hover:bg-accent-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+              className="h-10 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors shrink-0"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
               <span>Add Insurance Partner</span>
             </button>
           </div>
 
-          {/* Insurance Table */}
-          <Panel
-            title={
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-accent" />
-                <span>General Insurance Tie-up Partners</span>
-                <Badge tone="accent">{insuranceProviders.length} Partners</Badge>
-              </div>
-            }
-          >
+          {/* Table Card */}
+          <div className="bg-white border border-line rounded-2xl shadow-xs overflow-hidden">
+            {/* Card Header */}
+            <div className="px-5 py-4 border-b border-line flex items-center gap-2.5 bg-white">
+              <Shield className="w-5 h-5 text-blue-600" />
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">
+                General Insurance Tie-up Partners
+              </h2>
+              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 text-xs font-semibold">
+                {insuranceProviders.length} Partners
+              </span>
+            </div>
+
+            {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
-                <thead className="bg-accent-soft border-b border-accent-line text-accent font-semibold uppercase tracking-[0.06em] text-label">
+                <thead className="bg-blue-50/50 border-b border-line text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                   <tr>
-                    <th className="py-2.5 px-3 w-10 text-center whitespace-nowrap">#</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Insurance Company</th>
-                    <th className="py-2.5 px-3 text-center whitespace-nowrap">Tie-Up Discount</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Claims Lead / In-Charge</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Surveyor / Contact Phone</th>
-                    <th className="py-2.5 px-3 whitespace-nowrap">Coverage Packages (Covers)</th>
-                    <th className="py-2.5 px-3 text-center whitespace-nowrap">Cashless Tie-Up</th>
-                    <th className="py-2.5 px-3 text-center whitespace-nowrap">Actions</th>
+                    <th className="py-3 px-4 w-12 text-center whitespace-nowrap">#</th>
+                    <th className="py-3 px-4 whitespace-nowrap">INSURANCE COMPANY</th>
+                    <th className="py-3 px-4 text-center whitespace-nowrap">TIE-UP DISCOUNT</th>
+                    <th className="py-3 px-4 whitespace-nowrap">CLAIMS LEAD / IN-CHARGE</th>
+                    <th className="py-3 px-4 whitespace-nowrap">SURVEYOR / CONTACT PHONE</th>
+                    <th className="py-3 px-4 whitespace-nowrap">COVERAGE PACKAGES (COVERS)</th>
+                    <th className="py-3 px-4 text-center whitespace-nowrap">CASHLESS TIE-UP</th>
+                    <th className="py-3 px-4 text-center whitespace-nowrap">ACTION</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line text-ink-2 text-xs">
-                  {insuranceProviders
-                    .filter(i => {
-                      const q = insuranceSearch.toLowerCase().trim();
-                      if (!q) return true;
-                      return (
-                        i.name.toLowerCase().includes(q) ||
-                        i.claimsHead.toLowerCase().includes(q) ||
-                        i.surveyorContact.toLowerCase().includes(q) ||
-                        (i.policyTypes && i.policyTypes.toLowerCase().includes(q))
-                      );
-                    })
-                    .map((i, idx) => (
-                      <tr key={i.id || idx} className="hover:bg-canvas transition-colors">
-                        <td className="py-2.5 px-3 text-center text-ink-3 tnum whitespace-nowrap">
-                          {idx + 1}
+                <tbody className="divide-y divide-line text-slate-600 text-xs">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={8} className="p-4">
+                        <div className="space-y-2">
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                          <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredInsuranceProviders.length === 0 ? (
+                    <tr>
+                      <td colSpan={8}>
+                        <Empty
+                          title="No insurance partners found"
+                          hint="Add your first insurance tie-up partner or seed standard tie-ups from the database seeder."
+                          action={
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={handleOpenAddInsurance}
+                                className="btn btn-primary text-xs h-7 px-3"
+                              >
+                                <Plus className="w-3 h-3 mr-1" /> Add Insurance Partner
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDbModalOpen(true)}
+                                className="btn btn-secondary text-xs h-7 px-3"
+                              >
+                                <Database className="w-3 h-3 mr-1" /> Seed Master Data
+                              </button>
+                            </div>
+                          }
+                        />
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredInsuranceProviders.map((i, idx) => (
+                      <tr key={i.id || idx} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-3.5 px-4 text-center text-slate-400 font-mono text-xs whitespace-nowrap">
+                          {idx + 1}.
                         </td>
-                        <td className="py-2.5 px-3 font-semibold text-ink whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Shield className="w-3.5 h-3.5 text-accent" />
-                            <span>{i.name}</span>
-                          </div>
+                        <td className="py-3.5 px-4 font-bold text-slate-900 text-xs whitespace-nowrap">
+                          {i.name}
                         </td>
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                          <span className="font-bold text-accent bg-accent-soft px-2 py-0.5 rounded border border-accent/20">
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                          <span className="inline-block px-3 py-0.5 rounded-full text-xs font-bold font-mono bg-blue-100 text-blue-700 border border-blue-200/60">
                             {i.discountPercentage}%
                           </span>
                         </td>
-                        <td className="py-2.5 px-3 text-ink-2 whitespace-nowrap">
+                        <td className="py-3.5 px-4 text-slate-700 font-medium text-xs whitespace-nowrap">
                           {i.claimsHead}
                         </td>
-                        <td className="py-2.5 px-3 font-mono text-ink-2 whitespace-nowrap">
+                        <td className="py-3.5 px-4 font-mono text-slate-600 text-xs whitespace-nowrap">
                           {i.surveyorContact}
                         </td>
-                        <td className="py-2.5 px-3 text-ink-2">
-                          <span className="inline-block max-w-xs truncate text-[11px]" title={i.policyTypes}>
-                            {i.policyTypes}
-                          </span>
+                        <td className="py-3.5 px-4 text-slate-600 text-xs whitespace-nowrap">
+                          {i.policyTypes}
                         </td>
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
                           {i.cashlessTieUp ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-ok bg-ok/10 px-2 py-0.5 rounded border border-ok/20">
-                              <CheckCircle2 className="w-3 h-3" />
+                            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                               <span>Approved</span>
                             </span>
                           ) : (
-                            <span className="text-ink-3 text-[11px]">Reimbursement</span>
+                            <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                              Reimbursement
+                            </span>
                           )}
                         </td>
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               type="button"
                               onClick={() => handleOpenEditInsurance(i)}
-                              className="w-7 h-7 rounded hover:bg-canvas border border-line hover:border-line-strong text-ink flex items-center justify-center transition-colors cursor-pointer"
+                              className="w-7 h-7 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
                               title="Edit Insurance Partner"
                             >
-                              <Edit3 className="w-3.5 h-3.5 text-ink-2" />
+                              <Edit3 className="w-3.5 h-3.5 text-slate-500" />
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDeleteInsurance(i.id)}
-                              className="w-7 h-7 rounded hover:bg-danger-soft border border-line hover:border-danger/40 text-danger flex items-center justify-center transition-colors cursor-pointer"
-                              title="Remove Partner"
+                              className="w-7 h-7 rounded-lg border border-slate-200 hover:bg-rose-50 hover:border-rose-200 text-slate-500 hover:text-rose-500 flex items-center justify-center transition-colors cursor-pointer"
+                              title="Delete Partner"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <MoreHorizontal className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
-          </Panel>
+          </div>
         </div>
       )}
 
@@ -2320,6 +2909,12 @@ export const AdminMasterPanel: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Supabase PostgreSQL Configuration & Master Seeder Modal */}
+      <DatabaseConfigModal
+        isOpen={dbModalOpen}
+        onClose={() => setDbModalOpen(false)}
+      />
 
     </div>
   );

@@ -6,53 +6,37 @@ import {
   FileSpreadsheet, X, Loader2, CheckCircle2, UserCheck,
   Calendar, Phone, DollarSign, Tag, Printer, ArrowRight,
   FolderOpen, Clock, AlertCircle, Check, Factory, FileText,
-  Building2, MapPin, Mail, Copy, CheckCheck, RefreshCw, Hash
+  Building2, MapPin, Mail, Copy, CheckCheck, RefreshCw, Hash, Database
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import * as XLSX from 'xlsx';
 import { formatDate } from '../utils/dateUtils';
 import { 
-  getBookingsForBrand, saveBookingsInventory, 
-  getVehiclesForBrand, saveStockInventory,
-  getActiveBranches, syncWithSupabase,
+  getActiveBranches,
   isTataItem, isHyundaiItem,
   TATA_ORG_ID, HYUNDAI_ORG_ID
 } from '../data/seedData';
 import { supabase } from '../lib/supabase';
+import { 
+  fetchBookings, saveBooking, bulkImportBookings, allocateBookingVin,
+  fetchVehicles, BookingRecord, StockVehicle
+} from '../services/dataService';
+import { DatabaseConfigModal } from '../components/common/DatabaseConfigModal';
 import { Panel, Stat, Badge, Empty, PageHeader } from '../components/ui/primitives';
 import { isSmartPbnaMatch } from '../utils/matchingUtils';
 
-export interface BookingRecord {
-  id: string;
-  receipt_date: string;
-  receipt_no: string;
-  customer_name: string;
-  mobile_number: string;
-  sales_consultant: string;
-  team_leader: string;
-  model: string;
-  variant: string;
-  colour: string;
-  allocated_vin_no?: string;
-  delivery_date?: string;
-  hypothecation?: string;
-  receipt_amt: number;
-  status: 'ALLOCATED' | 'PENDING_ALLOCATION';
-  organization_id?: string;
-  created_at?: string;
-}
+export type { BookingRecord };
 
 export const BookingsPage: React.FC = () => {
   const { currentBrand } = useAuth();
 
-  const [bookings, setBookings] = useState<BookingRecord[]>(() => getBookingsForBrand('DHOOT-ALL'));
-  const [loading, setLoading] = useState(false);
+  const [bookings, setBookings] = useState<BookingRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [brandFilter, setBrandFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING_ALLOCATION' | 'ALLOCATED'>('ALL');
   
   // Real Database Stock For Live VIN Allocation Dropdown
-  const [stockVehicles, setStockVehicles] = useState<any[]>(() => getVehiclesForBrand('DHOOT-ALL'));
+  const [stockVehicles, setStockVehicles] = useState<StockVehicle[]>([]);
 
   // Modals Controls
   const [showNewModal, setShowNewModal] = useState(false);
@@ -61,6 +45,7 @@ export const BookingsPage: React.FC = () => {
   const [voucherBooking, setVoucherBooking] = useState<BookingRecord | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isDbModalOpen, setIsDbModalOpen] = useState(false);
 
   // Bulk Excel Import State
   const [parsedRows, setParsedRows] = useState<BookingRecord[]>([]);
@@ -85,27 +70,30 @@ export const BookingsPage: React.FC = () => {
     receipt_amt: 25000,
   });
 
+  const fetchBookingsAndStock = async () => {
+    setLoading(true);
+    try {
+      const [bList, sList] = await Promise.all([
+        fetchBookings(currentBrand?.code || 'DHOOT-ALL'),
+        fetchVehicles(currentBrand?.code || 'DHOOT-ALL')
+      ]);
+      setBookings(bList);
+      setStockVehicles(sList);
+    } catch (e) {
+      console.error('Error fetching live bookings and stock:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const brand = currentBrand.code === 'DHOOT-ALL' ? 'ALL' : currentBrand.code;
     setBrandFilter(brand);
+    fetchBookingsAndStock();
 
-    // 1. Sync immediately from in-memory cache
-    const bList = getBookingsForBrand(currentBrand?.code || 'DHOOT-ALL');
-    setBookings(bList);
-    const sList = getVehiclesForBrand(currentBrand?.code || 'DHOOT-ALL');
-    setStockVehicles(sList);
-    setLoading(false);
-
-    // 2. Trigger background cloud sync once
-    syncWithSupabase().catch(() => {});
-
-    // 3. Listen for updates without infinite re-fetch loop
     const handleUpdate = () => {
-      const updatedB = getBookingsForBrand(currentBrand?.code || 'DHOOT-ALL');
-      setBookings(updatedB);
-      const updatedS = getVehiclesForBrand(currentBrand?.code || 'DHOOT-ALL');
-      setStockVehicles(updatedS);
-      setLoading(false);
+      fetchBookings(currentBrand?.code || 'DHOOT-ALL').then(setBookings);
+      fetchVehicles(currentBrand?.code || 'DHOOT-ALL').then(setStockVehicles);
     };
 
     window.addEventListener('bookings-updated', handleUpdate);
@@ -117,15 +105,7 @@ export const BookingsPage: React.FC = () => {
     };
   }, [currentBrand?.code]);
 
-  const fetchBookingsAndStock = () => {
-    const bList = getBookingsForBrand(currentBrand?.code || 'DHOOT-ALL');
-    setBookings(bList);
-    const sList = getVehiclesForBrand(currentBrand?.code || 'DHOOT-ALL');
-    setStockVehicles(sList);
-    setLoading(false);
-  };
-
-  const handleCreateBooking = (e: React.FormEvent) => {
+  const handleCreateBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     const newRecord: BookingRecord = {
       id: `bk-${Date.now()}`,
@@ -147,33 +127,11 @@ export const BookingsPage: React.FC = () => {
       created_at: new Date().toISOString()
     };
 
-    const updated = [newRecord, ...bookings];
-    setBookings(updated);
-    saveBookingsInventory(updated);
-
+    setBookings(prev => [newRecord, ...prev]);
     setShowNewModal(false);
+    await saveBooking(newRecord);
+    fetchBookingsAndStock();
 
-    try {
-      const isHyn = isHyundaiItem(newRecord);
-      const targetOrg = isHyn ? HYUNDAI_ORG_ID : TATA_ORG_ID;
-      supabase.from('bookings').upsert({
-        receipt_no: newRecord.receipt_no,
-        customer_name: newRecord.customer_name,
-        mobile_number: newRecord.mobile_number,
-        sales_consultant: newRecord.sales_consultant,
-        team_leader: newRecord.team_leader,
-        model: newRecord.model,
-        variant: newRecord.variant,
-        colour: newRecord.colour,
-        allocated_vin_no: newRecord.allocated_vin_no || null,
-        promise_delivery_date: newRecord.delivery_date || null,
-        receipt_amt: newRecord.receipt_amt || 0,
-        status: newRecord.allocated_vin_no ? 'ALLOCATED' : 'BOOKED',
-        organization_id: targetOrg
-      }).then();
-    } catch (e) {
-      console.warn('Supabase booking insert note:', e);
-    }
     setNewBooking({
       receipt_date: new Date().toISOString().split('T')[0],
       receipt_no: `BK-${Date.now().toString().slice(-6)}`,
@@ -192,10 +150,10 @@ export const BookingsPage: React.FC = () => {
   };
 
   // Perform VIN Allocation
-  const handleConfirmVinAllocation = () => {
+  const handleConfirmVinAllocation = async () => {
     if (!allocatingBooking || !selectedStockVin) return;
 
-    // 1. Update Booking Record
+    // 1. Optimistic Update
     const updatedBookings = bookings.map(b => {
       if (b.id === allocatingBooking.id || b.receipt_no === allocatingBooking.receipt_no) {
         return {
@@ -206,11 +164,8 @@ export const BookingsPage: React.FC = () => {
       }
       return b;
     });
-
     setBookings(updatedBookings);
-    saveBookingsInventory(updatedBookings);
 
-    // 2. Update Vehicle Record in Stock
     const updatedVehicles = stockVehicles.map(v => {
       if (v.vin === selectedStockVin) {
         return {
@@ -226,10 +181,18 @@ export const BookingsPage: React.FC = () => {
       return v;
     });
     setStockVehicles(updatedVehicles);
-    saveStockInventory(updatedVehicles);
+
+    // 2. Direct Supabase Database Allocation
+    await allocateBookingVin(
+      allocatingBooking.id,
+      allocatingBooking.receipt_no,
+      selectedStockVin,
+      allocatingBooking.customer_name
+    );
 
     setAllocatingBooking(null);
     setSelectedStockVin('');
+    fetchBookingsAndStock();
   };
 
   // =========================================================================
@@ -377,8 +340,9 @@ export const BookingsPage: React.FC = () => {
     setImportSummary(null);
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
+        const XLSX = await import('xlsx');
         const data = new Uint8Array(event.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array', cellDates: true });
         const firstSheetName = workbook.SheetNames[0];
@@ -393,7 +357,7 @@ export const BookingsPage: React.FC = () => {
     reader.readAsArrayBuffer(file);
   };
 
-  const handleConfirmBulkImport = () => {
+  const handleConfirmBulkImport = async () => {
     if (parsedRows.length === 0) return;
     setIsImporting(true);
 
@@ -434,39 +398,12 @@ export const BookingsPage: React.FC = () => {
 
       const finalBookings = Array.from(combinedMap.values());
       setBookings(finalBookings);
-      saveBookingsInventory(finalBookings);
-
       setIsImportModalOpen(false);
 
-      try {
-        const rowsToSync = finalBookings.map(r => {
-          const isHyn = isHyundaiItem(r);
-          return {
-            receipt_no: r.receipt_no,
-            customer_name: r.customer_name,
-            mobile_number: r.mobile_number,
-            sales_consultant: r.sales_consultant,
-            team_leader: r.team_leader,
-            model: r.model,
-            variant: r.variant,
-            colour: r.colour,
-            allocated_vin_no: r.allocated_vin_no || null,
-            promise_delivery_date: r.delivery_date || null,
-            receipt_amt: r.receipt_amt || 0,
-            status: r.allocated_vin_no ? 'ALLOCATED' : 'BOOKED',
-            organization_id: isHyn ? HYUNDAI_ORG_ID : TATA_ORG_ID
-          };
-        });
+      // Direct Live Supabase Database Bulk Upsert
+      await bulkImportBookings(finalBookings);
+      fetchBookingsAndStock();
 
-        supabase.from('bookings').upsert(rowsToSync, { onConflict: 'receipt_no' }).then();
-        fetch(getApiUrl('/api/v1/bookings/bulk-import'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bookings: rowsToSync })
-        }).catch(() => {});
-      } catch (e) {
-        console.warn('Supabase bulk bookings sync note:', e);
-      }
       setParsedRows([]);
       setImportSummary(null);
     } catch (e: any) {
@@ -579,6 +516,15 @@ export const BookingsPage: React.FC = () => {
             </button>
 
             <button
+              type="button"
+              onClick={() => setIsDbModalOpen(true)}
+              className="h-8 px-3 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <Database className="w-3.5 h-3.5 text-accent" />
+              <span>Database Seeder</span>
+            </button>
+
+            <button
               onClick={() => setShowNewModal(true)}
               className="h-8 px-3.5 rounded bg-accent hover:bg-accent-600 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
@@ -667,25 +613,50 @@ export const BookingsPage: React.FC = () => {
             <tbody className="divide-y divide-line text-ink-2 text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan={15} className="py-12 text-center text-ink-3">
-                    <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-accent" />
-                    Loading customer bookings...
+                  <td colSpan={15} className="p-4">
+                    <div className="space-y-2.5">
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                    </div>
                   </td>
                 </tr>
               ) : filteredBookings.length === 0 ? (
                 <tr>
-                  <td colSpan={15}>
-                    <div className="py-12 text-center space-y-3">
-                      <div className="w-12 h-12 rounded-full bg-accent-soft text-accent flex items-center justify-center mx-auto">
-                        <Bookmark className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-ink">0 Bookings in System</p>
-                        <p className="text-xs text-ink-3 mt-1">
-                          {search ? 'No bookings matched your search query.' : 'Click Bulk Import Bookings to upload daily bookings spreadsheet.'}
-                        </p>
-                      </div>
-                    </div>
+                  <td colSpan={15} className="p-6">
+                    <Empty
+                      title={search || statusFilter !== 'ALL' ? "No matching bookings" : "0 Bookings in Live Database"}
+                      hint={search || statusFilter !== 'ALL'
+                        ? "Try clearing your search keyword or selecting 'All Bookings'."
+                        : "Customer bookings ledger has 0 records in Supabase. Create a new booking voucher, bulk import customer spreadsheet, or seed standard catalog."}
+                      action={
+                        <div className="flex items-center justify-center gap-2 flex-wrap mt-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowNewModal(true)}
+                            className="btn btn-primary text-xs h-8 px-3.5"
+                          >
+                            <Plus className="w-3.5 h-3.5 mr-1" /> New Booking
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsImportModalOpen(true)}
+                            className="btn btn-secondary text-xs h-8 px-3.5"
+                          >
+                            <Upload className="w-3.5 h-3.5 mr-1" /> Bulk Import Bookings
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsDbModalOpen(true)}
+                            className="btn btn-secondary text-xs h-8 px-3.5"
+                          >
+                            <Database className="w-3.5 h-3.5 mr-1" /> Seed Master Data
+                          </button>
+                        </div>
+                      }
+                    />
                   </td>
                 </tr>
               ) : (
@@ -1477,6 +1448,12 @@ export const BookingsPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Database Connection & Master Seeder Modal */}
+      <DatabaseConfigModal
+        isOpen={isDbModalOpen}
+        onClose={() => setIsDbModalOpen(false)}
+      />
     </div>
   );
 };

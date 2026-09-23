@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../utils/apiConfig';
-import { getVehiclesForBrand } from '../data/seedData';
+import { fetchQaQueue as fetchQaService, approveQaInspection } from '../services/dataService';
 import { Panel, Stat, Badge, Empty, PageHeader } from '../components/ui/primitives';
 
 export const QaQueuePage: React.FC = () => {
@@ -19,50 +19,32 @@ export const QaQueuePage: React.FC = () => {
 
   useEffect(() => {
     fetchQaQueue();
-  }, [currentBrand?.code]);
 
-  const mapQa = (rows: any[]) => {
-    return rows
-      .filter((v: any) => v.status === 'PDI_APPROVED' || v.status === 'QA_PENDING' || v.status === 'DELIVERY_READY')
-      .map((v: any) => ({
-        id: v.id || v.vin,
-        vin: v.vin,
-        model: v.model || 'OEM Vehicle',
-        variant: v.variant || 'Standard',
-        color: v.color || 'Standard',
-        inspector: v.inspector_name || 'Senior PDI Inspector',
-        passed: 42,
-        failed: 0,
-        submittedAt: 'Today, 11:30 AM',
-        status: v.status === 'PDI_APPROVED' || v.status === 'DELIVERY_READY' ? 'APPROVED' : 'PENDING',
-        certId: `CERT-${v.vin.slice(-6)}`
-      }));
-  };
+    const handleStockUpdate = () => {
+      fetchQaQueue();
+    };
+    window.addEventListener('stock-updated', handleStockUpdate);
+    return () => {
+      window.removeEventListener('stock-updated', handleStockUpdate);
+    };
+  }, [currentBrand?.code]);
 
   const fetchQaQueue = async () => {
     setLoading(true);
     try {
-      const orgParam = currentBrand && currentBrand.code !== 'DHOOT-ALL' ? `?organization_id=${currentBrand.orgId}` : '';
-      const res = await fetch(getApiUrl(`/api/v1/stock${orgParam}`));
-      if (res.ok) {
-        const json = await res.json();
-        const rows = json.data || [];
-        if (rows.length > 0) {
-          setQueue(mapQa(rows));
-          setLoading(false);
-          return;
-        }
-      }
-      setQueue(mapQa(getVehiclesForBrand(currentBrand.code)));
+      const data = await fetchQaService(currentBrand?.code);
+      setQueue(data || []);
     } catch (e) {
-      setQueue(mapQa(getVehiclesForBrand(currentBrand.code)));
+      setQueue([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApprove = (id: string) => {
-    setApprovedList(prev => [...prev, id]);
+  const handleApprove = async (vinOrId: string) => {
+    setApprovedList(prev => [...prev, vinOrId]);
+    await approveQaInspection(vinOrId);
+    fetchQaQueue();
   };
 
   const filteredQueue = queue.filter(item => {
@@ -157,7 +139,18 @@ export const QaQueuePage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-line text-ink-2 text-xs">
-              {filteredQueue.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={9} className="p-6">
+                    <div className="space-y-2.5">
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredQueue.length === 0 ? (
                 <tr>
                   <td colSpan={9}>
                     <Empty title="0 QA Submissions Found" hint="Inspections submitted by engineers will appear here for final QA sign-off." />

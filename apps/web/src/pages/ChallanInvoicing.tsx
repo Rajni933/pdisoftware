@@ -7,70 +7,26 @@ import {
   FileSpreadsheet, X, Loader2, DollarSign, CheckCircle2, 
   Receipt, Building, ShieldCheck, Printer, Calendar,
   Key, UserCheck, Truck, ArrowRight, FolderOpen, Clock,
-  AlertCircle, Check, MapPin, Phone, Hash
+  AlertCircle, Check, MapPin, Phone, Hash, Database
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import * as XLSX from 'xlsx';
 import { formatDate } from '../utils/dateUtils';
 import { 
-  getChallansForBrand, saveChallansInventory,
-  getVehiclesForBrand, syncWithSupabase
-} from '../data/seedData';
+  fetchChallans, saveChallan, bulkImportChallans, ChallanRecord 
+} from '../services/dataService';
+import { DatabaseConfigModal } from '../components/common/DatabaseConfigModal';
 import { Panel, Stat, Badge, Empty, PageHeader } from '../components/ui/primitives';
 
-export interface ChallanRecord {
-  id: string;
-  booking_date: string;
-  challan_no: string;
-  challan_date: string;
-  delivery_date: string;
-  challan_type: string;
-  vin_no: string;
-  customer_name: string;
-  mobile: string;
-  city: string;
-  model: string;
-  variant: string;
-  colour: string;
-  sale_consultant: string;
-  team_leader: string;
-  financier_name: string;
-  corporate: string;
-  exchange: string;
-  ex_showroom: number;
-  discount: number;
-  net: number;
-  insurance_per: number;
-  insurance_amount: number;
-  ep: number;
-  rti: number;
-  cm: number;
-  rto_city: string;
-  rto_amount: number;
-  hml_acc: number;
-  own_acc: number;
-  acc_discount_amount: number;
-  acc_amount: number;
-  trc: number;
-  warranty: number;
-  handling_charges: number;
-  other: number;
-  fast_tag: number;
-  tcs: number;
-  net_amount: number;
-  invoice_date: string;
-  invoice_no: string;
-  status: string;
-  created_at?: string;
-}
+export type { ChallanRecord };
 
 export const ChallanInvoicingPage: React.FC = () => {
   const { currentBrand } = useAuth();
 
-  const [records, setRecords] = useState<ChallanRecord[]>(() => getChallansForBrand(currentBrand?.code || 'DHOOT-ALL'));
-  const [loading, setLoading] = useState(false);
+  const [records, setRecords] = useState<ChallanRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [isDbModalOpen, setIsDbModalOpen] = useState(false);
 
   // Modals
   const [showNewModal, setShowNewModal] = useState(false);
@@ -129,33 +85,29 @@ export const ChallanInvoicingPage: React.FC = () => {
     'Invoice No.'
   ];
 
-  useEffect(() => {
-    syncWithSupabase();
-  }, []);
-
-  useEffect(() => {
-    fetchChallans();
-
-    const handleUpdate = () => {
-      fetchChallans();
-    };
-
-    window.addEventListener('challans-updated', handleUpdate);
-    return () => window.removeEventListener('challans-updated', handleUpdate);
-  }, [currentBrand?.code]);
-
-  const fetchChallans = () => {
+  const loadChallans = async () => {
     setLoading(true);
     try {
-      const list = getChallansForBrand(currentBrand?.code || 'DHOOT-ALL');
+      const list = await fetchChallans(currentBrand?.code || 'DHOOT-ALL');
       setRecords(list);
     } catch (e) {
-      console.warn('Error loading challans:', e);
+      console.error('Error loading challans:', e);
       setRecords([]);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadChallans();
+
+    const handleUpdate = () => {
+      fetchChallans(currentBrand?.code || 'DHOOT-ALL').then(setRecords);
+    };
+
+    window.addEventListener('challans-updated', handleUpdate);
+    return () => window.removeEventListener('challans-updated', handleUpdate);
+  }, [currentBrand?.code]);
 
   const handleDownloadTemplate = () => {
     const sampleRows = [
@@ -402,8 +354,9 @@ export const ChallanInvoicingPage: React.FC = () => {
     setImportSummary(null);
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
+        const XLSX = await import('xlsx');
         const data = new Uint8Array(event.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array', cellDates: true });
         const firstSheetName = workbook.SheetNames[0];
@@ -418,7 +371,7 @@ export const ChallanInvoicingPage: React.FC = () => {
     reader.readAsArrayBuffer(file);
   };
 
-  const handleConfirmBulkImport = () => {
+  const handleConfirmBulkImport = async () => {
     if (parsedRows.length === 0) return;
     setIsImporting(true);
 
@@ -502,74 +455,11 @@ export const ChallanInvoicingPage: React.FC = () => {
       });
 
       const finalRecords = Array.from(combinedMap.values());
-      saveChallansInventory(finalRecords);
-      setRecords(getChallansForBrand(currentBrand.code || 'DHOOT-ALL'));
-
       setIsImportModalOpen(false);
 
-      // 3. Prepare exact Schema-aligned payload for Supabase Cloud Database
-      const rowsToSync = finalRecords.map(r => ({
-        booking_date: r.booking_date && r.booking_date !== '—' ? r.booking_date : null,
-        challan_no: r.challan_no || `CH-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-        challan_date: r.challan_date && r.challan_date !== '—' ? r.challan_date : null,
-        delivery_date: r.delivery_date && r.delivery_date !== '—' ? r.delivery_date : null,
-        challan_type: r.challan_type || 'TAX_INVOICE_DELIVERY',
-        vin_no: r.vin_no || 'VIN-PENDING',
-        customer_name: r.customer_name || 'Valued Customer',
-        mobile_no: r.mobile || null,
-        city: r.city || null,
-        model: r.model || 'Standard Model',
-        variant: r.variant || 'Standard Variant',
-        colour: r.colour || 'Standard Colour',
-        sale_consultant: r.sale_consultant || null,
-        team_leader: r.team_leader || null,
-        financier_name: r.financier_name || null,
-        corporate: Number(r.corporate) || 0,
-        exchange: Number(r.exchange) || 0,
-        ex_showroom: Number(r.ex_showroom) || 0,
-        discount: Number(r.discount) || 0,
-        net: Number(r.net) || 0,
-        insurance_per: Number(r.insurance_per) || 0,
-        insurance_amount: Number(r.insurance_amount) || 0,
-        ep: Number(r.ep) || 0,
-        rti: Number(r.rti) || 0,
-        cm: Number(r.cm) || 0,
-        rto_city: r.rto_city || r.city || null,
-        rto_amount: Number(r.rto_amount) || 0,
-        hml_acc: Number(r.hml_acc) || 0,
-        own_acc: Number(r.own_acc) || 0,
-        acc_discount_amount: Number(r.acc_discount_amount) || 0,
-        acc_amount: Number(r.acc_amount) || 0,
-        trc: Number(r.trc) || 0,
-        warranty: Number(r.warranty) || 0,
-        handling_charges: Number(r.handling_charges) || 0,
-        other_charges: Number(r.other) || 0,
-        fast_tag: Number(r.fast_tag) || 500,
-        tcs: Number(r.tcs) || 0,
-        net_amount: Number(r.net_amount) || 0,
-        invoice_date: r.invoice_date && r.invoice_date !== '—' ? r.invoice_date : null,
-        invoice_no: r.invoice_no || `INV-${Date.now()}`,
-        status: r.status || 'INVOICED',
-        organization_id: '11111111-1111-1111-1111-111111111111'
-      }));
-
-      // Async persistence to Cloud Database & Worker API
-      const challanNos = rowsToSync.map(s => s.challan_no).filter(Boolean);
-      if (challanNos.length > 0) {
-        supabase.from('challan_invoices').delete().in('challan_no', challanNos).then(() => {
-          supabase.from('challan_invoices').insert(rowsToSync).then(({ error }) => {
-            if (error) console.warn('Supabase Challan Insert Error:', error);
-          });
-        });
-      } else {
-        supabase.from('challan_invoices').insert(rowsToSync).then();
-      }
-
-      fetch(getApiUrl('/api/v1/challans/bulk-import'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ records: rowsToSync })
-      }).catch(() => {});
+      // Direct Live Supabase Database Bulk Upsert
+      await bulkImportChallans(finalRecords);
+      loadChallans();
 
       setParsedRows([]);
       setImportSummary(null);
@@ -677,6 +567,15 @@ export const ChallanInvoicingPage: React.FC = () => {
             )}
 
             <button
+              type="button"
+              onClick={() => setIsDbModalOpen(true)}
+              className="h-8 px-3 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <Database className="w-3.5 h-3.5 text-accent" />
+              <span>Database Seeder</span>
+            </button>
+
+            <button
               onClick={() => setIsImportModalOpen(true)}
               className="h-8 px-3.5 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
@@ -766,25 +665,43 @@ export const ChallanInvoicingPage: React.FC = () => {
             <tbody className="divide-y divide-line text-ink-2 text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan={24} className="py-12 text-center text-ink-3">
-                    <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-accent" />
-                    Loading challan & invoice ledger...
+                  <td colSpan={24} className="p-6">
+                    <div className="space-y-2.5">
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
+                    </div>
                   </td>
                 </tr>
               ) : filteredRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={24}>
-                    <div className="py-12 text-center space-y-3">
-                      <div className="w-12 h-12 rounded-full bg-accent-soft text-accent flex items-center justify-center mx-auto">
-                        <Receipt className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-ink">0 Invoices in Ledger</p>
-                        <p className="text-xs text-ink-3 mt-1">
-                          Click Bulk Import Challans to upload daily delivery challan spreadsheet.
-                        </p>
-                      </div>
-                    </div>
+                  <td colSpan={24} className="p-6">
+                    <Empty
+                      title={search ? "No matching challans found" : "0 Delivery Challans in Live Database"}
+                      hint={search
+                        ? "Try clearing your search keyword to view all challan and invoice records."
+                        : "No delivery challans recorded in Supabase. Import your daily delivery register or seed sample records."}
+                      action={
+                        <div className="flex items-center justify-center gap-2 flex-wrap mt-2">
+                          <button
+                            type="button"
+                            onClick={() => setIsImportModalOpen(true)}
+                            className="btn btn-primary text-xs h-8 px-3.5"
+                          >
+                            <FileSpreadsheet className="w-3.5 h-3.5 mr-1" /> Bulk Import Challans
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsDbModalOpen(true)}
+                            className="btn btn-secondary text-xs h-8 px-3.5"
+                          >
+                            <Database className="w-3.5 h-3.5 mr-1" /> Seed Master Data
+                          </button>
+                        </div>
+                      }
+                    />
                   </td>
                 </tr>
               ) : (
@@ -1142,6 +1059,12 @@ export const ChallanInvoicingPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Database Connection & Seeder Modal */}
+      <DatabaseConfigModal
+        isOpen={isDbModalOpen}
+        onClose={() => setIsDbModalOpen(false)}
+      />
 
     </div>
   );
