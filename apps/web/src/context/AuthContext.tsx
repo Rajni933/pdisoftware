@@ -63,8 +63,9 @@ export const BRAND_CONFIGS: Record<BrandCode, BrandConfig> = {
 
 export interface AuthUser {
   id: string;
-  employeeId: string;
-  userCode: string;
+  userId?: string;
+  employeeId?: string;
+  userCode?: string;
   userName: string;
   email: string;
   role: string;
@@ -72,9 +73,14 @@ export interface AuthUser {
   nature?: string;
   branchCode?: string;
   branchId?: string;
-  organizationId: string;
+  organizationId?: string;
   brand: string;
+  brandId?: string | null;
   hasDualBrandAccess?: boolean;
+  allowedMenus?: string[];
+  permissions?: string[];
+  lastLoginAt?: string;
+  lastPasswordChangeAt?: string;
 }
 
 interface AuthContextType {
