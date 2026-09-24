@@ -1,4 +1,4 @@
-﻿# CHANGELOG
+# CHANGELOG
 ## Autoprime Tata PDI Management Platform — Dhoot Group
 
 All notable changes to this project will be documented in this file.

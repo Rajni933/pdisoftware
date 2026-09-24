@@ -1,4 +1,4 @@
-﻿# SECURITY REQUIREMENTS
+# SECURITY REQUIREMENTS
 ## Autoprime Tata PDI Management Platform — Dhoot Group
 
 **Version:** 1.0.0

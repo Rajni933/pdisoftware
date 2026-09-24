@@ -1,4 +1,4 @@
-﻿# Object Naming Convention — Cloudflare R2
+# Object Naming Convention — Cloudflare R2
 
 ## Path Template
 

@@ -1,4 +1,4 @@
-﻿-- Autoprime Tata PDI Management Platform - Phase 4 & 5: Media, Damage Findings & Repairs
+-- Autoprime Tata PDI Management Platform - Phase 4 & 5: Media, Damage Findings & Repairs
 -- Version: 1.0.0
 
 DO $$ BEGIN

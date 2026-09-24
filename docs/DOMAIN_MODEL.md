@@ -1,4 +1,4 @@
-﻿# DOMAIN MODEL
+# DOMAIN MODEL
 ## Autoprime Tata PDI Management Platform — Dhoot Group
 
 **Version:** 1.0.0

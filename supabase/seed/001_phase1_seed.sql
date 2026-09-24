@@ -1,4 +1,4 @@
-﻿-- Autoprime Tata PDI Management Platform - Seed Data
+-- Autoprime Tata PDI Management Platform - Seed Data
 
 INSERT INTO roles (code, name, description) VALUES
 ('SUPER_ADMIN', 'Super Administrator', 'Full platform access and cross-organization management'),

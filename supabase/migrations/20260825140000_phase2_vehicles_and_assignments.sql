@@ -1,4 +1,4 @@
-﻿-- Autoprime Tata PDI Management Platform - Phase 2: Vehicles & Assignments
+-- Autoprime Tata PDI Management Platform - Phase 2: Vehicles & Assignments
 -- Version: 1.0.0
 
 DO $$ BEGIN

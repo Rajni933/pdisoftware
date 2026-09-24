@@ -1,4 +1,4 @@
-﻿import { Context, Next } from 'hono';
+import { Context, Next } from 'hono';
 
 export function correlationId() {
   return async (c: Context, next: Next) => {

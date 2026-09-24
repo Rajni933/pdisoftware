@@ -1,4 +1,4 @@
-﻿# DATA RETENTION POLICY
+# DATA RETENTION POLICY
 ## Autoprime Tata PDI Management Platform — Dhoot Group
 
 **Version:** 1.0.0

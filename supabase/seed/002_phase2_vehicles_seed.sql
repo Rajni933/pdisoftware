@@ -1,4 +1,4 @@
-﻿-- Sample Tata Motors Vehicles for Autoprime Pune Central (33333333-3333-3333-3333-333333333331)
+-- Sample Tata Motors Vehicles for Autoprime Pune Central (33333333-3333-3333-3333-333333333331)
 
 INSERT INTO vehicles (id, organization_id, branch_id, stockyard_id, vin, chassis_number, engine_number, model, variant, fuel_type, transmission, color, manufacturing_year, status) VALUES
 ('55555555-5555-5555-5555-555555555551', '11111111-1111-1111-1111-111111111111', '33333333-3333-3333-3333-333333333331', '44444444-4444-4444-4444-444444444441', 'MAT612345N1234567', 'CH-NXN-9021', 'ENG-NXN-4412', 'Tata Nexon', 'Fearless Plus S DT', 'PETROL', 'DCA', 'Daytona Grey', 2026, 'RECEIVED'),

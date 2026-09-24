@@ -1,4 +1,4 @@
-﻿export const cleanStr = (s?: string) => {
+export const cleanStr = (s?: string) => {
   if (!s) return '';
   return String(s)
     .toLowerCase()

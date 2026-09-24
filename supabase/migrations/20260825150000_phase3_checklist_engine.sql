@@ -1,4 +1,4 @@
-﻿-- Autoprime Tata PDI Management Platform - Phase 3: Configurable PDI Checklist Engine
+-- Autoprime Tata PDI Management Platform - Phase 3: Configurable PDI Checklist Engine
 -- Version: 1.0.0
 
 DO $$ BEGIN

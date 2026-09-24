@@ -9,6 +9,8 @@
   },
   "scripts": {
     "build": "turbo build",
+    "build:web": "pnpm --filter web build",
+    "deploy:web": "pnpm --filter web build",
     "dev": "turbo dev",
     "db": "node services/local-db/server.mjs",
     "setup:db": "node scripts/setup-database.mjs",

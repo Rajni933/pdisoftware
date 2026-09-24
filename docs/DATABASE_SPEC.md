@@ -1,4 +1,4 @@
-﻿# DATABASE_SPEC.md
+# DATABASE_SPEC.md
 ## Autoprime Tata PDI Management Platform — Database Specification
 
 **Version:** 1.0.0

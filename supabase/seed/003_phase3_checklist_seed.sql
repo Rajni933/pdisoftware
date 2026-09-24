@@ -1,4 +1,4 @@
-﻿-- Autoprime Tata Motors Standard PDI Master Template & Categories
+-- Autoprime Tata Motors Standard PDI Master Template & Categories
 
 INSERT INTO checklist_templates (id, organization_id, name, model_pattern, fuel_type, version, is_active) VALUES
 ('66666666-6666-6666-6666-666666666661', '11111111-1111-1111-1111-111111111111', 'Tata Motors Standard Passenger Vehicle PDI Template', 'ALL', 'ALL', 1, true)

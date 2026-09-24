@@ -1,4 +1,4 @@
-﻿# Supabase
+# Supabase
 
 This directory contains all Supabase database configuration, migrations, and seed data.
 

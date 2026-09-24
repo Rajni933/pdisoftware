@@ -1,4 +1,4 @@
-﻿import { Context } from 'hono';
+import { Context } from 'hono';
 
 export async function errorHandler(err: Error, c: Context) {
   console.error('Unhandled API Error:', err);

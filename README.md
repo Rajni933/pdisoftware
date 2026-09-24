@@ -1,4 +1,4 @@
-﻿# Autoprime PDI Management Platform
+# Autoprime PDI Management Platform
 ## Dhoot Group — Autoprime Tata
 
 A production-grade Pre-Delivery Inspection (PDI) management platform for Autoprime Tata dealerships.

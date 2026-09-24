@@ -1,4 +1,4 @@
-﻿-- Autoprime Tata PDI Management Platform - Phase 1 Core Schema
+-- Autoprime Tata PDI Management Platform - Phase 1 Core Schema
 -- Version: 1.0.0
 -- Description: Organizations, Branches, Roles, Permissions, Users, Devices, Audit Logs, and RLS
 

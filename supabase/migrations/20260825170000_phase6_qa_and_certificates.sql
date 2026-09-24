@@ -1,4 +1,4 @@
-﻿-- Autoprime Tata PDI Management Platform - Phase 6: QA Approvals & Digital Certificates
+-- Autoprime Tata PDI Management Platform - Phase 6: QA Approvals & Digital Certificates
 -- Version: 1.0.0
 
 DO $$ BEGIN

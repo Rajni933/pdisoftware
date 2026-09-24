@@ -1,4 +1,4 @@
-﻿# SYSTEM_ARCHITECTURE.md
+# SYSTEM_ARCHITECTURE.md
 ## Autoprime Tata PDI Management Platform — System Architecture
 
 **Version:** 1.0.0

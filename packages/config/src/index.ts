@@ -1,4 +1,4 @@
-﻿export const APP_CONFIG = {
+export const APP_CONFIG = {
   API_VERSION: 'v1',
   BASE_PATH: '/api/v1',
   AUTH: {

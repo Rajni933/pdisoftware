@@ -1,4 +1,4 @@
-﻿import { UserRole, VehicleStatus, ChecklistItem, ChecklistResponse } from '@autoprime/types';
+import { UserRole, VehicleStatus, ChecklistItem, ChecklistResponse } from '@autoprime/types';
 
 export function calculatePdiProgress(totalItems: number, answeredItems: number): number {
   if (totalItems === 0) return 0;

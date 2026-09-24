@@ -1,4 +1,4 @@
-﻿# IMPLEMENTATION STATUS
+# IMPLEMENTATION STATUS
 ## Autoprime Tata PDI Management Platform — Dhoot Group
 
 **Last Updated:** 2026-08-25
