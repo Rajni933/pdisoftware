@@ -183,16 +183,61 @@ export const SignInPage: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6"
+      className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 lg:p-8"
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
-      <div
-        className="w-full max-w-[380px] sm:max-w-[400px] rounded-[var(--radius-lg)] p-6 sm:p-8"
-        style={{
-          backgroundColor: 'var(--color-surface)',
-          border: '1px solid var(--color-border)',
-        }}
-      >
+      <div className="w-full max-w-[1240px] mx-auto flex flex-col md:flex-row items-center justify-center gap-6 lg:gap-10 xl:gap-14">
+        {/* Left Branding: Autoprime Tata */}
+        <aside
+          aria-label="Autoprime Tata Motors Dealership"
+          className="hidden md:flex flex-col items-center text-center p-6 lg:p-8 rounded-[var(--radius-lg)] w-64 lg:w-72 shrink-0 select-none shadow-sm transition-transform hover:-translate-y-0.5"
+          style={{
+            backgroundColor: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          <img
+            src="/logo-tata.jpg"
+            alt="Autoprime Tata"
+            className="w-24 h-24 rounded-full object-cover mb-4 border-2 border-[var(--color-border-subtle)] shadow-sm"
+          />
+          <h2
+            className="font-bold text-[var(--color-text-primary)] m-0"
+            style={{ fontSize: 'var(--t-h3-size)', lineHeight: 'var(--t-h3-lh)' }}
+          >
+            Autoprime Tata
+          </h2>
+          <p
+            className="text-[var(--color-text-secondary)] mt-1 mb-4"
+            style={{ fontSize: 'var(--t-caption-size)', lineHeight: 'var(--t-caption-lh)' }}
+          >
+            Authorized Tata Motors Dealership
+          </p>
+          <div className="flex flex-wrap gap-1.5 justify-center">
+            {['Nexon', 'Harrier', 'Safari', 'Punch', 'Curvv.ev', 'Tiago', 'Altroz'].map((model) => (
+              <span
+                key={model}
+                className="px-2 py-0.5 rounded text-xs font-medium"
+                style={{
+                  backgroundColor: 'var(--color-surface-sunken)',
+                  color: 'var(--color-text-secondary)',
+                  border: '1px solid var(--color-border-subtle)',
+                }}
+              >
+                {model}
+              </span>
+            ))}
+          </div>
+        </aside>
+
+        {/* Center: Sign In Card */}
+        <div
+          className="w-full max-w-[380px] sm:max-w-[400px] rounded-[var(--radius-lg)] p-6 sm:p-8 shadow-sm"
+          style={{
+            backgroundColor: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
         {/* Dhoot Logo & Brand Header */}
         <div className="flex flex-col items-center text-center mb-6">
           <img
@@ -631,7 +676,64 @@ export const SignInPage: React.FC = () => {
             </div>
           </form>
         )}
+
+        {/* Mobile Brand Footer (Visible on screens < 768px) */}
+        <div className="flex md:hidden items-center justify-center gap-4 mt-6 pt-4 border-t border-[var(--color-border-subtle)] text-xs text-[var(--color-text-secondary)]">
+          <div className="flex items-center gap-1.5">
+            <img src="/logo-tata.jpg" alt="Tata" className="w-5 h-5 rounded-full object-cover" />
+            <span>Autoprime Tata</span>
+          </div>
+          <span className="text-[var(--color-text-disabled)]">•</span>
+          <div className="flex items-center gap-1.5">
+            <img src="/logo-hyundai.jpg" alt="Hyundai" className="w-5 h-5 rounded-sm object-cover" />
+            <span>Raja Hyundai</span>
+          </div>
+        </div>
       </div>
+
+      {/* Right Branding: Raja Hyundai */}
+      <aside
+        aria-label="Raja Hyundai Dealership"
+        className="hidden md:flex flex-col items-center text-center p-6 lg:p-8 rounded-[var(--radius-lg)] w-64 lg:w-72 shrink-0 select-none shadow-sm transition-transform hover:-translate-y-0.5"
+        style={{
+          backgroundColor: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
+        }}
+      >
+        <img
+          src="/logo-hyundai.jpg"
+          alt="Raja Hyundai"
+          className="w-24 h-24 rounded-2xl object-cover mb-4 border-2 border-[var(--color-border-subtle)] shadow-sm"
+        />
+        <h2
+          className="font-bold text-[var(--color-text-primary)] m-0"
+          style={{ fontSize: 'var(--t-h3-size)', lineHeight: 'var(--t-h3-lh)' }}
+        >
+          Raja Hyundai
+        </h2>
+        <p
+          className="text-[var(--color-text-secondary)] mt-1 mb-4"
+          style={{ fontSize: 'var(--t-caption-size)', lineHeight: 'var(--t-caption-lh)' }}
+        >
+          Sales · Service · Smiles
+        </p>
+        <div className="flex flex-wrap gap-1.5 justify-center">
+          {['Creta', 'Venue', 'Verna', 'Exter', 'Ioniq 5', 'i20', 'Tucson'].map((model) => (
+            <span
+              key={model}
+              className="px-2 py-0.5 rounded text-xs font-medium"
+              style={{
+                backgroundColor: 'var(--color-surface-sunken)',
+                color: 'var(--color-text-secondary)',
+                border: '1px solid var(--color-border-subtle)',
+              }}
+            >
+              {model}
+            </span>
+          ))}
+        </div>
+      </aside>
     </div>
+  </div>
   );
 };
