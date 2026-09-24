@@ -32,6 +32,27 @@ if (!fs.existsSync(dbDir)) {
 // Initial Staff Accounts (Phase 11 seed)
 const INITIAL_USERS = [
   {
+    id: 'a0000000-0000-0000-0000-000000000000',
+    user_code: 'Admin',
+    employee_id: 'Admin',
+    first_name: 'System',
+    last_name: 'Administrator',
+    user_name: 'System Admin (Super Admin)',
+    email: 'admin@autoprime.com',
+    mail_id: 'admin@autoprime.com',
+    phone: '9822001122',
+    role: 'SUPER_ADMIN',
+    designation: 'Managing Director / Super Admin',
+    brand: 'ALL',
+    nature: 'Head Office',
+    branch_code: 'HO-DHOOT',
+    organization_id: '11111111-1111-1111-1111-111111111111',
+    is_active: true,
+    status: 'ACTIVE',
+    password_hash: 'Mujhenhipta01',
+    created_at: new Date().toISOString()
+  },
+  {
     id: 'a0000000-0000-0000-0000-000000000001',
     user_code: 'ADMIN01',
     employee_id: 'ADMIN01',
@@ -49,7 +70,7 @@ const INITIAL_USERS = [
     organization_id: '11111111-1111-1111-1111-111111111111',
     is_active: true,
     status: 'ACTIVE',
-    password_hash: 'Admin@2026',
+    password_hash: 'Mujhenhipta01',
     created_at: new Date().toISOString()
   },
   {

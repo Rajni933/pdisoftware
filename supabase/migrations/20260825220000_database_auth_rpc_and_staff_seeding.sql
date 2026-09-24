@@ -142,11 +142,17 @@ INSERT INTO users (
     id, organization_id, employee_id, user_code, first_name, last_name, email, phone, 
     role, designation, brand, nature, password_hash, is_active
 ) VALUES 
+-- 0. Main Administrator
+(
+    '00000000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 
+    'Admin', 'Admin', 'System', 'Administrator', 'admin@autoprime.com', '+919829010000',
+    'SUPER_ADMIN', 'System Administrator', 'ALL', 'Management', crypt('Mujhenhipta01', gen_salt('bf')), true
+),
 -- 1. Super Admin
 (
     '00000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 
     'ADMIN01', 'ADMIN01', 'System', 'Administrator', 'admin@dhootgroup.com', '+919829010001',
-    'SUPER_ADMIN', 'General Manager', 'ALL', 'Management', crypt('Admin@2026', gen_salt('bf')), true
+    'SUPER_ADMIN', 'General Manager', 'ALL', 'Management', crypt('Mujhenhipta01', gen_salt('bf')), true
 ),
 -- 2. PDI Quality Inspector
 (
