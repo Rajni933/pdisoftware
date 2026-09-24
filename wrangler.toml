@@ -1,0 +1,17 @@
+name = "pdisoftware"
+main = "services/api-worker/src/index.ts"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[build]
+command = "pnpm --filter web build"
+
+[assets]
+directory = "./apps/web/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+[vars]
+ENVIRONMENT = "production"
+SUPABASE_URL = "https://eyskoxjbzziahdatzvmq.supabase.co"
+SUPABASE_ANON_KEY = "sb_publishable_YC_deZ2YNk0EwpdQBEliMQ_X2ES1f10"

@@ -26,6 +26,7 @@ export interface Env {
   SUPABASE_ANON_KEY: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
   MEDIA_BUCKET?: any;
+  ASSETS?: { fetch: (request: Request) => Promise<Response> };
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -40,28 +41,33 @@ app.use('*', cors({
 
 app.onError(errorHandler);
 
-app.get('/', (c) => c.json({
-  service: 'Dhoot Group PDI — Enterprise Management Platform API',
-  brand: 'Dhoot Group',
-  status: 'ONLINE',
-  version: '1.0.0',
-  environment: c.env.ENVIRONMENT || 'production',
-  portal_url: 'https://dhoot-group-pdi.pages.dev',
-  timestamp: new Date().toISOString(),
-  endpoints: {
-    health: '/health',
-    users: '/api/v1/users',
-    stock: '/api/v1/stock',
-    bookings: '/api/v1/bookings',
-    vehicles: '/api/v1/vehicles',
-    challans: '/api/v1/challans',
-    pdi_inspections: '/api/v1/pdi',
-    repairs: '/api/v1/repairs',
-    qa: '/api/v1/qa',
-    certificates: '/api/v1/certificates',
-    masters: '/api/v1/masters'
+app.get('/', async (c) => {
+  if (c.env.ASSETS && !c.req.header('accept')?.includes('application/json')) {
+    return c.env.ASSETS.fetch(c.req.raw);
   }
-}));
+  return c.json({
+    service: 'Dhoot Group PDI — Enterprise Management Platform API',
+    brand: 'Dhoot Group',
+    status: 'ONLINE',
+    version: '1.0.0',
+    environment: c.env.ENVIRONMENT || 'production',
+    portal_url: 'https://dhoot-group-pdi.pages.dev',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/health',
+      users: '/api/v1/users',
+      stock: '/api/v1/stock',
+      bookings: '/api/v1/bookings',
+      vehicles: '/api/v1/vehicles',
+      challans: '/api/v1/challans',
+      pdi_inspections: '/api/v1/pdi',
+      repairs: '/api/v1/repairs',
+      qa: '/api/v1/qa',
+      certificates: '/api/v1/certificates',
+      masters: '/api/v1/masters'
+    }
+  });
+});
 
 app.get('/health', (c) => c.json({ 
   status: 'healthy', 
@@ -93,5 +99,12 @@ v1.route('/certificates', certificatesRouter);
 v1.route('/verify', publicVerifyRouter);
 
 app.route('/api/v1', v1);
+
+app.notFound(async (c) => {
+  if (c.env.ASSETS) {
+    return c.env.ASSETS.fetch(c.req.raw);
+  }
+  return c.json({ error: 'Not Found' }, 404);
+});
 
 export default app;
