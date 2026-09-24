@@ -18,11 +18,17 @@ export const getSupabaseConfig = (): DatabaseConfig => {
   const customKey = localStorage.getItem('autoprime_supabase_anon_key');
 
   if (customUrl && customKey) {
-    return {
-      url: customUrl.trim(),
-      anonKey: customKey.trim(),
-      isCustom: true
-    };
+    const trimmedUrl = customUrl.trim();
+    if (trimmedUrl.includes('localhost:54321') || trimmedUrl.includes('eyskoxjbzziahdatzvmq')) {
+      localStorage.removeItem('autoprime_supabase_url');
+      localStorage.removeItem('autoprime_supabase_anon_key');
+    } else {
+      return {
+        url: trimmedUrl,
+        anonKey: customKey.trim(),
+        isCustom: true
+      };
+    }
   }
 
   // When loaded over HTTPS in production and no remote URL is configured, use current origin

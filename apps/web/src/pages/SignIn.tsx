@@ -11,13 +11,8 @@ export const SignInPage: React.FC = () => {
 
   return (
     <AuthShell
-      environment="Staging"
-      version="v1.0.3 (412)"
-      branchName="Basni"
-      supportPhone="1800 000 000"
       title="Autoprime Tata"
       subtitle="Pre-delivery inspection"
-      captionBranches="Jodhpur · Pali · Barmer"
       orgName="Dhoot Group"
       error={authError}
     >
