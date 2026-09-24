@@ -48,16 +48,16 @@ jobs:
 
       - name: Build Web Application
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://eyskoxjbzziahdatzvmq.supabase.co' }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'sb_publishable_YC_deZ2YNk0EwpdQBEliMQ_X2ES1f10' }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://ckwzbaazgbheeeuclbci.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrd3piYWF6Z2JoZWVldWNsYmNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNzQzMTYsImV4cCI6MjEwNDg1MDMxNn0.uv_oLFH_uybZJEYZ3x_-OfT3g_7vPBmbmwk5HTUdpqI' }}
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'https://dhoot-group-pdi-api.workers.dev' }}
         run: pnpm --filter web build
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CLOUDFLARE_API_KEY }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'cf103f5355c1a4d2ab251cad6b062f6c' }}
           command: pages deploy apps/web/dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT_NAME || 'dhoot-group-pdi' }} --branch=main
 
   deploy-worker:
@@ -88,7 +88,7 @@ jobs:
       - name: Deploy Cloudflare Worker API
         uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CLOUDFLARE_API_KEY }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'cf103f5355c1a4d2ab251cad6b062f6c' }}
           workingDirectory: services/api-worker
           command: deploy

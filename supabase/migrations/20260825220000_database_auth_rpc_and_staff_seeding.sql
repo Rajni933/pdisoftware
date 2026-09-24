@@ -7,8 +7,14 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 2. Ensure public.users table has enterprise fields
 ALTER TABLE IF EXISTS users 
+DROP CONSTRAINT IF EXISTS users_id_fkey;
+
+ALTER TABLE IF EXISTS users 
+ALTER COLUMN id SET DEFAULT gen_random_uuid();
+
+ALTER TABLE IF EXISTS users 
+ADD COLUMN IF NOT EXISTS auth_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
 ADD COLUMN IF NOT EXISTS user_code VARCHAR(50),
 ADD COLUMN IF NOT EXISTS password_hash TEXT,
 ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'BRANCH_MANAGER',
@@ -35,7 +41,7 @@ CREATE OR REPLACE FUNCTION authenticate_user(p_identifier TEXT, p_password TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
     v_user RECORD;
@@ -128,7 +134,7 @@ GRANT EXECUTE ON FUNCTION authenticate_user(TEXT, TEXT) TO service_role;
 -- 4. Ensure master organization exists
 INSERT INTO organizations (id, name, code) 
 VALUES ('11111111-1111-1111-1111-111111111111', 'Autoprime Tata & Hyundai - Dhoot Group', 'DHOOT-ALL')
-ON CONFLICT (code) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
 -- 5. Seed Enterprise Operational Users with standard credentials
 -- Passwords:

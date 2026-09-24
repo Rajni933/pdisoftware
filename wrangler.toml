@@ -13,5 +13,9 @@ not_found_handling = "single-page-application"
 
 [vars]
 ENVIRONMENT = "production"
-SUPABASE_URL = "https://eyskoxjbzziahdatzvmq.supabase.co"
-SUPABASE_ANON_KEY = "sb_publishable_YC_deZ2YNk0EwpdQBEliMQ_X2ES1f10"
+SUPABASE_URL = "https://ckwzbaazgbheeeuclbci.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrd3piYWF6Z2JoZWVldWNsYmNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNzQzMTYsImV4cCI6MjEwNDg1MDMxNn0.uv_oLFH_uybZJEYZ3x_-OfT3g_7vPBmbmwk5HTUdpqI"
+
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "pdi-media-storage"
