@@ -25,8 +25,14 @@ export const getSupabaseConfig = (): DatabaseConfig => {
     };
   }
 
+  // When loaded over HTTPS in production and no remote URL is configured, use current origin
+  const isHttps = window.location.protocol === 'https:';
+  const effectiveUrl = (isHttps && DEFAULT_URL.startsWith('http://localhost'))
+    ? window.location.origin
+    : DEFAULT_URL;
+
   return {
-    url: DEFAULT_URL,
+    url: effectiveUrl,
     anonKey: DEFAULT_KEY,
     isCustom: false
   };

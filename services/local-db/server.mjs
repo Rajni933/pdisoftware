@@ -519,15 +519,31 @@ function matchesFilters(item, queryParams) {
   for (const [key, rawVal] of Object.entries(queryParams)) {
     if (['select', 'order', 'limit', 'offset'].includes(key)) continue;
 
-    // Handles or=(id.eq.X,vin.eq.Y)
+    // Handles or=(id.eq.X,employee_id.ilike.Y)
     if (key === 'or') {
       const orExpr = rawVal.replace(/^\(|\)$/g, '');
       const parts = orExpr.split(',');
       const anyMatch = parts.some(part => {
-        const [pKey, opVal] = part.split('.eq.');
+        let pKey, op, opVal;
+        if (part.includes('.eq.')) {
+          [pKey, opVal] = part.split('.eq.');
+          op = 'eq';
+        } else if (part.includes('.ilike.')) {
+          [pKey, opVal] = part.split('.ilike.');
+          op = 'ilike';
+        } else if (part.includes('.neq.')) {
+          [pKey, opVal] = part.split('.neq.');
+          op = 'neq';
+        } else {
+          return false;
+        }
         if (!pKey || opVal === undefined) return false;
-        const itemVal = item[pKey.trim()];
-        return String(itemVal).toLowerCase() === String(opVal).toLowerCase();
+        const itemVal = String(item[pKey.trim()] ?? '').toLowerCase();
+        const target = opVal.replace(/%/g, '').trim().toLowerCase();
+        if (op === 'eq') return itemVal === target;
+        if (op === 'ilike') return itemVal.includes(target);
+        if (op === 'neq') return itemVal !== target;
+        return false;
       });
       if (!anyMatch) return false;
       continue;
