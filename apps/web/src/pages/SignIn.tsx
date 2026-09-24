@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { User, Lock, Eye, EyeOff, Loader2, KeyRound, ArrowLeft, Mail, CheckCircle2, Car, ShieldCheck, Wrench, Award, Sparkles } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, Loader2, KeyRound, ArrowLeft, Mail, CheckCircle2 } from 'lucide-react';
 
 export const SignInPage: React.FC = () => {
   const navigate = useNavigate();
@@ -183,104 +183,17 @@ export const SignInPage: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 lg:p-8"
+      className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6"
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
-      <div className="w-full max-w-[1240px] mx-auto flex flex-col md:flex-row items-center justify-center gap-6 lg:gap-10 xl:gap-14">
-        {/* Left Branding: Autoprime Tata */}
-        <aside
-          aria-label="Autoprime Tata Motors Dealership"
-          className="hidden lg:flex flex-col items-center text-center p-8 rounded-[var(--radius-lg)] w-72 xl:w-80 shrink-0 select-none shadow-sm transition-transform hover:-translate-y-1"
-          style={{
-            backgroundColor: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
-          }}
-        >
-          <div className="w-12 h-1 rounded-full mb-5" style={{ backgroundColor: 'var(--color-action)' }} />
-
-          <div className="relative mb-3">
-            <img
-              src="/logo-tata.jpg"
-              alt="Autoprime Tata"
-              className="w-20 h-20 rounded-full object-cover shadow-sm ring-4 ring-[var(--color-surface-sunken)] border border-[var(--color-border-subtle)]"
-            />
-          </div>
-
-          <span
-            className="px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wider uppercase mb-2"
-            style={{
-              backgroundColor: 'var(--color-action-soft)',
-              color: 'var(--color-action)',
-            }}
-          >
-            Authorized Dealer
-          </span>
-
-          <h2
-            className="font-bold tracking-tight text-[var(--color-text-primary)] m-0"
-            style={{ fontSize: 'var(--t-h3-size)', lineHeight: 'var(--t-h3-lh)' }}
-          >
-            Autoprime Tata
-          </h2>
-
-          <p className="text-xs text-[var(--color-text-secondary)] italic mt-1 mb-5">
-            Connecting Aspirations
-          </p>
-
-          <div className="w-full border-t border-[var(--color-border-subtle)] pt-4 flex flex-col gap-3 text-left">
-            <div className="flex items-center gap-3">
-              <div
-                className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
-                style={{ backgroundColor: 'var(--color-surface-sunken)', color: 'var(--color-action)' }}
-              >
-                <Car className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-[var(--color-text-primary)]">Passenger & EV Fleet</div>
-                <div className="text-xs text-[var(--color-text-tertiary)]">Complete Tata line-up</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div
-                className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
-                style={{ backgroundColor: 'var(--color-surface-sunken)', color: 'var(--color-action)' }}
-              >
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-[var(--color-text-primary)]">Certified PDI Quality</div>
-                <div className="text-xs text-[var(--color-text-tertiary)]">100% factory compliance</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div
-                className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
-                style={{ backgroundColor: 'var(--color-surface-sunken)', color: 'var(--color-action)' }}
-              >
-                <Wrench className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-[var(--color-text-primary)]">Express Service</div>
-                <div className="text-xs text-[var(--color-text-tertiary)]">Genuine OEM spares & care</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="w-full pt-4 mt-5 border-t border-[var(--color-border-subtle)] text-xs text-[var(--color-text-tertiary)]">
-            Dhoot Group • Western Rajasthan
-          </div>
-        </aside>
-
-        {/* Center: Sign In Card */}
-        <div
-          className="w-full max-w-[380px] sm:max-w-[400px] rounded-[var(--radius-lg)] p-6 sm:p-8 shadow-sm"
-          style={{
-            backgroundColor: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
-          }}
-        >
+      {/* Center: Sign In Card */}
+      <div
+        className="w-full max-w-[400px] rounded-[var(--radius-lg)] p-6 sm:p-8 shadow-sm"
+        style={{
+          backgroundColor: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
+        }}
+      >
         {/* Dhoot Logo & Brand Header */}
         <div className="flex flex-col items-center text-center mb-6">
           <img
@@ -720,106 +633,7 @@ export const SignInPage: React.FC = () => {
           </form>
         )}
 
-        {/* Mobile Brand Footer (Visible on screens < 768px) */}
-        <div className="flex md:hidden items-center justify-center gap-4 mt-6 pt-4 border-t border-[var(--color-border-subtle)] text-xs text-[var(--color-text-secondary)]">
-          <div className="flex items-center gap-1.5">
-            <img src="/logo-tata.jpg" alt="Tata" className="w-5 h-5 rounded-full object-cover" />
-            <span>Autoprime Tata</span>
-          </div>
-          <span className="text-[var(--color-text-disabled)]">•</span>
-          <div className="flex items-center gap-1.5">
-            <img src="/logo-hyundai.jpg" alt="Hyundai" className="w-5 h-5 rounded-sm object-cover" />
-            <span>Raja Hyundai</span>
-          </div>
-        </div>
       </div>
-
-      {/* Right Branding: Raja Hyundai */}
-      <aside
-        aria-label="Raja Hyundai Dealership"
-        className="hidden lg:flex flex-col items-center text-center p-8 rounded-[var(--radius-lg)] w-72 xl:w-80 shrink-0 select-none shadow-sm transition-transform hover:-translate-y-1"
-        style={{
-          backgroundColor: 'var(--color-surface)',
-          border: '1px solid var(--color-border)',
-        }}
-      >
-        <div className="w-12 h-1 rounded-full mb-5" style={{ backgroundColor: 'var(--color-info)' }} />
-
-        <div className="relative mb-3">
-          <img
-            src="/logo-hyundai.jpg"
-            alt="Raja Hyundai"
-            className="w-20 h-20 rounded-2xl object-cover shadow-sm ring-4 ring-[var(--color-surface-sunken)] border border-[var(--color-border-subtle)]"
-          />
-        </div>
-
-        <span
-          className="px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wider uppercase mb-2"
-          style={{
-            backgroundColor: 'var(--color-info-soft)',
-            color: 'var(--color-info)',
-          }}
-        >
-          Authorized Dealer
-        </span>
-
-        <h2
-          className="font-bold tracking-tight text-[var(--color-text-primary)] m-0"
-          style={{ fontSize: 'var(--t-h3-size)', lineHeight: 'var(--t-h3-lh)' }}
-        >
-          Raja Hyundai
-        </h2>
-
-        <p className="text-xs text-[var(--color-text-secondary)] italic mt-1 mb-5">
-          Sales · Service · Smiles
-        </p>
-
-        <div className="w-full border-t border-[var(--color-border-subtle)] pt-4 flex flex-col gap-3 text-left">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
-              style={{ backgroundColor: 'var(--color-surface-sunken)', color: 'var(--color-info)' }}
-            >
-              <Car className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-[var(--color-text-primary)]">Full Hyundai Fleet</div>
-              <div className="text-xs text-[var(--color-text-tertiary)]">SUVs, sedans & electric</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
-              style={{ backgroundColor: 'var(--color-surface-sunken)', color: 'var(--color-info)' }}
-            >
-              <Award className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-[var(--color-text-primary)]">Platinum Dealership</div>
-              <div className="text-xs text-[var(--color-text-tertiary)]">Highest customer satisfaction</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
-              style={{ backgroundColor: 'var(--color-surface-sunken)', color: 'var(--color-info)' }}
-            >
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-[var(--color-text-primary)]">3S Mega Workshop</div>
-              <div className="text-xs text-[var(--color-text-tertiary)]">Next-gen diagnostic bays</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="w-full pt-4 mt-5 border-t border-[var(--color-border-subtle)] text-xs text-[var(--color-text-tertiary)]">
-          Dhoot Group • Western Rajasthan
-        </div>
-      </aside>
     </div>
-  </div>
   );
 };
