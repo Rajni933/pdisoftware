@@ -79,7 +79,7 @@ export const SignInPage: React.FC = () => {
       }
 
       if (!authUser) {
-        setError('Employee ID or password is incorrect.');
+        setError('Invalid username or password.');
         setLoading(false);
         return;
       }
@@ -248,14 +248,14 @@ export const SignInPage: React.FC = () => {
         {/* ========================================================================= */}
         {view === 'signin' && (
           <form onSubmit={handleSignInSubmit} noValidate className="flex flex-col gap-4">
-            {/* Username / Employee ID */}
+            {/* Username */}
             <div className="flex flex-col gap-1.5 text-left">
               <label
                 htmlFor="signin-username"
                 className="font-medium text-[var(--color-text-primary)]"
                 style={{ fontSize: 'var(--t-label-size)', lineHeight: 'var(--t-label-lh)' }}
               >
-                Employee ID / Username
+                Username
               </label>
               <div className="relative flex items-center">
                 <span className="absolute left-3 text-[var(--color-text-tertiary)] pointer-events-none flex items-center">
@@ -269,7 +269,7 @@ export const SignInPage: React.FC = () => {
                   disabled={loading}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter username or employee ID"
+                  placeholder="Enter username"
                   className="w-full h-10 pl-9 pr-3 rounded-[var(--radius-md)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-disabled)] outline-none transition-colors"
                   style={{
                     backgroundColor: 'var(--color-surface)',
@@ -380,7 +380,7 @@ export const SignInPage: React.FC = () => {
                 className="text-[var(--color-text-secondary)] mt-1 m-0"
                 style={{ fontSize: 'var(--t-caption-size)', lineHeight: 'var(--t-caption-lh)' }}
               >
-                Enter your username or employee ID to receive a verification OTP on your registered email.
+                Enter your username to receive a verification OTP on your registered email.
               </p>
             </div>
 
@@ -390,7 +390,7 @@ export const SignInPage: React.FC = () => {
                 className="font-medium text-[var(--color-text-primary)]"
                 style={{ fontSize: 'var(--t-label-size)', lineHeight: 'var(--t-label-lh)' }}
               >
-                Employee ID / Username
+                Username
               </label>
               <div className="relative flex items-center">
                 <span className="absolute left-3 text-[var(--color-text-tertiary)] pointer-events-none flex items-center">
@@ -404,7 +404,7 @@ export const SignInPage: React.FC = () => {
                   disabled={loading}
                   value={forgotUsername}
                   onChange={(e) => setForgotUsername(e.target.value)}
-                  placeholder="Enter username or employee ID"
+                  placeholder="Enter username"
                   className="w-full h-10 pl-9 pr-3 rounded-[var(--radius-md)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-disabled)] outline-none transition-colors"
                   style={{
                     backgroundColor: 'var(--color-surface)',
