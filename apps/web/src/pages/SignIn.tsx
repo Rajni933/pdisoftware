@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { User, Lock, Eye, EyeOff, Loader2, KeyRound, ArrowLeft, Mail, CheckCircle2 } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, Loader2, KeyRound, ArrowLeft, Mail, CheckCircle2, Car, ShieldCheck, Wrench, Award, Sparkles } from 'lucide-react';
 
 export const SignInPage: React.FC = () => {
   const navigate = useNavigate();
@@ -190,43 +190,86 @@ export const SignInPage: React.FC = () => {
         {/* Left Branding: Autoprime Tata */}
         <aside
           aria-label="Autoprime Tata Motors Dealership"
-          className="hidden md:flex flex-col items-center text-center p-6 lg:p-8 rounded-[var(--radius-lg)] w-64 lg:w-72 shrink-0 select-none shadow-sm transition-transform hover:-translate-y-0.5"
+          className="hidden lg:flex flex-col items-center text-center p-8 rounded-[var(--radius-lg)] w-72 xl:w-80 shrink-0 select-none shadow-sm transition-transform hover:-translate-y-1"
           style={{
             backgroundColor: 'var(--color-surface)',
             border: '1px solid var(--color-border)',
           }}
         >
-          <img
-            src="/logo-tata.jpg"
-            alt="Autoprime Tata"
-            className="w-24 h-24 rounded-full object-cover mb-4 border-2 border-[var(--color-border-subtle)] shadow-sm"
-          />
+          <div className="w-12 h-1 rounded-full mb-5" style={{ backgroundColor: 'var(--color-action)' }} />
+
+          <div className="relative mb-3">
+            <img
+              src="/logo-tata.jpg"
+              alt="Autoprime Tata"
+              className="w-20 h-20 rounded-full object-cover shadow-sm ring-4 ring-[var(--color-surface-sunken)] border border-[var(--color-border-subtle)]"
+            />
+          </div>
+
+          <span
+            className="px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wider uppercase mb-2"
+            style={{
+              backgroundColor: 'var(--color-action-soft)',
+              color: 'var(--color-action)',
+            }}
+          >
+            Authorized Dealer
+          </span>
+
           <h2
-            className="font-bold text-[var(--color-text-primary)] m-0"
+            className="font-bold tracking-tight text-[var(--color-text-primary)] m-0"
             style={{ fontSize: 'var(--t-h3-size)', lineHeight: 'var(--t-h3-lh)' }}
           >
             Autoprime Tata
           </h2>
-          <p
-            className="text-[var(--color-text-secondary)] mt-1 mb-4"
-            style={{ fontSize: 'var(--t-caption-size)', lineHeight: 'var(--t-caption-lh)' }}
-          >
-            Authorized Tata Motors Dealership
+
+          <p className="text-xs text-[var(--color-text-secondary)] italic mt-1 mb-5">
+            Connecting Aspirations
           </p>
-          <div className="flex flex-wrap gap-1.5 justify-center">
-            {['Nexon', 'Harrier', 'Safari', 'Punch', 'Curvv.ev', 'Tiago', 'Altroz'].map((model) => (
-              <span
-                key={model}
-                className="px-2 py-0.5 rounded text-xs font-medium"
-                style={{
-                  backgroundColor: 'var(--color-surface-sunken)',
-                  color: 'var(--color-text-secondary)',
-                  border: '1px solid var(--color-border-subtle)',
-                }}
+
+          <div className="w-full border-t border-[var(--color-border-subtle)] pt-4 flex flex-col gap-3 text-left">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
+                style={{ backgroundColor: 'var(--color-surface-sunken)', color: 'var(--color-action)' }}
               >
-                {model}
-              </span>
-            ))}
+                <Car className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-[var(--color-text-primary)]">Passenger & EV Fleet</div>
+                <div className="text-xs text-[var(--color-text-tertiary)]">Complete Tata line-up</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
+                style={{ backgroundColor: 'var(--color-surface-sunken)', color: 'var(--color-action)' }}
+              >
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-[var(--color-text-primary)]">Certified PDI Quality</div>
+                <div className="text-xs text-[var(--color-text-tertiary)]">100% factory compliance</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
+                style={{ backgroundColor: 'var(--color-surface-sunken)', color: 'var(--color-action)' }}
+              >
+                <Wrench className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-[var(--color-text-primary)]">Express Service</div>
+                <div className="text-xs text-[var(--color-text-tertiary)]">Genuine OEM spares & care</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="w-full pt-4 mt-5 border-t border-[var(--color-border-subtle)] text-xs text-[var(--color-text-tertiary)]">
+            Dhoot Group • Western Rajasthan
           </div>
         </aside>
 
@@ -694,43 +737,86 @@ export const SignInPage: React.FC = () => {
       {/* Right Branding: Raja Hyundai */}
       <aside
         aria-label="Raja Hyundai Dealership"
-        className="hidden md:flex flex-col items-center text-center p-6 lg:p-8 rounded-[var(--radius-lg)] w-64 lg:w-72 shrink-0 select-none shadow-sm transition-transform hover:-translate-y-0.5"
+        className="hidden lg:flex flex-col items-center text-center p-8 rounded-[var(--radius-lg)] w-72 xl:w-80 shrink-0 select-none shadow-sm transition-transform hover:-translate-y-1"
         style={{
           backgroundColor: 'var(--color-surface)',
           border: '1px solid var(--color-border)',
         }}
       >
-        <img
-          src="/logo-hyundai.jpg"
-          alt="Raja Hyundai"
-          className="w-24 h-24 rounded-2xl object-cover mb-4 border-2 border-[var(--color-border-subtle)] shadow-sm"
-        />
+        <div className="w-12 h-1 rounded-full mb-5" style={{ backgroundColor: 'var(--color-info)' }} />
+
+        <div className="relative mb-3">
+          <img
+            src="/logo-hyundai.jpg"
+            alt="Raja Hyundai"
+            className="w-20 h-20 rounded-2xl object-cover shadow-sm ring-4 ring-[var(--color-surface-sunken)] border border-[var(--color-border-subtle)]"
+          />
+        </div>
+
+        <span
+          className="px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wider uppercase mb-2"
+          style={{
+            backgroundColor: 'var(--color-info-soft)',
+            color: 'var(--color-info)',
+          }}
+        >
+          Authorized Dealer
+        </span>
+
         <h2
-          className="font-bold text-[var(--color-text-primary)] m-0"
+          className="font-bold tracking-tight text-[var(--color-text-primary)] m-0"
           style={{ fontSize: 'var(--t-h3-size)', lineHeight: 'var(--t-h3-lh)' }}
         >
           Raja Hyundai
         </h2>
-        <p
-          className="text-[var(--color-text-secondary)] mt-1 mb-4"
-          style={{ fontSize: 'var(--t-caption-size)', lineHeight: 'var(--t-caption-lh)' }}
-        >
+
+        <p className="text-xs text-[var(--color-text-secondary)] italic mt-1 mb-5">
           Sales · Service · Smiles
         </p>
-        <div className="flex flex-wrap gap-1.5 justify-center">
-          {['Creta', 'Venue', 'Verna', 'Exter', 'Ioniq 5', 'i20', 'Tucson'].map((model) => (
-            <span
-              key={model}
-              className="px-2 py-0.5 rounded text-xs font-medium"
-              style={{
-                backgroundColor: 'var(--color-surface-sunken)',
-                color: 'var(--color-text-secondary)',
-                border: '1px solid var(--color-border-subtle)',
-              }}
+
+        <div className="w-full border-t border-[var(--color-border-subtle)] pt-4 flex flex-col gap-3 text-left">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
+              style={{ backgroundColor: 'var(--color-surface-sunken)', color: 'var(--color-info)' }}
             >
-              {model}
-            </span>
-          ))}
+              <Car className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-[var(--color-text-primary)]">Full Hyundai Fleet</div>
+              <div className="text-xs text-[var(--color-text-tertiary)]">SUVs, sedans & electric</div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div
+              className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
+              style={{ backgroundColor: 'var(--color-surface-sunken)', color: 'var(--color-info)' }}
+            >
+              <Award className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-[var(--color-text-primary)]">Platinum Dealership</div>
+              <div className="text-xs text-[var(--color-text-tertiary)]">Highest customer satisfaction</div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div
+              className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
+              style={{ backgroundColor: 'var(--color-surface-sunken)', color: 'var(--color-info)' }}
+            >
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-[var(--color-text-primary)]">3S Mega Workshop</div>
+              <div className="text-xs text-[var(--color-text-tertiary)]">Next-gen diagnostic bays</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full pt-4 mt-5 border-t border-[var(--color-border-subtle)] text-xs text-[var(--color-text-tertiary)]">
+          Dhoot Group • Western Rajasthan
         </div>
       </aside>
     </div>
