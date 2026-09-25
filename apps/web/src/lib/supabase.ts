@@ -1,7 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const DEFAULT_URL = import.meta.env.VITE_SUPABASE_URL || 'http://localhost:54321';
-const DEFAULT_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'autoprime_local_dev_key';
+const DEFAULT_URL = import.meta.env.VITE_SUPABASE_URL || 'https://ckwzbaazgbheeeuclbci.supabase.co';
+const DEFAULT_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrd3piYWF6Z2JoZWVldWNsYmNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNzQzMTYsImV4cCI6MjEwNDg1MDMxNn0.uv_oLFH_uybZJEYZ3x_-OfT3g_7vPBmbmwk5HTUdpqI';
 
 export interface DatabaseConfig {
   url: string;
@@ -19,7 +19,13 @@ export const getSupabaseConfig = (): DatabaseConfig => {
 
   if (customUrl && customKey) {
     const trimmedUrl = customUrl.trim();
-    if (trimmedUrl.includes('localhost:54321') || trimmedUrl.includes('eyskoxjbzziahdatzvmq')) {
+    if (
+      trimmedUrl.includes('localhost:54321') ||
+      trimmedUrl.includes('eyskoxjbzziahdatzvmq') ||
+      trimmedUrl.includes('workers.dev') ||
+      trimmedUrl.includes('pages.dev') ||
+      customKey.includes('autoprime_local_dev_key')
+    ) {
       localStorage.removeItem('autoprime_supabase_url');
       localStorage.removeItem('autoprime_supabase_anon_key');
     } else {
@@ -31,14 +37,8 @@ export const getSupabaseConfig = (): DatabaseConfig => {
     }
   }
 
-  // When loaded over HTTPS in production and no remote URL is configured, use current origin
-  const isHttps = window.location.protocol === 'https:';
-  const effectiveUrl = (isHttps && DEFAULT_URL.startsWith('http://localhost'))
-    ? window.location.origin
-    : DEFAULT_URL;
-
   return {
-    url: effectiveUrl,
+    url: DEFAULT_URL,
     anonKey: DEFAULT_KEY,
     isCustom: false
   };

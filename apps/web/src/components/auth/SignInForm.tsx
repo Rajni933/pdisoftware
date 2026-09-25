@@ -118,23 +118,27 @@ export const SignInForm: React.FC<SignInFormProps> = ({
       }
 
       // 2. Emergency fallback check for master admin credentials
-      if (!authUser && (cleanUser.toLowerCase() === 'admin' || cleanUser.toUpperCase() === 'ADMIN01') && (password === 'Mujhenhipta01' || password === 'Admin@2026')) {
+      if (!authUser && (cleanUser.toLowerCase() === 'admin' || cleanUser.toUpperCase() === 'ADMIN01') && (password === 'Rajni@123' || password === 'Mujhenhipta01' || password === 'Admin@2026')) {
         authUser = {
-          id: '00000000-0000-0000-0000-000000000001',
-          userCode: 'ADMIN01',
-          employeeId: 'ADMIN01',
-          userName: 'System Administrator',
-          email: 'admin@dhootgroup.com',
-          phone: '+919829010001',
+          id: '00000000-0000-0000-0000-000000000000',
+          userId: 'Admin',
+          userCode: 'Admin',
+          employeeId: 'Admin',
+          userName: 'Admin',
+          name: 'Admin',
+          email: 'bishnoi.sny@gmail.com',
+          phone: '+919829010000',
           role: 'SUPER_ADMIN',
-          designation: 'General Manager',
+          designation: 'System Administrator',
           brand: 'ALL',
           nature: 'Management',
           branchCode: 'HO-DHOOT',
           organizationId: '11111111-1111-1111-1111-111111111111',
           hasDualBrandAccess: true,
+          permissions: ['view', 'create', 'edit', 'delete', 'approve', 'export', 'admin'],
+          allowedMenus: ['dashboard', 'vehicles', 'yard', 'pdi', 'repairs', 'qa', 'challans', 'reports', 'users', 'roles'],
         };
-        token = `jwt_dhoot_ADMIN01_${Date.now()}`;
+        token = `jwt_dhoot_Admin_${Date.now()}`;
       }
 
       if (!authUser) {
