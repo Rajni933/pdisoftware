@@ -488,6 +488,20 @@ function saveDb() {
 // Initialize on startup
 initDb();
 
+// Hot reload when database file is modified externally
+try {
+  fs.watchFile(dbFile, { interval: 1000 }, () => {
+    try {
+      const content = fs.readFileSync(dbFile, 'utf8');
+      const loaded = JSON.parse(content);
+      if (loaded && typeof loaded === 'object') {
+        db = loaded;
+        console.log(`[DB] Hot reloaded database from disk: ${(db.vehicles || []).length} vehicles loaded`);
+      }
+    } catch (e) {}
+  });
+} catch (e) {}
+
 // Role-based permissions matrix
 const getPermissionsForRole = (role) => {
   switch (role) {

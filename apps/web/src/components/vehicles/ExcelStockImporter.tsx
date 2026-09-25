@@ -97,6 +97,19 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
   // Clean and match header name
   const cleanHeader = (h: string) => String(h || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
+  // Helper to verify if string represents a legitimate chassis/VIN
+  const isVinString = (s: any): boolean => {
+    const clean = String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (clean.length < 8) return false;
+    const nonVinWords = [
+      'NEWCAR', 'DEMOCAR', 'AVAILABLE', 'ALLOCATED', 'DELIVERED', 
+      'TRANSIT', 'CANCELLED', 'APPROVED', 'INSPECTED', 'GATEINWARD', 
+      'RECEIVED', 'PENDING', 'REPAIRED', 'DELIVERYREADY', 'PURCHASEDATE'
+    ];
+    if (nonVinWords.includes(clean)) return false;
+    return /[0-9]/.test(clean) && /[A-Z]/.test(clean);
+  };
+
   // Process 2D Array of rows from SheetJS or Text Split
   const processRawDataGrid = (grid: any[][]) => {
     if (!grid || grid.length <= 1) {
@@ -124,6 +137,13 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
 
     const rawHeaders = (grid[headerRowIdx] || []).map(h => String(h || '').trim());
     const cleanedHeaders = rawHeaders.map(h => cleanHeader(h));
+
+    // Detect if this is the 22-column dealership CSV/Excel format (with extra Colour Code column between Colour and Fuel)
+    // In that format: col 0 is Date, col 1 is Model, col 2 is Variant, col 3 is Colour, col 4 is Colour Code, col 5 is Fuel, col 6 is FSC, col 7 is Dealer, col 8 is Plant, col 9 is Year, col 10 is Status, col 11 is VIN!
+    const sampleRows = grid.slice(headerRowIdx + 1, headerRowIdx + 8);
+    const isDealership22Col = sampleRows.some(row => 
+      Array.isArray(row) && row.length >= 12 && isVinString(row[11]) && !isVinString(row[10])
+    );
 
     const findColIndex = (aliases: string[]): number => {
       const cleanAliases = aliases.map(a => cleanHeader(a));
@@ -193,46 +213,64 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
         return '';
       };
 
-      // Extract VIN: remove spaces, asterisks, or quotes
-      let vinRaw = idxVin >= 0 ? getVal(idxVin).toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
-      
-      // Universal Scanner: If VIN wasn't found at designated column, scan columns for a 17 or 6+ character alphanumeric string
-      if (vinRaw.length < 5) {
-        for (const colVal of cols) {
-          const clean = String(colVal || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-          if (clean.length >= 8 && (clean.startsWith('MA') || clean.startsWith('MAL') || clean.startsWith('MAT') || clean.length === 17)) {
-            vinRaw = clean;
-            break;
+      // Extract VIN using smart detection
+      let vinRaw = '';
+      if (isDealership22Col) {
+        vinRaw = getVal(11).toUpperCase().replace(/[^A-Z0-9]/g, '');
+      } else {
+        vinRaw = idxVin >= 0 ? getVal(idxVin).toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
+      }
+
+      // If vinRaw does not look like a genuine chassis/VIN, scan other columns
+      if (!isVinString(vinRaw)) {
+        if (cols[11] && isVinString(cols[11])) {
+          vinRaw = String(cols[11]).toUpperCase().replace(/[^A-Z0-9]/g, '');
+        } else {
+          for (const colVal of cols) {
+            const clean = String(colVal || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if ((clean.startsWith('MAT') || clean.startsWith('MAL') || clean.length === 17) && isVinString(clean)) {
+              vinRaw = clean;
+              break;
+            }
+          }
+          if (!isVinString(vinRaw)) {
+            for (const colVal of cols) {
+              const clean = String(colVal || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+              if (isVinString(clean)) {
+                vinRaw = clean;
+                break;
+              }
+            }
           }
         }
       }
 
-      // If still not found, check any column with length >= 6
-      if (vinRaw.length < 5) {
-        for (const colVal of cols) {
-          const clean = String(colVal || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-          if (clean.length >= 6 && /[0-9]/.test(clean) && /[A-Z]/.test(clean)) {
-            vinRaw = clean;
-            break;
-          }
-        }
-      }
-
-      const isValidVin = vinRaw.length >= 5;
+      const isValidVin = isVinString(vinRaw);
       const isDuplicateInFile = isValidVin && fileSeenVins.has(vinRaw);
       if (isValidVin) fileSeenVins.add(vinRaw);
       const isAlreadyInDb = isValidVin && existingVins.has(vinRaw);
 
-      const rawPurchaseDate = getVal(idxPurchaseDate);
+      const rawPurchaseDate = isDealership22Col ? getVal(0) : getVal(idxPurchaseDate);
       const formattedPurchaseDate = rawPurchaseDate ? formatDate(rawPurchaseDate) : formatDate(new Date());
 
-      const rawDeliveryDate = getVal(idxDeliveryDate);
-      const rawAllocationDate = getVal(idxAllocationDate);
+      const rawDeliveryDate = isDealership22Col ? getVal(18) : getVal(idxDeliveryDate);
+      const rawAllocationDate = isDealership22Col ? getVal(19) : getVal(idxAllocationDate);
 
-      const modelVal = getVal(idxModel) || (currentBrand.code === 'DHOOT-HYUNDAI' ? 'Hyundai Creta' : 'Tata Safari');
-      const isHyundai = isHyundaiItem({ model: modelVal }) || currentBrand.code === 'DHOOT-HYUNDAI';
-      const defaultYard = isHyundai ? 'Shantinath Yard' : 'Basni Yard';
-      const userLoc = getVal(idxLocation);
+      const modelVal = isDealership22Col ? getVal(1) : (getVal(idxModel) || (currentBrand.code === 'DHOOT-HYUNDAI' ? 'Hyundai Creta' : 'Tata Safari'));
+      const isHyundai = isHyundaiItem({ model: modelVal, vin: vinRaw }) || currentBrand.code === 'DHOOT-HYUNDAI';
+      const defaultYard = isHyundai ? 'Shantinath Yard' : 'Jodhpur (Basni)';
+
+      let colorVal = '';
+      if (isDealership22Col) {
+        const cName = getVal(3);
+        const cCode = getVal(4);
+        colorVal = cName ? (cCode ? `${cName} (${cCode})` : cName) : (cCode || 'Standard Colour');
+      } else {
+        colorVal = getVal(idxColour) || 'Standard Colour';
+      }
+
+      const rawLoc = isDealership22Col ? getVal(13) : getVal(idxLocation);
+      const userLoc = (!rawLoc || rawLoc.toUpperCase() === 'JODHPUR') ? defaultYard : rawLoc;
 
       rows.push({
         _rowNum: i + 1,
@@ -240,25 +278,27 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
         _isDuplicateInFile: isDuplicateInFile,
         _isAlreadyInDb: isAlreadyInDb,
         vin: vinRaw || `VIN-TEMP-${i}`,
+        brand: isHyundai ? 'Hyundai' : 'Tata Motors',
+        organization_id: isHyundai ? '11111111-1111-1111-1111-111111111112' : '11111111-1111-1111-1111-111111111111',
         model: modelVal,
-        variant: getVal(idxVariant) || 'Standard Variant',
-        color: getVal(idxColour) || 'Standard Colour',
-        fuel_type: getVal(idxFuel) || 'PETROL',
-        fsc_code: getVal(idxFscCode) || 'FSC-001',
-        dealer_code: getVal(idxDealerCode) || 'DLR-MH01',
-        plant_code: getVal(idxPlantCode) || (isHyundai ? 'PLT-CHE' : 'PLT-PUN'),
-        manufacturing_year: parseInt(getVal(idxYear)) || 2026,
-        status: getVal(idxStatus) || 'RECEIVED',
-        quantity: parseInt(getVal(idxQuantity)) || 1,
-        location: userLoc || defaultYard,
-        customer_name: getVal(idxCustomerName) || '',
-        sales_consultant: getVal(idxSalesConsultant) || '',
-        accessories_amount: parseFloat(getVal(idxAccessoriesAmount).replace(/[^0-9.]/g, '')) || 0,
-        vehicle_status: getVal(idxVehicleStatus) || getVal(idxStatus) || 'RECEIVED',
+        variant: (isDealership22Col ? getVal(2) : getVal(idxVariant)) || 'Standard Variant',
+        color: colorVal,
+        fuel_type: (isDealership22Col ? getVal(5) : getVal(idxFuel)) || 'PETROL',
+        fsc_code: isDealership22Col ? getVal(6) : (getVal(idxFscCode) || 'FSC-001'),
+        dealer_code: (isDealership22Col ? getVal(7) : getVal(idxDealerCode)) || '3D0A730',
+        plant_code: isDealership22Col ? getVal(8) : (getVal(idxPlantCode) || (isHyundai ? 'PLT-CHE' : '7501')),
+        manufacturing_year: parseInt(isDealership22Col ? getVal(9) : getVal(idxYear)) || 2026,
+        status: (isDealership22Col ? getVal(10) : getVal(idxStatus)) || 'NEW CAR',
+        quantity: parseInt(isDealership22Col ? getVal(12) : getVal(idxQuantity)) || 1,
+        location: userLoc,
+        customer_name: (isDealership22Col ? getVal(14) : getVal(idxCustomerName)) || '',
+        sales_consultant: (isDealership22Col ? getVal(15) : getVal(idxSalesConsultant)) || '',
+        accessories_amount: parseFloat((isDealership22Col ? getVal(16) : getVal(idxAccessoriesAmount)).replace(/[^0-9.]/g, '')) || 0,
+        vehicle_status: (isDealership22Col ? getVal(17) : (getVal(idxVehicleStatus) || getVal(idxStatus))) || 'NEW CAR',
         delivery_date: rawDeliveryDate ? formatDate(rawDeliveryDate) : '',
         allocation_date: rawAllocationDate ? formatDate(rawAllocationDate) : '',
-        allocated_days: parseInt(getVal(idxAllocatedDays)) || 0,
-        received_amount: parseFloat(getVal(idxReceivedAmount).replace(/[^0-9.]/g, '')) || 0,
+        allocated_days: parseInt(isDealership22Col ? getVal(20) : getVal(idxAllocatedDays)) || 0,
+        received_amount: parseFloat((isDealership22Col ? getVal(21) : getVal(idxReceivedAmount)).replace(/[^0-9.]/g, '')) || 0,
         purchase_date: formattedPurchaseDate,
       });
     }
@@ -314,8 +354,16 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
         
         processRawDataGrid(grid);
       } catch (err: any) {
-        console.error('File parse error:', err);
-        setErrorMsg('Could not parse Excel/CSV file. Please ensure valid .xlsx, .xls, or .csv format.');
+        console.warn('ArrayBuffer XLSX read note, trying text fallback:', err);
+        try {
+          const textReader = new FileReader();
+          textReader.onload = (tEvent) => {
+            handleParseText(String(tEvent.target?.result || ''));
+          };
+          textReader.readAsText(file);
+        } catch {
+          setErrorMsg('Could not parse Excel/CSV file. Please ensure valid .xlsx, .xls, or .csv format.');
+        }
       }
     };
     reader.readAsArrayBuffer(file);
@@ -373,6 +421,8 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
             ...prev,
             id: prev.id || `v-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
             vin: item.vin,
+            brand: item.brand || (isHyundaiItem(item) ? 'Hyundai' : 'Tata Motors'),
+            organization_id: item.organization_id || (isHyundaiItem(item) ? '11111111-1111-1111-1111-111111111112' : '11111111-1111-1111-1111-111111111111'),
             model: item.model,
             variant: item.variant,
             color: item.color,
@@ -405,6 +455,8 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
         const newObjects = newOnly.map(item => ({
           id: `v-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
           vin: item.vin,
+          brand: item.brand || (isHyundaiItem(item) ? 'Hyundai' : 'Tata Motors'),
+          organization_id: item.organization_id || (isHyundaiItem(item) ? '11111111-1111-1111-1111-111111111112' : '11111111-1111-1111-1111-111111111111'),
           model: item.model,
           variant: item.variant,
           color: item.color,
@@ -430,11 +482,21 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
         finalStock = [...existingStock, ...newObjects];
       }
 
+      // Sanitize before DB upsert - remove temporary UI flags
+      const cleanIncoming = deduplicatedIncoming.map(item => {
+        const copy: any = { ...item };
+        delete copy._rowNum;
+        delete copy._isValid;
+        delete copy._isDuplicateInFile;
+        delete copy._isAlreadyInDb;
+        return copy;
+      });
+
       // Save to localStorage & notify all components
       saveStockInventory(finalStock);
 
       // Direct Live Supabase Database Upsert
-      await bulkImportVehicles(deduplicatedIncoming);
+      await bulkImportVehicles(cleanIncoming);
 
       // 1. Sync to Backend Edge API (Cloudflare Worker API)
       try {

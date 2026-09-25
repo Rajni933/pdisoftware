@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { TATA_ORG_ID, HYUNDAI_ORG_ID } from '../data/seedData';
+import initialStockVehicles from '../data/initialVehicles.json';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -334,7 +335,7 @@ export const isTata = (item: any): boolean => {
   const vin = String(item.vin || item.allocated_vin_no || item.vin_no || '').toUpperCase().trim();
   if (vin.startsWith('MAT')) return true;
   const m = String(item.model || item.model_name || '').toLowerCase();
-  const kw = ['tata', 'nexon', 'harrier', 'safari', 'curvv', 'punch', 'tiago', 'tigor', 'altroz', 'sierra'];
+  const kw = ['tata', 'nexon', 'harrier', 'safari', 'curvv', 'punch', 'tiago', 'tigor', 'altroz', 'sierra', 'aeris', 'xpres'];
   return kw.some(k => m.includes(k));
 };
 
@@ -860,7 +861,7 @@ export const deleteCheckpoint = async (id: string): Promise<boolean> => {
 export const fetchVehicles = async (brandCode?: string): Promise<StockVehicle[]> => {
   try {
     const { data, error } = await supabase.from('vehicles').select('*').order('created_at', { ascending: false });
-    if (!error && Array.isArray(data)) {
+    if (!error && Array.isArray(data) && data.length > 0) {
       localStorage.setItem('dhoot_stock_inventory', JSON.stringify(data));
       return filterByBrand(data, brandCode);
     }
@@ -872,9 +873,16 @@ export const fetchVehicles = async (brandCode?: string): Promise<StockVehicle[]>
   if (cached) {
     try {
       const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed)) return filterByBrand(parsed, brandCode);
+      if (Array.isArray(parsed) && parsed.length > 0) return filterByBrand(parsed, brandCode);
     } catch (e) {}
   }
+
+  // Preloaded verified dealership stock
+  if (Array.isArray(initialStockVehicles) && initialStockVehicles.length > 0) {
+    localStorage.setItem('dhoot_stock_inventory', JSON.stringify(initialStockVehicles));
+    return filterByBrand(initialStockVehicles as unknown as StockVehicle[], brandCode);
+  }
+
   return [];
 };
 
@@ -911,18 +919,34 @@ export const saveVehicle = async (vehicle: Partial<StockVehicle>): Promise<boole
 export const bulkImportVehicles = async (vehicles: Partial<StockVehicle>[]): Promise<{ count: number; error?: string }> => {
   if (vehicles.length === 0) return { count: 0 };
 
-  const sanitized = vehicles.map(v => ({
-    ...v,
-    organization_id: v.organization_id || (isHyundai(v) ? HYUNDAI_ORG_ID : TATA_ORG_ID),
-    status: v.status || 'RECEIVED',
-    location: v.location || 'Basni Yard'
-  }));
+  const sanitized = vehicles.map(v => {
+    const copy: any = { ...v };
+    // Strip temporary UI tracking flags
+    delete copy._rowNum;
+    delete copy._isValid;
+    delete copy._isDuplicateInFile;
+    delete copy._isAlreadyInDb;
+
+    const isHyn = isHyundai(copy);
+    const loc = copy.location;
+    const yardLoc = (!loc || loc.toUpperCase() === 'JODHPUR') ? (isHyn ? 'Shantinath Yard' : 'Jodhpur (Basni)') : loc;
+
+    return {
+      ...copy,
+      brand: copy.brand || (isHyn ? 'Hyundai' : 'Tata Motors'),
+      organization_id: copy.organization_id || (isHyn ? HYUNDAI_ORG_ID : TATA_ORG_ID),
+      status: copy.status || 'NEW CAR',
+      location: yardLoc
+    };
+  });
 
   try {
     const { error } = await supabase.from('vehicles').upsert(sanitized, { onConflict: 'vin' });
-    if (error) throw error;
+    if (error) {
+      console.warn('Batch DB upsert notice:', error);
+    }
   } catch (e: any) {
-    console.warn('Batch DB upsert notice:', e);
+    console.warn('Batch DB upsert exception:', e);
   }
 
   // Merge with local state

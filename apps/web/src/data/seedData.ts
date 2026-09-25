@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import initialStockVehicles from './initialVehicles.json';
 
 export const TATA_ORG_ID = '11111111-1111-1111-1111-111111111111';
 export const HYUNDAI_ORG_ID = '11111111-1111-1111-1111-111111111112';
@@ -34,8 +35,8 @@ export interface BranchItem {
 export const SEED_STOCKYARDS: YardItem[] = [];
 export const SEED_BRANCHES: BranchItem[] = [];
 
-// 3. Clean Sheets Ready For User Uploads
-export const SEED_STOCK_VEHICLES: any[] = [];
+// 3. Official Dealership Stock Inventory (Pre-loaded with 543 user vehicles)
+export const SEED_STOCK_VEHICLES: any[] = initialStockVehicles;
 export const SEED_BOOKINGS: any[] = [];
 export const SEED_CHALLANS: any[] = [];
 
@@ -113,7 +114,7 @@ export const isTataItem = (item: any): boolean => {
   if (vin.startsWith('MAT')) return true;
 
   const m = String(item.model || '').toLowerCase();
-  const tataKeywords = ['tata', 'nexon', 'harrier', 'safari', 'curvv', 'punch', 'tiago', 'tigor', 'altroz', 'sierra'];
+  const tataKeywords = ['tata', 'nexon', 'harrier', 'safari', 'curvv', 'punch', 'tiago', 'tigor', 'altroz', 'sierra', 'aeris', 'xpres'];
   return tataKeywords.some(kw => m.includes(kw));
 };
 
@@ -145,6 +146,10 @@ export const getVehiclesForBrand = (brandCode: string) => {
     }
   } catch (e) {
     console.warn('Error reading stock from storage:', e);
+  }
+
+  if (list.length === 0) {
+    list = SEED_STOCK_VEHICLES;
   }
 
   if (brandCode === 'DHOOT-TATA' || brandCode.toLowerCase().includes('tata')) {
