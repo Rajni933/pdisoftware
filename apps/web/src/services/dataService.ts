@@ -1,6 +1,9 @@
 import { supabase } from '../lib/supabase';
-import { TATA_ORG_ID, HYUNDAI_ORG_ID, getAllVehicles, getVehiclesForBrand, saveStockInventory } from '../data/seedData';
+import { TATA_ORG_ID, HYUNDAI_ORG_ID, getAllVehicles, getVehiclesForBrand, saveStockInventory, getAllUsers, saveUsersInventory, saveSingleUser, deleteUserFromInventory, findUserForAuth, SEED_USERS } from '../data/seedData';
+export { getAllUsers, saveUsersInventory, saveSingleUser, deleteUserFromInventory, findUserForAuth, SEED_USERS };
+export type { EnterpriseUser } from '../data/seedData';
 import initialStockVehicles from '../data/initialVehicles.json';
+
 
 // ============================================================================
 // TYPE DEFINITIONS

@@ -5,6 +5,8 @@ import { TextField, PasswordField, OtpInput, Countdown, Button, Banner } from '@
 import { Lock, Smartphone, Fingerprint, HelpCircle, X, User, ArrowRight } from 'lucide-react';
 import { getApiUrl } from '../../utils/apiConfig';
 import { supabase } from '../../lib/supabase';
+import { findUserForAuth } from '../../data/seedData';
+
 
 export type AuthMode = 'signin' | 'verify' | 'locked' | 'device-check' | 'app-lock';
 
@@ -109,15 +111,39 @@ export const SignInForm: React.FC<SignInFormProps> = ({
         if (!rpcErr && rpcRes && rpcRes.success && rpcRes.user) {
           authUser = rpcRes.user;
           token = rpcRes.token;
-        } else if (rpcRes && !rpcRes.success && rpcRes.message) {
-          setAuthError(rpcRes.message);
-          return;
         }
       } catch (rpcErr) {
         console.warn('Supabase auth notice:', rpcErr);
       }
 
-      // 2. Emergency fallback check for master admin credentials
+      // 2. Local Database Server RPC check (/rest/v1/rpc/authenticate_user)
+      if (!authUser) {
+        try {
+          const localAuthRes = await fetch('http://localhost:54321/rest/v1/rpc/authenticate_user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ p_identifier: cleanUser, p_password: password })
+          });
+          if (localAuthRes.ok) {
+            const localJson = await localAuthRes.json();
+            if (localJson.success && localJson.user) {
+              authUser = localJson.user;
+              token = localJson.token;
+            }
+          }
+        } catch (e) {}
+      }
+
+      // 3. Unified Local & Seeded User Store check (supports any user registered in /admin)
+      if (!authUser) {
+        const found = findUserForAuth(cleanUser, password);
+        if (found) {
+          authUser = found.authUser;
+          token = found.token;
+        }
+      }
+
+      // 4. Emergency fallback check for master admin credentials
       if (!authUser && (cleanUser.toLowerCase() === 'admin' || cleanUser.toUpperCase() === 'ADMIN01') && (password === 'Rajni@123' || password === 'Mujhenhipta01' || password === 'Admin@2026')) {
         authUser = {
           id: '00000000-0000-0000-0000-000000000000',
@@ -140,6 +166,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
         };
         token = `jwt_dhoot_Admin_${Date.now()}`;
       }
+
 
       if (!authUser) {
         const nextAttempts = attemptsLeft - 1;

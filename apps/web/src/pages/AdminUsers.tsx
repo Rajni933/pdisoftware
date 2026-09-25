@@ -2,32 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../utils/apiConfig';
 import { supabase } from '../lib/supabase';
+import { getAllUsers, saveSingleUser, deleteUserFromInventory, type EnterpriseUser } from '../data/seedData';
 import { 
   Users, Search, Plus, Shield, ShieldCheck, 
   Settings, Key, X, Loader2, Edit3, CheckCircle2, 
   Building2, Briefcase, Eye, EyeOff, UserPlus,
   Sliders, Check, Trash2, ShieldAlert, FileText, CheckSquare,
-  Lock, LayoutDashboard, Truck, Car, Wrench, Bookmark
+  Lock, LayoutDashboard, Truck, Car, Wrench, Bookmark, Copy
 } from 'lucide-react';
 
-export interface EnterpriseUser {
-  id: string;
-  user_code: string;
-  employee_id: string;
-  user_name: string;
-  password_hash: string;
-  password?: string;
-  date_of_birth?: string;
-  mail_id: string;
-  mobile_number: string;
-  branch_code: string;
-  designation: string;
-  brand: string;
-  nature: string;
-  status: string;
-  role: string;
-  created_at?: string;
-}
+
+export type { EnterpriseUser };
+
 
 export interface RolePermissionConfig {
   role: string;
@@ -209,8 +195,9 @@ export const AdminUsersPage: React.FC = () => {
 
   // New User Form State
   const [newUser, setNewUser] = useState({
+    userCode: `DG${Math.floor(100 + Math.random() * 900)}`,
     userName: '',
-    password: '',
+    password: 'Dhoot@2026',
     dateOfBirth: '1995-01-01',
     mailId: '',
     mobileNumber: '+91 ',
@@ -221,6 +208,10 @@ export const AdminUsersPage: React.FC = () => {
     role: 'PDI_ENGINEER',
     status: 'ACTIVE'
   });
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [actionNotice, setActionNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Master Entry Form State
   const [newDesignationTitle, setNewDesignationTitle] = useState('');
@@ -243,35 +234,67 @@ export const AdminUsersPage: React.FC = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // 1. Direct Supabase Database Query
-      const { data: dbUsers, error: dbErr } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // 1. Baseline local and seeded users
+      const localUsers = getAllUsers();
+      const userMap = new Map<string, EnterpriseUser>();
+      localUsers.forEach(u => userMap.set((u.user_code || u.employee_id).toUpperCase(), u));
 
-      if (!dbErr && Array.isArray(dbUsers) && dbUsers.length > 0) {
-        setUsersList(dbUsers as EnterpriseUser[]);
-        setLoading(false);
-        return;
+      // 2. Direct Supabase Database Query (if configured)
+      try {
+        const { data: dbUsers, error: dbErr } = await supabase
+          .from('users')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!dbErr && Array.isArray(dbUsers) && dbUsers.length > 0) {
+          dbUsers.forEach((u: any) => {
+            const code = (u.user_code || u.employee_id || u.user_id || '').toUpperCase();
+            if (code) {
+              const existing = userMap.get(code) || ({} as EnterpriseUser);
+              userMap.set(code, {
+                ...existing,
+                id: u.id || existing.id || crypto.randomUUID(),
+                user_code: u.user_code || u.employee_id || code,
+                employee_id: u.employee_id || u.user_code || code,
+                user_name: u.user_name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || existing.user_name || 'Staff User',
+                password_hash: u.password_hash || u.password || existing.password_hash || 'Dhoot@2026',
+                password: u.password || u.password_hash || existing.password || 'Dhoot@2026',
+                mail_id: u.mail_id || u.email || existing.mail_id || '',
+                mobile_number: u.mobile_number || u.phone || existing.mobile_number || '',
+                branch_code: u.branch_code || existing.branch_code || 'HO-DHOOT',
+                designation: u.designation || existing.designation || 'Staff',
+                brand: u.brand || existing.brand || 'Dhoot Group',
+                nature: u.nature || existing.nature || 'Stockyard',
+                status: u.is_active === false ? 'INACTIVE' : (u.status || 'ACTIVE'),
+                role: u.role || existing.role || 'PDI_ENGINEER',
+                created_at: u.created_at || existing.created_at || new Date().toISOString()
+              });
+            }
+          });
+        }
+      } catch (dbErr) {
+        console.warn('Supabase users query note:', dbErr);
       }
 
-      // 2. Try Worker API if active
+      // 3. Try Local DB server (/rest/v1/users)
       try {
-        const res = await fetch(getApiUrl('/api/v1/users'));
-        if (res.ok) {
-          const json = await res.json();
-          if (json.data && json.data.length > 0) {
-            setUsersList(json.data);
-            setLoading(false);
-            return;
+        const localRes = await fetch('http://localhost:54321/rest/v1/users');
+        if (localRes.ok) {
+          const list = await localRes.json();
+          if (Array.isArray(list)) {
+            list.forEach((u: any) => {
+              const code = (u.user_code || u.employee_id || '').toUpperCase();
+              if (code && !userMap.has(code)) {
+                userMap.set(code, u);
+              }
+            });
           }
         }
       } catch (err) {}
 
-      // 3. Fallback to empty state
-      setUsersList([]);
+      setUsersList(Array.from(userMap.values()));
     } catch (e) {
-      setUsersList([]);
+      setUsersList(getAllUsers());
     } finally {
       setLoading(false);
     }
@@ -279,98 +302,121 @@ export const AdminUsersPage: React.FC = () => {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newUser.userName.trim() || !newUser.mailId.trim()) return;
+    setIsSubmitting(true);
+    setActionNotice(null);
+
     try {
-      const generatedCode = `DG${Math.floor(100 + Math.random() * 900)}`;
-      const payload: Partial<EnterpriseUser> = {
+      const code = (newUser.userCode || `DG${Math.floor(100 + Math.random() * 900)}`).trim().toUpperCase();
+      const chosenPassword = (newUser.password || 'Dhoot@2026').trim();
+
+      const payload: EnterpriseUser = {
         id: crypto.randomUUID(),
-        user_code: generatedCode,
-        employee_id: generatedCode,
-        user_name: newUser.userName,
-        password_hash: newUser.password || 'Dhoot@2026',
+        user_code: code,
+        employee_id: code,
+        user_name: newUser.userName.trim(),
+        password_hash: chosenPassword,
+        password: chosenPassword,
         date_of_birth: newUser.dateOfBirth,
-        mail_id: newUser.mailId,
-        mobile_number: newUser.mobileNumber,
-        branch_code: newUser.branchCode,
+        mail_id: newUser.mailId.trim(),
+        mobile_number: newUser.mobileNumber.trim(),
+        branch_code: newUser.branchCode.trim() || 'HO-DHOOT',
         designation: newUser.designation,
         brand: newUser.brand,
         nature: newUser.nature,
         role: newUser.role,
-        status: newUser.status
+        status: newUser.status,
+        created_at: new Date().toISOString()
       };
 
-      // 1. Insert directly into Supabase users table
-      await supabase.from('users').insert({
-        ...payload,
-        organization_id: '11111111-1111-1111-1111-111111111111',
-        first_name: newUser.userName.split(' ')[0] || 'User',
-        last_name: newUser.userName.split(' ').slice(1).join(' ') || '',
-        email: newUser.mailId,
-        phone: newUser.mobileNumber,
-        is_active: newUser.status === 'ACTIVE'
-      });
-
-      // 2. Also notify worker if available
-      try {
-        await fetch(getApiUrl('/api/v1/users'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newUser)
+      const result = await saveSingleUser(payload);
+      if (result.success) {
+        setUsersList(prev => [payload, ...prev.filter(u => (u.user_code || u.employee_id).toUpperCase() !== code)]);
+        setActionNotice({
+          type: 'success',
+          message: `Staff Account "${code}" created successfully! Login Credentials: User ID "${code}" | Password "${chosenPassword}". Account is active and ready for login.`
         });
-      } catch (err) {}
-
-      setShowCreateModal(false);
-      setNewUser({
-        userName: '',
-        password: '',
-        dateOfBirth: '1995-01-01',
-        mailId: '',
-        mobileNumber: '+91 ',
-        branchCode: 'HO-DHOOT',
-        designation: 'PDI Engineer',
-        brand: 'Dhoot Group',
-        nature: 'Stockyard',
-        role: 'PDI_ENGINEER',
-        status: 'ACTIVE'
-      });
-      fetchUsers();
-    } catch (e) {
-      console.error(e);
+        setShowCreateModal(false);
+        setNewUser({
+          userCode: `DG${Math.floor(100 + Math.random() * 900)}`,
+          userName: '',
+          password: 'Dhoot@2026',
+          dateOfBirth: '1995-01-01',
+          mailId: '',
+          mobileNumber: '+91 ',
+          branchCode: 'HO-DHOOT',
+          designation: 'PDI Engineer',
+          brand: 'Dhoot Group',
+          nature: 'Stockyard',
+          role: 'PDI_ENGINEER',
+          status: 'ACTIVE'
+        });
+      } else {
+        setActionNotice({ type: 'error', message: result.message });
+      }
+    } catch (e: any) {
+      setActionNotice({ type: 'error', message: e?.message || 'Error creating user account.' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUser) return;
+    setIsSubmitting(true);
     try {
-      // 1. Direct Supabase update
-      await supabase.from('users').update({
-        user_name: selectedUser.user_name,
-        role: selectedUser.role,
-        designation: selectedUser.designation,
-        brand: selectedUser.brand,
-        nature: selectedUser.nature,
-        status: selectedUser.status,
-        mobile_number: selectedUser.mobile_number,
-        mail_id: selectedUser.mail_id,
-        is_active: selectedUser.status === 'ACTIVE'
-      }).eq('id', selectedUser.id);
-
-      // 2. Also notify worker if available
-      try {
-        await fetch(getApiUrl(`/api/v1/users/${selectedUser.id}`), {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(selectedUser)
-        });
-      } catch (err) {}
-
+      await saveSingleUser(selectedUser);
+      setUsersList(prev => prev.map(u => u.id === selectedUser.id ? selectedUser : u));
+      setActionNotice({
+        type: 'success',
+        message: `Staff Account "${selectedUser.user_code || selectedUser.employee_id}" updated successfully.`
+      });
       setShowEditModal(false);
       setSelectedUser(null);
-      fetchUsers();
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      setActionNotice({ type: 'error', message: e?.message || 'Failed to update user.' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const handleDeleteUser = async (userToDelete: EnterpriseUser) => {
+    const code = userToDelete.user_code || userToDelete.employee_id;
+    if (!confirm(`Are you sure you want to delete staff account ${code} (${userToDelete.user_name})?`)) return;
+
+    try {
+      await deleteUserFromInventory(userToDelete.id);
+      setUsersList(prev => prev.filter(u => u.id !== userToDelete.id && u.user_code !== userToDelete.user_code));
+      setActionNotice({
+        type: 'success',
+        message: `Staff Account "${code}" was deleted successfully.`
+      });
+    } catch (e: any) {
+      setActionNotice({ type: 'error', message: e?.message || 'Failed to delete user.' });
+    }
+  };
+
+  const handleToggleStatus = async (userToToggle: EnterpriseUser) => {
+    const updatedStatus = userToToggle.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    const updatedUser: EnterpriseUser = { ...userToToggle, status: updatedStatus };
+    await saveSingleUser(updatedUser);
+    setUsersList(prev => prev.map(u => u.id === userToToggle.id ? updatedUser : u));
+    setActionNotice({
+      type: 'success',
+      message: `Staff Account "${userToToggle.user_code}" status changed to ${updatedStatus}.`
+    });
+  };
+
+  const handleCopyCredentials = (u: EnterpriseUser) => {
+    const code = u.user_code || u.employee_id;
+    const pass = u.password || u.password_hash || 'Dhoot@2026';
+    const text = `Autoprime Staff Credentials:\nUser ID: ${code}\nPassword: ${pass}\nRole: ${u.role}\nFranchise: ${u.brand}`;
+    navigator.clipboard?.writeText(text);
+    setCopiedId(code);
+    setTimeout(() => setCopiedId(null), 2500);
+  };
+
 
   const handleAddDesignation = (e: React.FormEvent) => {
     e.preventDefault();
@@ -482,7 +528,7 @@ export const AdminUsersPage: React.FC = () => {
               className="px-3.5 py-1.5 bg-accent hover:bg-accent-600 text-white rounded text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
               <UserPlus className="w-3.5 h-3.5" />
-              <span>Create User (Auto ID)</span>
+              <span>Register Staff ID</span>
             </button>
           )}
 
@@ -512,10 +558,35 @@ export const AdminUsersPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Global User Management Action Notice */}
+      {actionNotice && (
+        <div className={`p-3 rounded border text-xs flex items-center justify-between transition-all ${
+          actionNotice.type === 'success'
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+            : 'bg-rose-50 border-rose-200 text-rose-800'
+        }`}>
+          <div className="flex items-center gap-2">
+            {actionNotice.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            ) : (
+              <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
+            )}
+            <span className="font-semibold">{actionNotice.message}</span>
+          </div>
+          <button
+            onClick={() => setActionNotice(null)}
+            className="text-slate-400 hover:text-slate-600 cursor-pointer ml-3"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* ========================================================================= */}
       {/* SUB-TAB 1: STAFF USER ACCOUNTS                                            */}
       {/* ========================================================================= */}
       {subTab === 'USERS' && (
+
         <div className="bg-white border border-line rounded p-5 shadow-xs space-y-3">
           {/* Controls */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-line pb-3">
@@ -597,21 +668,52 @@ export const AdminUsersPage: React.FC = () => {
                         {u.branch_code}
                       </td>
                       <td className="py-2.5 px-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          u.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-600'
-                        }`}>
-                          {u.status}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
                         <button
-                          onClick={() => { setSelectedUser(u); setShowEditModal(true); }}
-                          className="p-1 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                          title="Edit User"
+                          type="button"
+                          onClick={() => handleToggleStatus(u)}
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
+                            u.status === 'ACTIVE' 
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100' 
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                          title="Click to toggle Active/Inactive"
                         >
-                          <Edit3 className="w-3.5 h-3.5" />
+                          {u.status}
                         </button>
                       </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyCredentials(u)}
+                            className="p-1 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer"
+                            title="Copy Staff Credentials"
+                          >
+                            {copiedId === (u.user_code || u.employee_id) ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setSelectedUser(u); setShowEditModal(true); }}
+                            className="p-1 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer"
+                            title="Edit User"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(u)}
+                            className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                            title="Delete User"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+
                     </tr>
                   ))
                 )}
@@ -893,7 +995,64 @@ export const AdminUsersPage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleCreateUser} className="p-6 space-y-3 text-xs overflow-y-auto max-h-[80vh]">
+            <form onSubmit={handleCreateUser} className="p-6 space-y-3.5 text-xs overflow-y-auto max-h-[80vh]">
+              {/* Credentials Header Notice */}
+              <div className="p-3 bg-accent-soft border border-accent-line rounded text-xs text-accent">
+                <div className="font-semibold flex items-center gap-1.5 mb-1">
+                  <Key className="w-3.5 h-3.5 text-accent" />
+                  <span>Dealership Staff Authentication Profile</span>
+                </div>
+                <p className="text-[11px] text-ink-2">
+                  Configure the official Employee ID and Password for this staff member. These credentials are activated immediately for logging into the Autoprime platform.
+                </p>
+              </div>
+
+              {/* Row 1: Explicit Staff Code / Employee ID & Password */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-bold text-slate-700 uppercase">Employee ID / Staff Code *</label>
+                    <button
+                      type="button"
+                      onClick={() => setNewUser(prev => ({ ...prev, userCode: `DG${Math.floor(100 + Math.random() * 900)}` }))}
+                      className="text-[10px] text-accent hover:underline font-bold cursor-pointer"
+                    >
+                      Generate Auto ID
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. DG201, ADMIN02, YARD02"
+                    value={newUser.userCode}
+                    onChange={(e) => setNewUser({ ...newUser, userCode: e.target.value.toUpperCase() })}
+                    className="w-full p-2 bg-canvas border border-line rounded font-mono font-bold uppercase tracking-wider"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">Login Password *</label>
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      required
+                      placeholder="e.g. Dhoot@2026"
+                      value={newUser.password}
+                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                      className="w-full p-2 pr-8 bg-canvas border border-line rounded font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 2: Full Name & Official Email */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 uppercase mb-1">Full Staff Name *</label>
@@ -919,6 +1078,7 @@ export const AdminUsersPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Row 3: Mobile Contact & Date of Birth */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 uppercase mb-1">Mobile Contact No *</label>
@@ -942,6 +1102,7 @@ export const AdminUsersPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Row 4: Franchise Access & Department Nature */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 uppercase mb-1">Brand Franchise Access *</label>
@@ -972,6 +1133,7 @@ export const AdminUsersPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Row 5: Designation & Security Role */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 uppercase mb-1">Assigned Designation *</label>
@@ -999,6 +1161,7 @@ export const AdminUsersPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Row 6: Branch Location & Status */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 uppercase mb-1">Branch Code / Yard Location</label>
@@ -1011,25 +1174,39 @@ export const AdminUsersPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 uppercase mb-1">Initial Password</label>
-                  <input
-                    type="text"
-                    value={newUser.password}
-                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                    className="w-full p-2 bg-canvas border border-line rounded font-mono"
-                  />
+                  <label className="block font-bold text-slate-700 uppercase mb-1">Account Status</label>
+                  <select
+                    value={newUser.status}
+                    onChange={(e) => setNewUser({ ...newUser, status: e.target.value })}
+                    className="w-full p-2 bg-canvas border border-line rounded font-bold"
+                  >
+                    <option value="ACTIVE">ACTIVE (Authorized to Sign In)</option>
+                    <option value="INACTIVE">INACTIVE (Temporarily Suspended)</option>
+                  </select>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-line flex justify-end gap-2">
-                <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 font-bold text-slate-600 hover:bg-slate-100 rounded">
-                  Cancel
-                </button>
-                <button type="submit" className="px-5 py-2.5 bg-accent hover:bg-accent-600 text-white font-semibold rounded shadow-xs">
-                  Create Staff Account
-                </button>
+              {/* Footer */}
+              <div className="pt-4 border-t border-line flex items-center justify-between">
+                <span className="text-[11px] text-slate-500 font-mono">
+                  {newUser.userCode ? `Assigned ID: ${newUser.userCode}` : 'Enter Staff Code above'}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 font-bold text-slate-600 hover:bg-slate-100 rounded cursor-pointer">
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-5 py-2.5 bg-accent hover:bg-accent-600 disabled:opacity-50 text-white font-semibold rounded shadow-xs flex items-center gap-2 cursor-pointer"
+                  >
+                    {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    <span>Create & Activate Staff ID</span>
+                  </button>
+                </div>
               </div>
             </form>
+
           </div>
         </div>
       )}

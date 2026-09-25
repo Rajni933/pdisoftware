@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { getApiUrl } from '../utils/apiConfig';
 import { Badge } from '../components/ui/primitives';
+import { findUserForAuth } from '../data/seedData';
+
 
 type ForgotStep = 'STEP_1_IDENTITY' | 'STEP_2_OTP' | 'STEP_3_NEW_PASSWORD' | 'STEP_4_SUCCESS';
 
@@ -78,16 +80,39 @@ export const LoginPage: React.FC = () => {
         if (!rpcErr && rpcRes && rpcRes.success && rpcRes.user) {
           authUser = rpcRes.user;
           token = rpcRes.token;
-        } else if (rpcRes && !rpcRes.success && rpcRes.message) {
-          setError(rpcRes.message);
-          setLoading(false);
-          return;
         }
       } catch (rpcErr) {
         console.warn('Supabase RPC auth notice:', rpcErr);
       }
 
-      // 2. Try API Worker
+      // 2. Local Database Server RPC check
+      if (!authUser) {
+        try {
+          const localAuthRes = await fetch('http://localhost:54321/rest/v1/rpc/authenticate_user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ p_identifier: cleanUser, p_password: password })
+          });
+          if (localAuthRes.ok) {
+            const localJson = await localAuthRes.json();
+            if (localJson.success && localJson.user) {
+              authUser = localJson.user;
+              token = localJson.token;
+            }
+          }
+        } catch (e) {}
+      }
+
+      // 3. Unified Local & Seeded User Store check (allows users created via /admin to log in immediately)
+      if (!authUser) {
+        const found = findUserForAuth(cleanUser, password);
+        if (found) {
+          authUser = found.authUser;
+          token = found.token;
+        }
+      }
+
+      // 4. Try API Worker
       if (!authUser) {
         try {
           const res = await fetch(getApiUrl('/api/v1/auth/login'), {
@@ -108,7 +133,7 @@ export const LoginPage: React.FC = () => {
         }
       }
 
-      // 3. Fail-safe Direct Supabase Users Table Authentication
+      // 5. Fail-safe Direct Supabase Users Table Authentication
       if (!authUser) {
         const { data: users, error: dbError } = await supabase
           .from('users')
@@ -140,7 +165,8 @@ export const LoginPage: React.FC = () => {
         }
       }
 
-      // 4. Emergency master fallback check
+      // 6. Emergency master fallback check
+
       if (!authUser && (cleanUser.toLowerCase() === 'admin' || cleanUser.toUpperCase() === 'ADMIN01') && (password === 'Rajni@123' || password === 'Dhootgroup@123' || password === 'Admin@2026')) {
         authUser = {
           id: '00000000-0000-0000-0000-000000000000',

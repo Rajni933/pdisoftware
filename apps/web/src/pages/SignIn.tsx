@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
+import { findUserForAuth } from '../data/seedData';
 import { User, Lock, Eye, EyeOff, Loader2, KeyRound, ArrowLeft, Mail, CheckCircle2 } from 'lucide-react';
+
 
 export const SignInPage: React.FC = () => {
   const navigate = useNavigate();
@@ -40,7 +42,7 @@ export const SignInPage: React.FC = () => {
       let authUser: any = null;
       let token = '';
 
-      // Direct Supabase RPC Authentication
+      // 1. Direct Supabase RPC Authentication
       try {
         const { data: rpcRes, error: rpcErr } = await (supabase as any).rpc('authenticate_user', {
           p_identifier: cleanUser,
@@ -50,16 +52,39 @@ export const SignInPage: React.FC = () => {
         if (!rpcErr && rpcRes && rpcRes.success && rpcRes.user) {
           authUser = rpcRes.user;
           token = rpcRes.token;
-        } else if (rpcRes && !rpcRes.success && rpcRes.message) {
-          setError(rpcRes.message);
-          setLoading(false);
-          return;
         }
       } catch (rpcErr) {
         console.warn('Supabase auth notice:', rpcErr);
       }
 
-      // Fallback check for seeded master admin credentials
+      // 2. Local Database Server RPC check
+      if (!authUser) {
+        try {
+          const localAuthRes = await fetch('http://localhost:54321/rest/v1/rpc/authenticate_user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ p_identifier: cleanUser, p_password: password })
+          });
+          if (localAuthRes.ok) {
+            const localJson = await localAuthRes.json();
+            if (localJson.success && localJson.user) {
+              authUser = localJson.user;
+              token = localJson.token;
+            }
+          }
+        } catch (e) {}
+      }
+
+      // 3. Unified Local & Seeded User Store check (allows users created via /admin to log in immediately)
+      if (!authUser) {
+        const found = findUserForAuth(cleanUser, password);
+        if (found) {
+          authUser = found.authUser;
+          token = found.token;
+        }
+      }
+
+      // 4. Fallback check for seeded master admin credentials
       if (!authUser && (cleanUser.toLowerCase() === 'admin' || cleanUser.toUpperCase() === 'ADMIN01') && (password === 'Rajni@123' || password === 'Mujhenhipta01' || password === 'Admin@2026')) {
         authUser = {
           id: '00000000-0000-0000-0000-000000000000',
@@ -82,6 +107,7 @@ export const SignInPage: React.FC = () => {
         };
         token = `jwt_dhoot_Admin_${Date.now()}`;
       }
+
 
       if (!authUser) {
         setError('Invalid username or password.');
