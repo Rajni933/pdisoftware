@@ -36,8 +36,8 @@
   }
 
   ::-webkit-scrollbar { width: 10px; height: 10px; }
-  ::-webkit-scrollbar-thumb { background: #DADDE1; border: 3px solid var(--canvas); border-radius: 8px; }
-  ::-webkit-scrollbar-thumb:hover { background: #C2C6CC; }
+  ::-webkit-scrollbar-thumb { background: var(--line); border: 3px solid var(--canvas); border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
   ::-webkit-scrollbar-track { background: transparent; }
 }
 
@@ -63,6 +63,3 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
-
-
-

@@ -1,6 +1,6 @@
 import { Env } from '../index';
-import { Hono } from 'hono';
-import { getSupabase } from '../lib/supabase';
+﻿import { Hono } from 'hono';
+import { createClient } from '@supabase/supabase-js';
 import { requireAuth } from '../middleware/auth';
 
 export const mediaRouter = new Hono<{ Bindings: Env; Variables: any }>();
@@ -15,7 +15,7 @@ mediaRouter.post('/presign-upload', requireAuth, async (c) => {
     return c.json({ success: false, error: { code: 'INVALID_PAYLOAD', message: 'vehicleId and slotCode required', requestId: c.get('requestId') } }, 400);
   }
 
-  const supabase = getSupabase(c.env);
+  const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY || c.env.SUPABASE_ANON_KEY);
   const objectKey = `${c.env.ENVIRONMENT || 'dev'}/vehicles/${vehicleId}/pdi/${sessionId || 'general'}/${slotCode}_${Date.now()}.webp`;
 
   // Create attachment record
@@ -50,7 +50,7 @@ mediaRouter.post('/confirm-upload', requireAuth, async (c) => {
   const body = await c.req.json();
   const { attachmentId } = body;
 
-  const supabase = getSupabase(c.env);
+  const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY || c.env.SUPABASE_ANON_KEY);
   const { data, error } = await supabase.from('attachments').update({ status: 'UPLOADED', updated_at: new Date().toISOString() }).eq('id', attachmentId).select().single();
 
   if (error) {

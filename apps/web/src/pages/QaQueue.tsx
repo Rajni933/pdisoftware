@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../utils/apiConfig';
-import { fetchQaQueue as fetchQaService, approveQaInspection } from '../services/dataService';
+import { getVehiclesForBrand } from '../data/seedData';
 import { Panel, Stat, Badge, Empty, PageHeader } from '../components/ui/primitives';
 
 export const QaQueuePage: React.FC = () => {
@@ -19,32 +19,50 @@ export const QaQueuePage: React.FC = () => {
 
   useEffect(() => {
     fetchQaQueue();
-
-    const handleStockUpdate = () => {
-      fetchQaQueue();
-    };
-    window.addEventListener('stock-updated', handleStockUpdate);
-    return () => {
-      window.removeEventListener('stock-updated', handleStockUpdate);
-    };
   }, [currentBrand?.code]);
+
+  const mapQa = (rows: any[]) => {
+    return rows
+      .filter((v: any) => v.status === 'PDI_APPROVED' || v.status === 'QA_PENDING' || v.status === 'DELIVERY_READY')
+      .map((v: any) => ({
+        id: v.id || v.vin,
+        vin: v.vin,
+        model: v.model || 'OEM Vehicle',
+        variant: v.variant || 'Standard',
+        color: v.color || 'Standard',
+        inspector: v.inspector_name || 'Senior PDI Inspector',
+        passed: 42,
+        failed: 0,
+        submittedAt: 'Today, 11:30 AM',
+        status: v.status === 'PDI_APPROVED' || v.status === 'DELIVERY_READY' ? 'APPROVED' : 'PENDING',
+        certId: `CERT-${v.vin.slice(-6)}`
+      }));
+  };
 
   const fetchQaQueue = async () => {
     setLoading(true);
     try {
-      const data = await fetchQaService(currentBrand?.code);
-      setQueue(data || []);
+      const orgParam = currentBrand && currentBrand.code !== 'DHOOT-ALL' ? `?organization_id=${currentBrand.orgId}` : '';
+      const res = await fetch(getApiUrl(`/api/v1/stock${orgParam}`));
+      if (res.ok) {
+        const json = await res.json();
+        const rows = json.data || [];
+        if (rows.length > 0) {
+          setQueue(mapQa(rows));
+          setLoading(false);
+          return;
+        }
+      }
+      setQueue(mapQa(getVehiclesForBrand(currentBrand.code)));
     } catch (e) {
-      setQueue([]);
+      setQueue(mapQa(getVehiclesForBrand(currentBrand.code)));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApprove = async (vinOrId: string) => {
-    setApprovedList(prev => [...prev, vinOrId]);
-    await approveQaInspection(vinOrId);
-    fetchQaQueue();
+  const handleApprove = (id: string) => {
+    setApprovedList(prev => [...prev, id]);
   };
 
   const filteredQueue = queue.filter(item => {
@@ -125,7 +143,7 @@ export const QaQueuePage: React.FC = () => {
       >
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead className="bg-accent-soft border-b border-accent-line text-accent font-semibold uppercase tracking-[0.06em] text-label">
+            <thead className="bg-canvas border-b border-line text-ink font-semibold uppercase tracking-[0.06em] text-xs">
               <tr>
                 <th className="py-2.5 px-3 w-10 text-center">#</th>
                 <th className="py-2.5 px-3">VIN / Chassis</th>
@@ -139,18 +157,7 @@ export const QaQueuePage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-line text-ink-2 text-xs">
-              {loading ? (
-                <tr>
-                  <td colSpan={9} className="p-6">
-                    <div className="space-y-2.5">
-                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
-                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
-                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
-                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredQueue.length === 0 ? (
+              {filteredQueue.length === 0 ? (
                 <tr>
                   <td colSpan={9}>
                     <Empty title="0 QA Submissions Found" hint="Inspections submitted by engineers will appear here for final QA sign-off." />
@@ -194,12 +201,22 @@ export const QaQueuePage: React.FC = () => {
                       </td>
                       <td className="py-2.5 px-3 text-center whitespace-nowrap">
                         {!isApproved ? (
-                          <Link
-                            to={`/qa/${item.id}`}
-                            className="h-7 px-3 rounded bg-accent text-white text-xs font-semibold transition-colors inline-flex items-center gap-1 whitespace-nowrap shadow-xs hover:bg-accent-hover"
-                          >
-                            <span>Review in QA</span>
-                          </Link>
+                          <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => handleApprove(item.id)}
+                              className="h-7 px-2.5 rounded bg-ok text-white text-xs font-semibold transition-colors inline-flex items-center gap-1 whitespace-nowrap shadow-xs cursor-pointer"
+                            >
+                              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                              <span>Approve</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="h-7 px-2.5 rounded bg-surface border border-danger/30 text-danger hover:bg-danger/10 text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer"
+                            >
+                              Reject
+                            </button>
+                          </div>
                         ) : (
                           <Link
                             to={`/certificates/${item.certId}`}

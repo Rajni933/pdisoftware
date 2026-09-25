@@ -1,13 +1,13 @@
+import { formatDate } from '../utils/dateUtils';
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { 
-  Wrench, Calendar, ChevronDown, Download, Search, Check,
-  FileText, Car, CheckCircle2, Clock, ListFilter
+  Check, Search, FileSpreadsheet, CheckCircle2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../utils/apiConfig';
-import { fetchRepairs as fetchRepairsService, updateRepairStatus } from '../services/dataService';
-import { Empty } from '../components/ui/primitives';
+import { Panel, Stat, Badge, Empty, PageHeader } from '../components/ui/primitives';
+
+const SEED_REPAIRS: any[] = [];
 
 export const RepairsPage: React.FC = () => {
   const { currentBrand } = useAuth();
@@ -18,14 +18,6 @@ export const RepairsPage: React.FC = () => {
 
   useEffect(() => {
     fetchRepairs();
-
-    const handleStockUpdate = () => {
-      fetchRepairs();
-    };
-    window.addEventListener('stock-updated', handleStockUpdate);
-    return () => {
-      window.removeEventListener('stock-updated', handleStockUpdate);
-    };
   }, [currentBrand?.code]);
 
   const getFilteredRepairs = (data: any[]) => {
@@ -37,15 +29,19 @@ export const RepairsPage: React.FC = () => {
   const fetchRepairs = async () => {
     setLoading(true);
     try {
-      const liveTickets = await fetchRepairsService(currentBrand?.code);
-      if (liveTickets && liveTickets.length > 0) {
-        setTickets(liveTickets);
-        setLoading(false);
-        return;
+      const res = await fetch(getApiUrl('/api/v1/repairs'));
+      if (res.ok) {
+        const json = await res.json();
+        const rows = json.data || [];
+        if (rows.length > 0) {
+          setTickets(getFilteredRepairs(rows));
+          setLoading(false);
+          return;
+        }
       }
-      setTickets([]);
+      setTickets(getFilteredRepairs(SEED_REPAIRS));
     } catch (e) {
-      setTickets([]);
+      setTickets(getFilteredRepairs(SEED_REPAIRS));
     } finally {
       setLoading(false);
     }
@@ -53,43 +49,17 @@ export const RepairsPage: React.FC = () => {
 
   const markComplete = async (id: string) => {
     try {
-      await updateRepairStatus(id, 'COMPLETED');
+      await fetch(getApiUrl(`/api/v1/repairs/${id}`), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'COMPLETED' })
+      });
       fetchRepairs();
     } catch (e) {
       setTickets((prev) =>
         prev.map((t) => (t.id === id ? { ...t, status: 'COMPLETED' } : t))
       );
     }
-  };
-
-  const handleExportExcel = () => {
-    if (filteredTickets.length === 0) {
-      alert('No repair tickets to export.');
-      return;
-    }
-    const headers = ['#', 'Ticket ID', 'VIN / Chassis', 'Brand & Model', 'Defect Area', 'Severity', 'Issue Description', 'Assigned Tech', 'Bay', 'Status'];
-    const rows = filteredTickets.map((t, idx) => [
-      idx + 1,
-      t.id,
-      t.vin,
-      t.model,
-      t.area || t.finding_area || 'General',
-      t.severity,
-      t.description,
-      t.assignedTo || t.assigned_to || 'Technician',
-      t.bay || 'Bay 1',
-      t.status
-    ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(','));
-
-    const csvContent = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Dhoot_Workshop_Repairs_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const filteredTickets = tickets.filter(t => {
@@ -110,306 +80,143 @@ export const RepairsPage: React.FC = () => {
   const openCount = tickets.filter(t => t.status === 'OPEN' || t.status === 'IN_PROGRESS').length;
   const completedCount = tickets.filter(t => t.status === 'COMPLETED').length;
 
-  // Active Date display formatted nicely
-  const currentDateFormatted = new Date().toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  });
-
   return (
-    <div className="space-y-4 max-w-[1600px] mx-auto select-none pb-16">
+    <div className="space-y-6 max-w-[1600px] mx-auto select-none">
       
-      {/* ========================================================================= */}
-      {/* 1. TOP HERO BANNER (AUTOMOTIVE WORKSHOP STUDIO THEME)                     */}
-      {/* ========================================================================= */}
-      <div className="relative overflow-hidden rounded-2xl border border-line shadow-xs bg-slate-950 p-5 sm:p-6">
-        {/* Background automotive image with cinematic gradient overlay */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity pointer-events-none"
-          style={{ backgroundImage: `url('/brand/login-car-bg.jpg')` }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/90 to-blue-950/75 pointer-events-none" />
+      {/* Header Banner */}
+      <PageHeader
+        title="Defect Repairs & Workshop"
+        subtitle="Manage job cards, track technician repairs for inspection defects, and clear vehicles for QA approval"
+        action={
+          <button
+            onClick={() => alert('Exporting workshop repair ledger to CSV...')}
+            className="h-8 px-3 rounded bg-surface border border-line hover:border-line-strong text-xs font-medium text-ink transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-ok" />
+            <span>Export Excel</span>
+          </button>
+        }
+      />
 
-        {/* Banner Content */}
-        <div className="relative z-10">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-blue-600/25 border border-blue-500/40 text-blue-400 flex items-center justify-center shrink-0 shadow-xs">
-                <Wrench className="w-6 h-6 stroke-[2.2] -rotate-45" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-white tracking-tight">Defect Repairs &amp; Workshop</h1>
-                <p className="text-xs text-slate-300/90 mt-0.5">
-                  Manage job cards, track technician repairs for inspection defects, and clear vehicles for QA approval
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5 flex-wrap self-start sm:self-auto">
-              {/* Date Indicator */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/95 text-slate-800 text-xs font-semibold shadow-xs border border-line">
-                <Calendar className="w-3.5 h-3.5 text-blue-600" />
-                <span>{currentDateFormatted}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
-              </div>
-
-              {/* Export Excel Button */}
-              <button
-                type="button"
-                onClick={handleExportExcel}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5 stroke-[2.2]" />
-                <span>Export Excel</span>
-              </button>
-            </div>
-          </div>
-
-          {/* 4 Metric Summary Cards Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mt-5">
-            {/* TOTAL JOB CARDS */}
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <FileText className="w-5 h-5 stroke-[2]" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-[10px] font-bold tracking-wider text-blue-600 uppercase">
-                  TOTAL JOB CARDS
-                </span>
-                <span className="text-2xl font-bold font-mono text-ink tracking-tight tnum mt-0.5">
-                  {tickets.length}
-                </span>
-                <span className="text-[11px] text-ink-3 truncate">Logged from Inspections</span>
-              </div>
-            </div>
-
-            {/* ACTIVE IN BAY */}
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <Car className="w-5 h-5 stroke-[2]" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-[10px] font-bold tracking-wider text-ink-3 uppercase">
-                  ACTIVE IN BAY
-                </span>
-                <span className="text-2xl font-bold font-mono text-ink tracking-tight tnum mt-0.5">
-                  {openCount}
-                </span>
-                <span className="text-[11px] text-ink-3 truncate">Under Rectification</span>
-              </div>
-            </div>
-
-            {/* COMPLETED */}
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-5 h-5 stroke-[2]" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-[10px] font-bold tracking-wider text-ink-3 uppercase">
-                  COMPLETED
-                </span>
-                <span className="text-2xl font-bold font-mono text-ink tracking-tight tnum mt-0.5">
-                  {completedCount}
-                </span>
-                <span className="text-[11px] text-ink-3 truncate">QA Clearance Ready</span>
-              </div>
-            </div>
-
-            {/* AVG TURNAROUND */}
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                <Clock className="w-5 h-5 stroke-[2]" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-[10px] font-bold tracking-wider text-ink-3 uppercase">
-                  AVG TURNAROUND
-                </span>
-                <span className="text-2xl font-bold font-mono text-ink tracking-tight tnum mt-0.5">
-                  1.4h
-                </span>
-                <span className="text-[11px] text-ink-3 truncate">Within Service SLA</span>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* KPI Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Stat label="Total Job Cards" value={tickets.length} note="Logged from Inspections" />
+        <Stat label="Active in Bay" value={openCount} note="Under Rectification" tone={openCount > 0 ? 'warn' : 'default'} />
+        <Stat label="Completed" value={completedCount} note="QA Clearance Ready" tone="ok" />
+        <Stat label="Avg Turnaround" value="1.4h" note="Within Service SLA" />
       </div>
 
-      {/* ========================================================================= */}
-      {/* 2. REPAIR TICKETS LEDGER PANEL                                            */}
-      {/* ========================================================================= */}
-      <div className="bg-white rounded-xl border border-line shadow-xs overflow-hidden">
-        {/* Card Header with Filters */}
-        <div className="px-5 py-3.5 border-b border-line flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-              <ListFilter className="w-4 h-4 stroke-[2.2]" />
+      {/* Main Repair Ledger Panel */}
+      <Panel
+        title="Repair Tickets Ledger"
+        action={
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center bg-canvas border border-line rounded p-0.5 text-xs">
+              {(['ALL', 'OPEN', 'IN_PROGRESS', 'COMPLETED'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setStatusFilter(tab)}
+                  className={`h-6 px-2.5 rounded-chip text-xs font-medium transition-colors cursor-pointer ${
+                    statusFilter === tab
+                      ? 'bg-surface text-ink border border-line shadow-xs font-semibold'
+                      : 'text-ink-3 hover:text-ink-2'
+                  }`}
+                >
+                  {tab === 'ALL' ? 'All Tickets' : tab.replace('_', ' ')}
+                </button>
+              ))}
             </div>
-            <h2 className="text-sm font-bold text-ink tracking-tight">Repair Tickets Ledger</h2>
-          </div>
 
-          {/* Segmented Filter Pills */}
-          <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-full border border-slate-200/70 self-start md:self-auto">
-            {[
-              { key: 'ALL', label: 'All Tickets' },
-              { key: 'OPEN', label: 'Open' },
-              { key: 'IN_PROGRESS', label: 'In Progress' },
-              { key: 'COMPLETED', label: 'Completed' },
-            ].map(tab => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setStatusFilter(tab.key as any)}
-                className={`px-4 py-1 text-xs font-semibold rounded-full transition-colors cursor-pointer ${
-                  statusFilter === tab.key
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-ink-2 hover:text-ink'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+            <div className="relative w-48 sm:w-64">
+              <Search className="w-3.5 h-3.5 text-ink-3 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search VIN, Model, Defect, Tech..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full h-7 pl-7 pr-2.5 text-xs bg-canvas border border-line rounded text-ink placeholder:text-ink-3 focus:outline-none focus:border-line-strong"
+              />
+            </div>
           </div>
-
-          {/* Search Box */}
-          <div className="relative w-full md:w-72">
-            <Search className="w-3.5 h-3.5 text-ink-3 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search VIN, Model, Defect, Tech..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-8 pl-9 pr-3 text-xs bg-slate-50/80 border border-line rounded-lg text-ink placeholder:text-ink-3 focus:outline-none focus:border-blue-500 transition-colors"
-            />
-          </div>
-        </div>
-
-        {/* Table View */}
+        }
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead className="bg-slate-50/80 border-b border-line text-[11px] font-bold uppercase tracking-wider text-slate-600">
+            <thead className="bg-canvas border-b border-line text-ink font-semibold uppercase tracking-[0.06em] text-xs">
               <tr>
                 <th className="py-2.5 px-3 w-10 text-center">#</th>
-                <th className="py-2.5 px-3">TICKET ID</th>
-                <th className="py-2.5 px-3">VIN / CHASSIS</th>
-                <th className="py-2.5 px-3">BRAND &amp; MODEL</th>
-                <th className="py-2.5 px-3">DEFECT AREA</th>
-                <th className="py-2.5 px-3">SEVERITY</th>
-                <th className="py-2.5 px-3">ISSUE DESCRIPTION</th>
-                <th className="py-2.5 px-3">ASSIGNED TECH</th>
-                <th className="py-2.5 px-3">BAY</th>
-                <th className="py-2.5 px-3">STATUS</th>
-                <th className="py-2.5 px-3 text-center">ACTION</th>
+                <th className="py-2.5 px-3">Ticket ID</th>
+                <th className="py-2.5 px-3">VIN / Chassis</th>
+                <th className="py-2.5 px-3">Brand & Model</th>
+                <th className="py-2.5 px-3">Defect Area</th>
+                <th className="py-2.5 px-3">Severity</th>
+                <th className="py-2.5 px-3">Issue Description</th>
+                <th className="py-2.5 px-3">Assigned Tech</th>
+                <th className="py-2.5 px-3">Bay</th>
+                <th className="py-2.5 px-3">Status</th>
+                <th className="py-2.5 px-3 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line text-ink-2 text-xs">
-              {loading ? (
+              {filteredTickets.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="p-6">
-                    <div className="space-y-2.5">
-                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
-                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
-                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
-                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredTickets.length === 0 ? (
-                <tr>
-                  <td colSpan={11} className="p-6">
-                    <Empty
-                      title="0 Active Repair Tickets Found"
-                      hint={searchTerm || statusFilter !== 'ALL'
-                        ? "Try clearing search keywords or selecting 'All' in status filters."
-                        : "All vehicle inspections have passed without defects requiring workshop repair."}
-                      action={
-                        <div className="flex items-center justify-center gap-2 flex-wrap mt-2">
-                          <Link to="/pdi" className="btn btn-primary text-xs h-8 px-3.5">
-                            <Car className="w-3.5 h-3.5 mr-1" /> View PDI Queue
-                          </Link>
-                          <Link to="/dashboard" className="btn btn-secondary text-xs h-8 px-3.5">
-                            Go to Dashboard
-                          </Link>
-                        </div>
-                      }
-                    />
+                  <td colSpan={11}>
+                    <Empty title="0 Active Repair Tickets Found" hint="All vehicle inspections have passed without defects requiring workshop repair." />
                   </td>
                 </tr>
               ) : (
                 filteredTickets.map((t, idx) => {
-                  const isHyundai = (t.model || '').toLowerCase().includes('hyundai') || (t.vin || '').startsWith('MAL');
+                  const isHyundai = t.model.toLowerCase().includes('hyundai') || t.vin.startsWith('MAL');
                   return (
-                    <tr key={t.id || idx} className="hover:bg-canvas transition-colors">
+                    <tr key={t.id} className="hover:bg-canvas transition-colors">
                       <td className="py-2.5 px-3 text-center text-ink-3 font-mono tnum">
                         {idx + 1}
                       </td>
-                      <td className="py-2.5 px-3 font-mono font-medium text-blue-600">
+                      <td className="py-2.5 px-3 font-mono font-medium text-ink">
                         {t.id}
                       </td>
-                      <td className="py-2.5 px-3 font-mono text-ink font-semibold">
-                        {(t.vin || '').length > 5 ? (
-                          <>
-                            <span className="text-ink-2">{(t.vin || '').slice(0, -5)}</span>
-                            <span className="text-blue-600 font-bold">{(t.vin || '').slice(-5)}</span>
-                          </>
-                        ) : (
-                          t.vin
-                        )}
+                      <td className="py-2.5 px-3 font-mono text-ink">
+                        {t.vin}
                       </td>
                       <td className="py-2.5 px-3">
                         <div className="flex items-center gap-1.5">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${isHyundai ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-                            {isHyundai ? 'Hyundai' : 'Tata'}
-                          </span>
-                          <span className="font-semibold text-ink">{t.model}</span>
+                          <Badge tone="accent">{isHyundai ? 'Hyundai' : 'Tata'}</Badge>
+                          <span className="font-medium text-ink">{t.model}</span>
                         </div>
                       </td>
                       <td className="py-2.5 px-3 text-ink-2">
                         {t.area || t.finding_area || 'General'}
                       </td>
                       <td className="py-2.5 px-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                          t.severity === 'CRITICAL'
-                            ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                            : t.severity === 'MAJOR'
-                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                            : 'bg-slate-100 text-slate-700 border border-slate-200'
-                        }`}>
-                          {t.severity || 'NORMAL'}
-                        </span>
+                        <Badge tone={t.severity === 'CRITICAL' ? 'danger' : t.severity === 'MAJOR' ? 'warn' : 'neutral'}>
+                          {t.severity}
+                        </Badge>
                       </td>
                       <td className="py-2.5 px-3 text-ink-2 max-w-xs truncate" title={t.description}>
                         {t.description}
                       </td>
-                      <td className="py-2.5 px-3 text-ink font-medium">
+                      <td className="py-2.5 px-3 text-ink">
                         {t.assignedTo || t.assigned_to || 'Technician'}
                       </td>
-                      <td className="py-2.5 px-3 text-ink font-mono">
+                      <td className="py-2.5 px-3 text-ink">
                         {t.bay || 'Bay 1'}
                       </td>
-                      <td className="py-2.5 px-3 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                          t.status === 'COMPLETED'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : t.status === 'IN_PROGRESS'
-                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
-                        }`}>
+                      <td className="py-2.5 px-3">
+                        <Badge tone={t.status === 'COMPLETED' ? 'ok' : 'warn'}>
                           {t.status}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="py-2.5 px-3 text-center whitespace-nowrap">
                         {t.status !== 'COMPLETED' ? (
                           <button
-                            type="button"
                             onClick={() => markComplete(t.id)}
-                            className="h-7 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors inline-flex items-center gap-1 whitespace-nowrap shadow-xs cursor-pointer"
+                            className="h-7 px-2.5 rounded bg-ok text-white text-xs font-semibold transition-colors inline-flex items-center gap-1 whitespace-nowrap shadow-xs cursor-pointer"
                           >
                             <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                             <span>Repaired</span>
                           </button>
                         ) : (
-                          <span className="text-xs text-emerald-600 font-semibold inline-flex items-center gap-1 whitespace-nowrap">
+                          <span className="text-xs text-ok font-semibold inline-flex items-center gap-1 whitespace-nowrap">
                             <Check className="w-3.5 h-3.5" />
                             Done
                           </span>
@@ -422,7 +229,7 @@ export const RepairsPage: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </Panel>
 
     </div>
   );

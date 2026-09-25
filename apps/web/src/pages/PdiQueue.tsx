@@ -1,14 +1,13 @@
+import { formatDate } from '../utils/dateUtils';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Search, Plus, ChevronRight, FileSpreadsheet,
-  FileText, Clock, AlertTriangle, Car, ClipboardCheck, ListChecks
+  Search, Plus, ChevronRight, FileSpreadsheet
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../utils/apiConfig';
 import { getVehiclesForBrand } from '../data/seedData';
-import { fetchVehicles } from '../services/dataService';
-import { Empty } from '../components/ui/primitives';
+import { Panel, Stat, Badge, Bar, Empty, PageHeader } from '../components/ui/primitives';
 
 export interface PdiInspectionItem {
   id: string;
@@ -37,14 +36,6 @@ export const PdiQueuePage: React.FC = () => {
 
   useEffect(() => {
     fetchPdiQueue();
-
-    const handleStockUpdate = () => {
-      fetchPdiQueue();
-    };
-    window.addEventListener('stock-updated', handleStockUpdate);
-    return () => {
-      window.removeEventListener('stock-updated', handleStockUpdate);
-    };
   }, [currentBrand?.code]);
 
   const mapPdi = (rows: any[]) => {
@@ -72,51 +63,22 @@ export const PdiQueuePage: React.FC = () => {
   const fetchPdiQueue = async () => {
     setLoading(true);
     try {
-      const liveVehicles = await fetchVehicles(currentBrand?.code);
-      if (liveVehicles && liveVehicles.length > 0) {
-        setPdiSessions(mapPdi(liveVehicles));
-        setLoading(false);
-        return;
+      const orgParam = currentBrand && currentBrand.code !== 'DHOOT-ALL' ? `?organization_id=${currentBrand.orgId}` : '';
+      const res = await fetch(getApiUrl(`/api/v1/stock${orgParam}`));
+      if (res.ok) {
+        const json = await res.json();
+        const rows = json.data || [];
+        if (rows.length > 0) {
+          setPdiSessions(mapPdi(rows));
+          setLoading(false);
+          return;
+        }
       }
-      setPdiSessions(mapPdi(getVehiclesForBrand(currentBrand?.code || '')));
+      setPdiSessions(mapPdi(getVehiclesForBrand(currentBrand.code)));
     } catch (e) {
-      setPdiSessions(mapPdi(getVehiclesForBrand(currentBrand?.code || '')));
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleExportExcel = () => {
-    if (filteredSessions.length === 0) {
-      alert('No PDI sessions to export.');
-      return;
-    }
-    const headers = ['#', 'VIN / Chassis', 'Brand', 'Model', 'Variant', 'Colour', 'Assigned Inspector', 'Staging Bay', 'Status', 'Passed', 'Total', 'Progress (%)', 'Duration'];
-    const rows = filteredSessions.map((s, idx) => [
-      idx + 1,
-      s.vin,
-      s.brand,
-      s.model,
-      s.variant,
-      s.color,
-      s.inspector,
-      s.yardLocation,
-      s.status,
-      s.passed,
-      s.total,
-      `${s.progress}%`,
-      s.elapsedTime
-    ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(','));
-
-    const csvContent = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Dhoot_PDI_Queue_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const filteredSessions = pdiSessions.filter(s => {
@@ -132,215 +94,97 @@ export const PdiQueuePage: React.FC = () => {
 
   const inProgressCount = pdiSessions.filter(s => s.status === 'PDI_IN_PROGRESS').length;
   const pendingCount = pdiSessions.filter(s => s.status !== 'PDI_IN_PROGRESS').length;
-  const defectsCount = pdiSessions.filter(s => s.failed > 0).length;
 
   return (
-    <div className="space-y-4 max-w-[1600px] mx-auto select-none pb-16">
+    <div className="space-y-6 max-w-[1600px] mx-auto select-none">
       
-      {/* ========================================================================= */}
-      {/* 1. TOP HEADER BANNER                                                      */}
-      {/* ========================================================================= */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-            <Car className="w-5 h-5 stroke-[2.2]" />
+      {/* Header Banner */}
+      <PageHeader
+        title="PDI Inspection Queue"
+        subtitle="Manage 64-point vehicle quality checklists, track inspector progress, and approve certifications"
+        action={
+          <div className="flex items-center gap-2">
+            <Link
+              to="/receiving"
+              className="h-8 px-3 rounded bg-surface border border-line hover:border-line-strong text-xs font-medium text-ink transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5 text-ink-3" />
+              <span>Receive New Car</span>
+            </Link>
+            <button
+              onClick={() => alert('Exporting PDI Inspection Queue to Excel CSV...')}
+              className="h-8 px-3 rounded bg-surface border border-line hover:border-line-strong text-xs font-medium text-ink transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-ok" />
+              <span>Export Excel</span>
+            </button>
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-ink tracking-tight">PDI Inspection Queue</h1>
-            <p className="text-xs text-ink-3">
-              Manage 64-point vehicle quality checklists, track inspector progress, and approve certifications
-            </p>
-          </div>
-        </div>
+        }
+      />
 
-        <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
-          <Link
-            to="/receiving"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-line bg-white hover:bg-slate-50 text-xs font-semibold text-ink shadow-xs transition-colors cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 text-ink-3" />
-            <span>Receive New Car</span>
-          </Link>
-          <button
-            type="button"
-            onClick={handleExportExcel}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-950 hover:bg-blue-900 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Export Excel</span>
-          </button>
-        </div>
+      {/* KPI Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Stat label="Total In Queue" value={pdiSessions.length} note="Awaiting Certification" />
+        <Stat label="In Inspection" value={inProgressCount} note="Engineers Active" tone="accent" />
+        <Stat label="Pending Start" value={pendingCount} note="Bay Staged" tone="warn" />
+        <Stat label="Defects Flagged" value={0} note="Zero Critical Blockers" tone="ok" />
       </div>
 
-      {/* ========================================================================= */}
-      {/* 2. TOP 4 KPI METRIC SUMMARY CARDS                                         */}
-      {/* ========================================================================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        {/* TOTAL IN QUEUE */}
-        <div className="bg-white rounded-xl border border-line p-4 shadow-xs flex flex-col justify-between gap-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold tracking-wider text-ink-3 uppercase">
-              TOTAL IN QUEUE
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-              <FileText className="w-4 h-4" />
+      {/* Main Inspection Table Panel */}
+      <Panel
+        title="Inspection Roster"
+        action={
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center bg-canvas border border-line rounded p-0.5 text-xs">
+              {(['ALL', 'IN_PROGRESS', 'PENDING', 'DEFECTS'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setStatusFilter(tab)}
+                  className={`h-6 px-2.5 rounded-chip text-xs font-medium transition-colors cursor-pointer ${
+                    statusFilter === tab
+                      ? 'bg-surface text-ink border border-line shadow-xs font-semibold'
+                      : 'text-ink-3 hover:text-ink-2'
+                  }`}
+                >
+                  {tab === 'ALL' ? 'All Sessions' : tab.replace('_', ' ')}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative w-48 sm:w-64">
+              <Search className="w-3.5 h-3.5 text-ink-3 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search VIN, model, inspector..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full h-7 pl-7 pr-2.5 text-xs bg-canvas border border-line rounded text-ink placeholder:text-ink-3 focus:outline-none focus:border-line-strong"
+              />
             </div>
           </div>
-          <div>
-            <span className="text-2xl font-bold font-mono text-ink tracking-tight tnum">
-              {pdiSessions.length}
-            </span>
-          </div>
-          <div className="text-xs text-ink-3">Awaiting Certification</div>
-        </div>
-
-        {/* IN INSPECTION */}
-        <div className="bg-white rounded-xl border border-line p-4 shadow-xs flex flex-col justify-between gap-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold tracking-wider text-ink-3 uppercase">
-              IN INSPECTION
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-              <Car className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <span className="text-2xl font-bold font-mono text-ink tracking-tight tnum">
-              {inProgressCount}
-            </span>
-          </div>
-          <div className="text-xs text-ink-3">Engineers Active</div>
-        </div>
-
-        {/* PENDING START */}
-        <div className="bg-white rounded-xl border border-line p-4 shadow-xs flex flex-col justify-between gap-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold tracking-wider text-ink-3 uppercase">
-              PENDING START
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-              <Clock className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <span className="text-2xl font-bold font-mono text-ink tracking-tight tnum">
-              {pendingCount}
-            </span>
-          </div>
-          <div className="text-xs text-ink-3">Bay Staged</div>
-        </div>
-
-        {/* DEFECTS FLAGGED */}
-        <div className="bg-white rounded-xl border border-line p-4 shadow-xs flex flex-col justify-between gap-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold tracking-wider text-ink-3 uppercase">
-              DEFECTS FLAGGED
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <span className="text-2xl font-bold font-mono text-ink tracking-tight tnum">
-              {defectsCount}
-            </span>
-          </div>
-          <div className="text-xs text-ink-3">Zero Critical Blockers</div>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 3. MAIN INSPECTION TABLE PANEL                                            */}
-      {/* ========================================================================= */}
-      <div className="bg-white rounded-xl border border-line shadow-xs overflow-hidden">
-        {/* Card Header with Filters */}
-        <div className="px-4 py-3 border-b border-line flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-              <ListChecks className="w-4 h-4 stroke-[2.2]" />
-            </div>
-            <h2 className="text-sm font-bold text-ink tracking-tight">Inspection Roster</h2>
-          </div>
-
-          {/* Segmented Filter Switcher */}
-          <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-lg border border-slate-200/70 self-start md:self-auto">
-            {(['ALL', 'IN_PROGRESS', 'PENDING', 'DEFECTS'] as const).map(tab => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setStatusFilter(tab)}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
-                  statusFilter === tab
-                    ? 'bg-blue-950 text-white shadow-xs'
-                    : 'text-ink-2 hover:text-ink'
-                }`}
-              >
-                {tab === 'ALL' ? 'All Sessions' : tab.replace('_', ' ')}
-              </button>
-            ))}
-          </div>
-
-          {/* Search Box */}
-          <div className="relative w-full md:w-64">
-            <Search className="w-3.5 h-3.5 text-ink-3 absolute left-2.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search VIN, model, inspector..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-8 pl-8 pr-3 text-xs bg-canvas border border-line rounded-lg text-ink placeholder:text-ink-3 focus:outline-none focus:border-line-strong transition-colors"
-            />
-          </div>
-        </div>
-
-        {/* Table View */}
+        }
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead className="bg-blue-50/50 border-b border-line text-[11px] font-bold uppercase tracking-wider text-blue-950/70">
+            <thead className="bg-canvas border-b border-line text-ink font-semibold uppercase tracking-[0.06em] text-xs">
               <tr>
                 <th className="py-2.5 px-3 w-10 text-center">#</th>
-                <th className="py-2.5 px-3">VIN / CHASSIS</th>
-                <th className="py-2.5 px-3">MODEL &amp; VARIANT</th>
-                <th className="py-2.5 px-3">COLOUR</th>
-                <th className="py-2.5 px-3">ASSIGNED INSPECTOR</th>
-                <th className="py-2.5 px-3">STAGING BAY</th>
-                <th className="py-2.5 px-3">STATUS</th>
-                <th className="py-2.5 px-3 w-36">CHECKLIST PROGRESS</th>
-                <th className="py-2.5 px-3">DURATION</th>
-                <th className="py-2.5 px-3 text-center">ACTION</th>
+                <th className="py-2.5 px-3">VIN / Chassis</th>
+                <th className="py-2.5 px-3">Model & Variant</th>
+                <th className="py-2.5 px-3">Colour</th>
+                <th className="py-2.5 px-3">Assigned Inspector</th>
+                <th className="py-2.5 px-3">Staging Bay</th>
+                <th className="py-2.5 px-3">Status</th>
+                <th className="py-2.5 px-3 w-36">Checklist Progress</th>
+                <th className="py-2.5 px-3">Duration</th>
+                <th className="py-2.5 px-3 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line text-ink-2 text-xs">
-              {loading ? (
+              {filteredSessions.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-6">
-                    <div className="space-y-2.5">
-                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
-                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
-                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
-                      <div className="h-8 bg-slate-100 rounded animate-pulse w-full" />
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredSessions.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="p-6">
-                    <Empty
-                      title="0 Inspection Sessions Found"
-                      hint={searchTerm || statusFilter !== 'ALL'
-                        ? "Try resetting filters or search query to find PDI sessions."
-                        : "Receive a carrier trailer at gate inward or import stock to start inspection."}
-                      action={
-                        <div className="flex items-center justify-center gap-2 flex-wrap mt-2">
-                          <Link to="/receiving" className="btn btn-primary text-xs h-8 px-3.5">
-                            <Plus className="w-3.5 h-3.5 mr-1" /> Receive Gate Inward
-                          </Link>
-                          <Link to="/vehicles" className="btn btn-secondary text-xs h-8 px-3.5">
-                            <Car className="w-3.5 h-3.5 mr-1" /> View Vehicle Stock
-                          </Link>
-                        </div>
-                      }
-                    />
+                  <td colSpan={10}>
+                    <Empty title="0 Inspection Sessions Found" hint="Receive a carrier trailer at gate or import stock to start inspection." />
                   </td>
                 </tr>
               ) : (
@@ -352,66 +196,46 @@ export const PdiQueuePage: React.FC = () => {
                         {idx + 1}
                       </td>
                       <td className="py-2.5 px-3 font-mono font-medium text-ink">
-                        {s.vin.length > 5 ? (
-                          <>
-                            <span className="text-ink-2">{s.vin.slice(0, -5)}</span>
-                            <span className="text-blue-600 font-bold">{s.vin.slice(-5)}</span>
-                          </>
-                        ) : (
-                          s.vin
-                        )}
+                        {s.vin}
                       </td>
                       <td className="py-2.5 px-3">
                         <div className="flex items-center gap-1.5">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${isHyundai ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-                            {isHyundai ? 'Hyundai' : 'Tata'}
-                          </span>
-                          <span className="font-semibold text-ink">{s.model}</span>
+                          <Badge tone="accent">{isHyundai ? 'Hyundai' : 'Tata'}</Badge>
+                          <span className="font-medium text-ink">{s.model}</span>
                         </div>
-                        <div className="text-[10px] text-ink-3 mt-0.5">{s.variant}</div>
+                        <div className="text-[10px] text-ink-3">{s.variant}</div>
                       </td>
                       <td className="py-2.5 px-3 text-ink-2">
                         {s.color}
                       </td>
-                      <td className="py-2.5 px-3 text-ink-2 font-medium">
+                      <td className="py-2.5 px-3 text-ink-2">
                         {s.inspector}
                       </td>
                       <td className="py-2.5 px-3 text-ink">
                         {s.yardLocation}
                       </td>
                       <td className="py-2.5 px-3 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                          s.status === 'PDI_IN_PROGRESS'
-                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                            : s.status === 'DEFECTS_FLAGGED'
-                            ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
-                        }`}>
-                          {s.status === 'PDI_IN_PROGRESS' ? 'In Progress' : s.status === 'DEFECTS_FLAGGED' ? 'Defect Flagged' : 'Pending Start'}
-                        </span>
+                        <Badge tone={s.status === 'PDI_IN_PROGRESS' ? 'accent' : 'warn'}>
+                          {s.status === 'PDI_IN_PROGRESS' ? 'In Progress' : 'Pending Start'}
+                        </Badge>
                       </td>
                       <td className="py-2.5 px-3">
                         <div className="space-y-1 min-w-[90px]">
-                          <div className="flex justify-between text-[10px] font-mono tnum">
+                          <div className="flex justify-between text-[10px] tnum">
                             <span className="text-ink-3">{s.passed}/{s.total}</span>
-                            <span className="font-semibold text-ink">{s.progress}%</span>
+                            <span className="font-medium text-ink">{s.progress}%</span>
                           </div>
-                          <div className="w-full bg-slate-100 border border-line rounded-full h-1.5 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all ${s.progress > 0 ? 'bg-blue-600' : 'bg-amber-500'}`}
-                              style={{ width: `${s.progress}%` }}
-                            />
-                          </div>
+                          <Bar pct={s.progress} tone={s.progress > 0 ? 'accent' : 'warn'} />
                         </div>
                       </td>
-                      <td className="py-2.5 px-3 text-ink-3 font-mono text-[11px] whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-ink-3 tnum text-[11px] whitespace-nowrap">
                         {s.elapsedTime}
                       </td>
                       <td className="py-2.5 px-3 text-center whitespace-nowrap">
                         {s.progress > 0 ? (
                           <Link
                             to={`/pdi/${s.id}`}
-                            className="h-7 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors inline-flex items-center justify-center gap-1 shadow-xs cursor-pointer"
+                            className="h-7 px-3 rounded bg-accent text-white hover:bg-accent-600 text-xs font-semibold transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap shadow-xs cursor-pointer"
                           >
                             <span>Resume</span>
                             <ChevronRight className="w-3.5 h-3.5" />
@@ -419,7 +243,7 @@ export const PdiQueuePage: React.FC = () => {
                         ) : (
                           <Link
                             to={`/pdi/${s.id}`}
-                            className="h-7 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors inline-flex items-center justify-center gap-1 shadow-xs cursor-pointer"
+                            className="h-7 px-3 rounded bg-ok text-white hover:bg-ok/90 text-xs font-semibold transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap shadow-xs cursor-pointer"
                           >
                             <span>Start PDI</span>
                             <ChevronRight className="w-3.5 h-3.5" />
@@ -433,7 +257,7 @@ export const PdiQueuePage: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </Panel>
 
     </div>
   );

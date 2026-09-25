@@ -26,7 +26,7 @@ export interface Env {
   SUPABASE_ANON_KEY: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
   MEDIA_BUCKET?: any;
-  ASSETS?: { fetch: (request: Request) => Promise<Response> };
+  ASSETS?: any;
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -53,19 +53,19 @@ app.get('/', async (c) => {
     environment: c.env.ENVIRONMENT || 'production',
     portal_url: 'https://dhoot-group-pdi.pages.dev',
     timestamp: new Date().toISOString(),
-    endpoints: {
-      health: '/health',
-      users: '/api/v1/users',
-      stock: '/api/v1/stock',
-      bookings: '/api/v1/bookings',
-      vehicles: '/api/v1/vehicles',
-      challans: '/api/v1/challans',
-      pdi_inspections: '/api/v1/pdi',
-      repairs: '/api/v1/repairs',
-      qa: '/api/v1/qa',
-      certificates: '/api/v1/certificates',
-      masters: '/api/v1/masters'
-    }
+  endpoints: {
+    health: '/health',
+    users: '/api/v1/users',
+    stock: '/api/v1/stock',
+    bookings: '/api/v1/bookings',
+    vehicles: '/api/v1/vehicles',
+    challans: '/api/v1/challans',
+    pdi_inspections: '/api/v1/pdi',
+    repairs: '/api/v1/repairs',
+    qa: '/api/v1/qa',
+    certificates: '/api/v1/certificates',
+    masters: '/api/v1/masters'
+  }
   });
 });
 

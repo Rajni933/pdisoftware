@@ -31,9 +31,49 @@ export interface BranchItem {
   status: 'ACTIVE' | 'INACTIVE';
 }
 
-// Master catalogs: empty by default so zero dummy/mock data is displayed unless loaded from database
-export const SEED_STOCKYARDS: YardItem[] = [];
-export const SEED_BRANCHES: BranchItem[] = [];
+// 1. Stockyards Master
+export const SEED_STOCKYARDS: YardItem[] = [
+  // Tata Yards
+  { id: 'yrd-t-1', code: 'YRD-BASNI', name: 'Basni Yard', brand: 'Tata Motors', city: 'Jodhpur', state: 'Rajasthan', capacity: '200 Cars', manager: 'Ramesh Choudhary', phone: '+91 98290 10001', status: 'ACTIVE' },
+  { id: 'yrd-t-2', code: 'YRD-SUMER', name: 'Sumerpur', brand: 'Tata Motors', city: 'Sumerpur', state: 'Rajasthan', capacity: '80 Cars', manager: 'Vikram Singh', phone: '+91 98290 10002', status: 'ACTIVE' },
+  { id: 'yrd-t-3', code: 'YRD-PALI', name: 'Pali', brand: 'Tata Motors', city: 'Pali', state: 'Rajasthan', capacity: '100 Cars', manager: 'Dinesh Gehlot', phone: '+91 98290 10003', status: 'ACTIVE' },
+  { id: 'yrd-t-4', code: 'YRD-JALORE', name: 'Jalore', brand: 'Tata Motors', city: 'Jalore', state: 'Rajasthan', capacity: '75 Cars', manager: 'Mahendra Patel', phone: '+91 98290 10004', status: 'ACTIVE' },
+  { id: 'yrd-t-5', code: 'YRD-BALOTRA-T', name: 'Balotra', brand: 'Tata Motors', city: 'Balotra', state: 'Rajasthan', capacity: '90 Cars', manager: 'Suresh Kumar', phone: '+91 98290 10005', status: 'ACTIVE' },
+  { id: 'yrd-t-6', code: 'YRD-BARMER', name: 'Barmer', brand: 'Tata Motors', city: 'Barmer', state: 'Rajasthan', capacity: '110 Cars', manager: 'Pawan Rathore', phone: '+91 98290 10006', status: 'ACTIVE' },
+  { id: 'yrd-t-7', code: 'YRD-BHINMAL', name: 'Bhinmal', brand: 'Tata Motors', city: 'Bhinmal', state: 'Rajasthan', capacity: '60 Cars', manager: 'Govind Ram', phone: '+91 98290 10007', status: 'ACTIVE' },
+  { id: 'yrd-t-8', code: 'YRD-PNAGAR-T', name: 'Pratap Nagar Showroom', brand: 'Tata Motors', city: 'Jodhpur', state: 'Rajasthan', capacity: '50 Cars', manager: 'Rajesh Sharma', phone: '+91 98290 10008', status: 'ACTIVE' },
+  { id: 'yrd-t-9', code: 'YRD-BKOTHI', name: 'Bhagat Ki Kothi Showroom', brand: 'Tata Motors', city: 'Jodhpur', state: 'Rajasthan', capacity: '60 Cars', manager: 'Sunil Jani', phone: '+91 98290 10009', status: 'ACTIVE' },
+  { id: 'yrd-t-10', code: 'YRD-SHANTI-T', name: 'Shantinath Yard', brand: 'Tata Motors', city: 'Jodhpur', state: 'Rajasthan', capacity: '150 Cars', manager: 'Kailash Joshi', phone: '+91 98290 10010', status: 'ACTIVE' },
+  { id: 'yrd-t-11', code: 'YRD-NEW', name: 'New Yard', brand: 'Tata Motors', city: 'Jodhpur', state: 'Rajasthan', capacity: '250 Cars', manager: 'Om Prakash', phone: '+91 98290 10011', status: 'ACTIVE' },
+
+  // Hyundai Yards
+  { id: 'yrd-h-1', code: 'YRD-SHANTI-H', name: 'Shantinath Yard', brand: 'Hyundai', city: 'Jodhpur', state: 'Rajasthan', capacity: '180 Cars', manager: 'Manish Rathore', phone: '+91 98291 20001', status: 'ACTIVE' },
+  { id: 'yrd-h-2', code: 'YRD-PNAGAR-H', name: 'Pratap Nagar Showroom', brand: 'Hyundai', city: 'Jodhpur', state: 'Rajasthan', capacity: '50 Cars', manager: 'Anil Vyas', phone: '+91 98291 20002', status: 'ACTIVE' },
+  { id: 'yrd-h-3', code: 'YRD-BALOTRA-H', name: 'Balotra', brand: 'Hyundai', city: 'Balotra', state: 'Rajasthan', capacity: '80 Cars', manager: 'Ashok Gehlot', phone: '+91 98291 20003', status: 'ACTIVE' },
+  { id: 'yrd-h-4', code: 'YRD-BILARA', name: 'Bilara', brand: 'Hyundai', city: 'Bilara', state: 'Rajasthan', capacity: '70 Cars', manager: 'Praveen Jain', phone: '+91 98291 20004', status: 'ACTIVE' },
+  { id: 'yrd-h-5', code: 'YRD-PIPAR', name: 'Pipar', brand: 'Hyundai', city: 'Pipar City', state: 'Rajasthan', capacity: '60 Cars', manager: 'Ratan Lal', phone: '+91 98291 20005', status: 'ACTIVE' },
+  { id: 'yrd-h-6', code: 'YRD-JAISAL', name: 'Jaisalmer', brand: 'Hyundai', city: 'Jaisalmer', state: 'Rajasthan', capacity: '90 Cars', manager: 'Bhanwar Singh', phone: '+91 98291 20006', status: 'ACTIVE' }
+];
+
+// 2. Branches Master
+export const SEED_BRANCHES: BranchItem[] = [
+  // Tata Branches
+  { id: 'br-t-1', code: 'BR-PNAGAR-T', name: 'Pratap Nagar', brand: 'Tata Motors', type: 'Main Showroom', city: 'Jodhpur', state: 'Rajasthan', capacity: '50 Cars', manager: 'Rajesh Sharma', phone: '+91 98290 10008', status: 'ACTIVE' },
+  { id: 'br-t-2', code: 'BR-BKOTHI', name: 'Bhagat Ki Kothi', brand: 'Tata Motors', type: 'Main Showroom', city: 'Jodhpur', state: 'Rajasthan', capacity: '60 Cars', manager: 'Sunil Jani', phone: '+91 98290 10009', status: 'ACTIVE' },
+  { id: 'br-t-3', code: 'BR-SUMER', name: 'Sumerpur', brand: 'Tata Motors', type: 'RSO', city: 'Sumerpur', state: 'Rajasthan', capacity: '80 Cars', manager: 'Vikram Singh', phone: '+91 98290 10002', status: 'ACTIVE' },
+  { id: 'br-t-4', code: 'BR-PALI', name: 'Pali', brand: 'Tata Motors', type: 'RSO', city: 'Pali', state: 'Rajasthan', capacity: '100 Cars', manager: 'Dinesh Gehlot', phone: '+91 98290 10003', status: 'ACTIVE' },
+  { id: 'br-t-5', code: 'BR-JALORE', name: 'Jalore', brand: 'Tata Motors', type: 'RSO', city: 'Jalore', state: 'Rajasthan', capacity: '75 Cars', manager: 'Mahendra Patel', phone: '+91 98290 10004', status: 'ACTIVE' },
+  { id: 'br-t-6', code: 'BR-BALOTRA-T', name: 'Balotra', brand: 'Tata Motors', type: 'RSO', city: 'Balotra', state: 'Rajasthan', capacity: '90 Cars', manager: 'Suresh Kumar', phone: '+91 98290 10005', status: 'ACTIVE' },
+  { id: 'br-t-7', code: 'BR-BARMER', name: 'Barmer', brand: 'Tata Motors', type: 'RSO', city: 'Barmer', state: 'Rajasthan', capacity: '110 Cars', manager: 'Pawan Rathore', phone: '+91 98290 10006', status: 'ACTIVE' },
+  { id: 'br-t-8', code: 'BR-BHINMAL', name: 'Bhinmal', brand: 'Tata Motors', type: 'RSO', city: 'Bhinmal', state: 'Rajasthan', capacity: '60 Cars', manager: 'Govind Ram', phone: '+91 98290 10007', status: 'ACTIVE' },
+
+  // Hyundai Branches
+  { id: 'br-h-1', code: 'BR-PNAGAR-H', name: 'Pratap Nagar', brand: 'Hyundai', type: 'Main Showroom', city: 'Jodhpur', state: 'Rajasthan', capacity: '50 Cars', manager: 'Anil Vyas', phone: '+91 98291 20002', status: 'ACTIVE' },
+  { id: 'br-h-2', code: 'BR-BALOTRA-H', name: 'Balotra', brand: 'Hyundai', type: 'RSO', city: 'Balotra', state: 'Rajasthan', capacity: '80 Cars', manager: 'Ashok Gehlot', phone: '+91 98291 20003', status: 'ACTIVE' },
+  { id: 'br-h-3', code: 'BR-PIPAR', name: 'Pipar', brand: 'Hyundai', type: 'RSO', city: 'Pipar City', state: 'Rajasthan', capacity: '60 Cars', manager: 'Ratan Lal', phone: '+91 98291 20005', status: 'ACTIVE' },
+  { id: 'br-h-4', code: 'BR-BILARA', name: 'Bilara', brand: 'Hyundai', type: 'RSO', city: 'Bilara', state: 'Rajasthan', capacity: '70 Cars', manager: 'Praveen Jain', phone: '+91 98291 20004', status: 'ACTIVE' },
+  { id: 'br-h-5', code: 'BR-JAISAL', name: 'Jaisalmer', brand: 'Hyundai', type: 'RSO', city: 'Jaisalmer', state: 'Rajasthan', capacity: '90 Cars', manager: 'Bhanwar Singh', phone: '+91 98291 20006', status: 'ACTIVE' }
+];
 
 // 3. Official Dealership Stock Inventory (Pre-loaded with 543 user vehicles)
 export const SEED_STOCK_VEHICLES: any[] = initialStockVehicles;
@@ -162,22 +202,8 @@ export const getVehiclesForBrand = (brandCode: string) => {
 };
 
 export const saveStockInventory = (vehicles: any[]) => {
-  try {
-    const sanitized = vehicles.map(v => {
-      let copy = { ...v };
-      if (copy.paper_pdi_photo && copy.paper_pdi_photo.length > 500) {
-        copy.paper_pdi_photo = '[Media Stored / Cloud Reference]';
-      }
-      if (copy.unloading_video && copy.unloading_video.length > 500) {
-        copy.unloading_video = '[Media Stored / Cloud Reference]';
-      }
-      return copy;
-    });
-    localStorage.setItem('dhoot_stock_inventory', JSON.stringify(sanitized));
-    window.dispatchEvent(new Event('stock-updated'));
-  } catch (err) {
-    console.warn('LocalStorage saveStockInventory quota safeguard:', err);
-  }
+  localStorage.setItem('dhoot_stock_inventory', JSON.stringify(vehicles));
+  window.dispatchEvent(new Event('stock-updated'));
 };
 
 export const clearStockInventory = () => {
@@ -280,21 +306,14 @@ export const syncWithSupabase = async () => {
       }
     } catch (e) {}
 
-    // 2. Fetch Live Vehicles directly from Supabase
+    // 2. Fetch Live Vehicles from Database / Worker API
     try {
-      const { data: dbVehicles, error: vehErr } = await supabase.from('vehicles').select('*').order('created_at', { ascending: false });
-      if (!vehErr && Array.isArray(dbVehicles)) {
-        localStorage.setItem('dhoot_stock_inventory', JSON.stringify(dbVehicles));
-        window.dispatchEvent(new Event('stock-updated'));
-      } else {
-        // Fallback to worker API if present
-        const res = await fetch(`${API_BASE}/api/v1/stock`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.data && Array.isArray(json.data) && json.data.length > 0) {
-            localStorage.setItem('dhoot_stock_inventory', JSON.stringify(json.data));
-            window.dispatchEvent(new Event('stock-updated'));
-          }
+      const res = await fetch(`${API_BASE}/api/v1/stock`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+          localStorage.setItem('dhoot_stock_inventory', JSON.stringify(json.data));
+          window.dispatchEvent(new Event('stock-updated'));
         }
       }
     } catch (e) {}
@@ -330,35 +349,7 @@ export const syncWithSupabase = async () => {
       }
     } catch (e) {}
 
-    // 5. Fetch Master Vehicle Models
-    try {
-      const { data: dbModels } = await supabase.from('master_vehicle_models').select('*').order('brand');
-      if (dbModels && Array.isArray(dbModels) && dbModels.length > 0) {
-        localStorage.setItem('autoprime_models', JSON.stringify(dbModels));
-        window.dispatchEvent(new Event('models-updated'));
-      }
-    } catch (e) {}
-
-    // 6. Fetch Master Financiers
-    try {
-      const { data: dbFinanciers } = await supabase.from('master_financiers').select('*').order('name');
-      if (dbFinanciers && Array.isArray(dbFinanciers) && dbFinanciers.length > 0) {
-        localStorage.setItem('autoprime_financiers', JSON.stringify(dbFinanciers));
-        window.dispatchEvent(new Event('financiers-updated'));
-      }
-    } catch (e) {}
-
-    // 7. Fetch Master Insurance Providers
-    try {
-      const { data: dbInsurance } = await supabase.from('master_insurance_providers').select('*').order('name');
-      if (dbInsurance && Array.isArray(dbInsurance) && dbInsurance.length > 0) {
-        localStorage.setItem('autoprime_insurance', JSON.stringify(dbInsurance));
-        window.dispatchEvent(new Event('insurance-updated'));
-      }
-    } catch (e) {}
-
   } catch (e) {
     console.warn('Sync with cloud note:', e);
   }
 };
-

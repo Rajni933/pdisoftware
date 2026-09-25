@@ -8,8 +8,7 @@ import { Panel, Stat, Badge, Bar, PageHeader } from '../components/ui/primitives
 import { isSmartPbnaMatch } from '../utils/matchingUtils';
 import { 
   Warehouse, Car, Bookmark, Truck, CheckCircle2, AlertTriangle, Eye, 
-  ArrowRight, Search, Download, X, Sliders, ShieldCheck, Layers, Palette, Filter, User, Phone, IndianRupee, Calendar,
-  ShoppingBag, Key, Sparkles, Award, ArrowUpRight, PieChart
+  ArrowRight, Search, Download, X, Sliders, ShieldCheck, Layers, Palette, Filter, User, Phone, IndianRupee, Calendar
 } from 'lucide-react';
 
 const cleanStr = (s?: string) => {
@@ -19,216 +18,6 @@ const cleanStr = (s?: string) => {
     .replace(/\b(tata|hyundai)\b/g, '')
     .replace(/[^a-z0-9]/g, '')
     .trim();
-};
-
-/* -------------------------------------------------------------------------- */
-/* Stock Overview Donut Chart Component                                       */
-/* -------------------------------------------------------------------------- */
-const StockDonutChart: React.FC<{
-  physical: number;
-  allocated: number;
-  freeStock: number;
-  gateInward: number;
-}> = ({ physical, allocated, freeStock, gateInward }) => {
-  const total = physical + gateInward;
-  const allocPct = physical > 0 ? Math.round((allocated / physical) * 100) : 0;
-  
-  const radius = 46;
-  const circumference = 2 * Math.PI * radius;
-
-  const segments = useMemo(() => {
-    if (total === 0) return [];
-    const items = [
-      { val: allocated, color: 'text-purple-500' },
-      { val: freeStock, color: 'text-amber-500' },
-      { val: gateInward, color: 'text-blue-500' },
-    ].filter(item => item.val > 0);
-    
-    let currentOffset = 0;
-    return items.map(item => {
-      const pct = item.val / total;
-      const strokeLen = Math.max(4, pct * circumference);
-      const dasharray = `${strokeLen} ${circumference}`;
-      const dashoffset = -currentOffset;
-      currentOffset += strokeLen;
-      return { ...item, dasharray, dashoffset };
-    });
-  }, [total, allocated, freeStock, gateInward, circumference]);
-
-  return (
-    <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
-      <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-        <circle
-          cx="60"
-          cy="60"
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="10"
-          className="text-slate-100"
-        />
-        {segments.map((s, idx) => (
-          <circle
-            key={idx}
-            cx="60"
-            cy="60"
-            r={radius}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="10"
-            strokeDasharray={s.dasharray}
-            strokeDashoffset={s.dashoffset}
-            strokeLinecap="round"
-            className={`${s.color} transition-all duration-500`}
-          />
-        ))}
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none pointer-events-none">
-        <span className="text-2xl font-bold font-mono text-ink tracking-tight tnum">
-          {allocPct}%
-        </span>
-        <span className="text-[10px] text-ink-3 font-semibold tracking-wider uppercase">
-          Total %
-        </span>
-      </div>
-    </div>
-  );
-};
-
-/* -------------------------------------------------------------------------- */
-/* Drive Your Dreams Modern White SUV Graphic Component                       */
-/* -------------------------------------------------------------------------- */
-const DriveDreamsGraphic: React.FC = () => {
-  return (
-    <div className="relative w-full flex items-center justify-center overflow-hidden py-1">
-      <svg
-        className="w-full max-w-[290px] h-auto"
-        viewBox="0 0 340 160"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        {/* Soft landscape horizon */}
-        <path
-          d="M0 130 C60 122, 140 126, 200 118 C260 110, 310 122, 340 118 L340 160 L0 160 Z"
-          fill="rgba(230, 240, 250, 0.45)"
-        />
-        <path
-          d="M0 138 C80 134, 160 140, 240 132 C280 128, 315 134, 340 132 L340 160 L0 160 Z"
-          fill="rgba(215, 230, 248, 0.55)"
-        />
-
-        {/* Shadow under vehicle */}
-        <ellipse cx="170" cy="142" rx="125" ry="9" fill="rgba(20, 35, 60, 0.12)" />
-        <ellipse cx="170" cy="141" rx="90" ry="5.5" fill="rgba(20, 35, 60, 0.18)" />
-
-        {/* SUV Body facing 3/4 front-left */}
-        <g id="modern-white-suv">
-          {/* Main White Body Shell */}
-          <path
-            d="M 288 116 
-               L 272 112 
-               C 266 98, 255 86, 238 80 
-               L 185 74 
-               C 165 64, 125 63, 82 70 
-               L 58 84 
-               L 46 100 
-               L 40 110 
-               C 38 114, 42 120, 48 122 
-               L 62 124 
-               C 64 110, 80 100, 96 101 
-               C 112 102, 124 114, 124 126 
-               L 216 128 
-               C 218 114, 232 104, 248 105 
-               C 262 106, 274 116, 274 128 
-               L 290 126 
-               C 294 125, 296 119, 288 116 Z"
-            fill="rgba(255, 255, 255, 0.98)"
-            stroke="rgba(165, 185, 215, 0.85)"
-            strokeWidth="1.8"
-            strokeLinejoin="round"
-          />
-
-          {/* Cabin & Tinted Windows */}
-          <path
-            d="M 236 82 
-               L 186 76 
-               L 126 72 
-               L 86 76 
-               L 64 87 
-               L 86 98 
-               L 154 99 
-               L 232 96 Z"
-            fill="rgba(195, 218, 245, 0.45)"
-            stroke="rgba(135, 165, 205, 0.75)"
-            strokeWidth="1.2"
-          />
-          {/* Window B-Pillars */}
-          <line x1="156" y1="74" x2="154" y2="99" stroke="rgba(95, 125, 165, 0.6)" strokeWidth="2.5" />
-          <line x1="110" y1="74" x2="108" y2="98" stroke="rgba(95, 125, 165, 0.5)" strokeWidth="2" />
-
-          {/* Front Grille and Headlights (Left side) */}
-          <path
-            d="M 56 92 L 43 104 L 52 110 L 62 104 Z"
-            fill="rgba(235, 243, 255, 0.9)"
-            stroke="rgba(60, 99, 163, 0.6)"
-            strokeWidth="1.2"
-          />
-          {/* LED DRL Signature */}
-          <path
-            d="M 58 90 L 42 102"
-            stroke="rgba(70, 145, 245, 0.9)"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-          />
-          {/* Lower Front Bumper */}
-          <path
-            d="M 64 120 L 44 114 C 40 118, 44 124, 50 125 L 66 124 Z"
-            fill="rgba(220, 230, 242, 0.8)"
-            stroke="rgba(160, 180, 205, 0.6)"
-            strokeWidth="1"
-          />
-
-          {/* Front Wheel (Left in front-facing perspective) */}
-          <g transform="translate(95, 126)">
-            <circle cx="0" cy="0" r="19" fill="rgba(35, 45, 60, 0.95)" />
-            <circle cx="0" cy="0" r="14" fill="rgba(235, 240, 248, 0.9)" stroke="rgba(180, 195, 215, 0.8)" strokeWidth="1.5" />
-            <circle cx="0" cy="0" r="6" fill="rgba(70, 85, 105, 0.9)" />
-            <line x1="-12" y1="0" x2="12" y2="0" stroke="rgba(100, 120, 150, 0.8)" strokeWidth="2" />
-            <line x1="0" y1="-12" x2="0" y2="12" stroke="rgba(100, 120, 150, 0.8)" strokeWidth="2" />
-            <line x1="-8" y1="-8" x2="8" y2="8" stroke="rgba(100, 120, 150, 0.8)" strokeWidth="1.8" />
-            <line x1="8" y1="-8" x2="-8" y2="8" stroke="rgba(100, 120, 150, 0.8)" strokeWidth="1.8" />
-          </g>
-
-          {/* Rear Wheel (Right in perspective) */}
-          <g transform="translate(247, 128)">
-            <circle cx="0" cy="0" r="18" fill="rgba(35, 45, 60, 0.95)" />
-            <circle cx="0" cy="0" r="13" fill="rgba(235, 240, 248, 0.9)" stroke="rgba(180, 195, 215, 0.8)" strokeWidth="1.5" />
-            <circle cx="0" cy="0" r="5" fill="rgba(70, 85, 105, 0.9)" />
-            <line x1="-11" y1="0" x2="11" y2="0" stroke="rgba(100, 120, 150, 0.8)" strokeWidth="1.8" />
-            <line x1="0" y1="-11" x2="0" y2="11" stroke="rgba(100, 120, 150, 0.8)" strokeWidth="1.8" />
-            <line x1="-7" y1="-7" x2="7" y2="7" stroke="rgba(100, 120, 150, 0.8)" strokeWidth="1.6" />
-            <line x1="7" y1="-7" x2="-7" y2="7" stroke="rgba(100, 120, 150, 0.8)" strokeWidth="1.6" />
-          </g>
-
-          {/* Body Character Lines & Highlights */}
-          <path
-            d="M 250 100 C 200 98, 140 96, 85 102"
-            stroke="rgba(200, 215, 235, 0.8)"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-          <path
-            d="M 220 112 C 180 110, 145 110, 115 112"
-            stroke="rgba(215, 228, 245, 0.9)"
-            strokeWidth="1.2"
-          />
-          {/* Door Handles */}
-          <rect x="175" y="101" width="10" height="2" rx="1" fill="rgba(140, 160, 185, 0.7)" />
-          <rect x="125" y="102" width="10" height="2" rx="1" fill="rgba(140, 160, 185, 0.7)" />
-        </g>
-      </svg>
-    </div>
-  );
 };
 
 export const DashboardPage: React.FC = () => {
@@ -681,418 +470,242 @@ export const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5 max-w-[1600px] mx-auto select-none pb-20">
+    <div className="space-y-6 max-w-[1600px] mx-auto select-none pb-20">
       
       {/* 1. Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-accent-soft border border-accent-line/60 flex items-center justify-center text-accent shrink-0 shadow-xs">
-            <Car className="w-5 h-5" />
+      <PageHeader
+        title="Operations Overview"
+        subtitle="100% Live Dealership Vehicle Ledger • Realtime Booking Pipeline, Stockyard Network & PBNA/VNA Status"
+        action={
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold px-2.5 py-1 bg-surface border border-line rounded text-ink shadow-xs">
+              {currentBrand.code === 'DHOOT-ALL' ? 'All Dealerships' : currentBrand.name}
+            </span>
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-ink tracking-tight">Operations Overview</h1>
-            <p className="text-xs text-ink-3">
-              100% Live Dealership Vehicle Ledger • Realtime Booking Pipeline, Stockyard Network &amp; PBNA/VNA Status
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="px-3.5 py-1.5 bg-surface border border-line rounded-full text-xs font-semibold text-ink shadow-xs">
-            {currentBrand.code === 'DHOOT-ALL' ? 'All Dealerships' : currentBrand.name}
-          </span>
-          <div className="flex items-center gap-1.5 px-3.5 py-1.5 bg-surface border border-line rounded-full text-xs font-medium text-ink-2 shadow-xs">
-            <Calendar className="w-3.5 h-3.5 text-ink-3" />
-            <span>{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* 2. Top 8 KPI Metric Cards Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3">
-        {/* Total Bookings */}
-        <Link
-          to="/bookings"
-          className="bg-surface border border-line hover:border-accent/40 rounded-xl p-3 flex flex-col justify-between transition-colors group shadow-xs"
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-blue-50 text-blue-600 border border-blue-100/60">
-              <ShoppingBag className="w-3.5 h-3.5" />
-            </div>
-            <span className="text-[10px] font-bold text-ink-2 tracking-wider uppercase truncate">
-              TOTAL BOOKINGS
-            </span>
-          </div>
-          <div className="py-2">
-            <div className="text-2xl font-bold font-mono text-ink tracking-tight tnum">
-              {counts.totalBookings}
-            </div>
-          </div>
-          <div className="text-[11px] text-ink-3 truncate">
-            Customer Orders
-          </div>
-        </Link>
-
-        {/* VIN Allocated */}
-        <Link
-          to="/bookings"
-          className="bg-surface border border-line hover:border-accent/40 rounded-xl p-3 flex flex-col justify-between transition-colors group shadow-xs"
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-emerald-50 text-emerald-600 border border-emerald-100/60">
-              <Key className="w-3.5 h-3.5" />
-            </div>
-            <span className="text-[10px] font-bold text-ink-2 tracking-wider uppercase truncate">
-              VIN ALLOCATED
-            </span>
-          </div>
-          <div className="py-2">
-            <div className="text-2xl font-bold font-mono text-ink tracking-tight tnum">
-              {counts.allocatedVehicles}
-            </div>
-          </div>
-          <div className="text-[11px] text-ink-3 truncate">
-            Tagged to Chassis
-          </div>
-        </Link>
-
-        {/* PBNA (In Stock) */}
-        <Link
-          to="/bookings"
-          className="bg-surface border border-line hover:border-accent/40 rounded-xl p-3 flex flex-col justify-between transition-colors group shadow-xs"
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-purple-50 text-purple-600 border border-purple-100/60">
-              <ShieldCheck className="w-3.5 h-3.5" />
-            </div>
-            <span className="text-[10px] font-bold text-ink-2 tracking-wider uppercase truncate">
-              PBNA (IN STOCK)
-            </span>
-          </div>
-          <div className="py-2">
-            <div className="text-2xl font-bold font-mono text-ink tracking-tight tnum">
-              {counts.totalPbnaVehicle}
-            </div>
-          </div>
-          <div className="text-[11px] text-ink-3 truncate">
-            Stock Available
-          </div>
-        </Link>
-
-        {/* Not in Stock (VNA) */}
-        <Link
-          to="/bookings"
-          className="bg-surface border border-line hover:border-accent/40 rounded-xl p-3 flex flex-col justify-between transition-colors group shadow-xs"
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-amber-50 text-amber-600 border border-amber-100/60">
-              <AlertTriangle className="w-3.5 h-3.5" />
-            </div>
-            <span className="text-[10px] font-bold text-ink-2 tracking-wider uppercase truncate">
-              NOT IN STOCK (VNA)
-            </span>
-          </div>
-          <div className="py-2">
-            <div className="text-2xl font-bold font-mono text-ink tracking-tight tnum">
-              {counts.totalVnaVehicle}
-            </div>
-          </div>
-          <div className="text-[11px] text-ink-3 truncate">
-            Factory Indent Needed
-          </div>
-        </Link>
-
-        {/* Physical Yard Stock */}
-        <Link
-          to="/vehicles"
-          className="bg-surface border border-line hover:border-accent/40 rounded-xl p-3 flex flex-col justify-between transition-colors group shadow-xs"
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-teal-50 text-teal-600 border border-teal-100/60">
-              <Warehouse className="w-3.5 h-3.5" />
-            </div>
-            <span className="text-[10px] font-bold text-ink-2 tracking-wider uppercase truncate">
-              PHYSICAL YARD STOCK
-            </span>
-          </div>
-          <div className="py-2">
-            <div className="text-2xl font-bold font-mono text-ink tracking-tight tnum">
-              {counts.totalPhysicalStock}
-            </div>
-          </div>
-          <div className="text-[11px] text-ink-3 truncate">
-            In Dealership Yards
-          </div>
-        </Link>
-
-        {/* Free Yard Stock */}
-        <Link
-          to="/vehicles"
-          className="bg-surface border border-line hover:border-accent/40 rounded-xl p-3 flex flex-col justify-between transition-colors group shadow-xs"
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-rose-50 text-rose-600 border border-rose-100/60">
-              <Sparkles className="w-3.5 h-3.5" />
-            </div>
-            <span className="text-[10px] font-bold text-ink-2 tracking-wider uppercase truncate">
-              FREE YARD STOCK
-            </span>
-          </div>
-          <div className="py-2">
-            <div className="text-2xl font-bold font-mono text-ink tracking-tight tnum">
-              {counts.totalFreeVehicle}
-            </div>
-          </div>
-          <div className="text-[11px] text-ink-3 truncate">
-            Available Unassigned
-          </div>
-        </Link>
-
-        {/* In-Transit / Gate */}
-        <Link
-          to="/receiving"
-          className="bg-surface border border-line hover:border-accent/40 rounded-xl p-3 flex flex-col justify-between transition-colors group shadow-xs"
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-sky-50 text-sky-600 border border-sky-100/60">
-              <Truck className="w-3.5 h-3.5" />
-            </div>
-            <span className="text-[10px] font-bold text-ink-2 tracking-wider uppercase truncate">
-              IN TRANSIT / GATE
-            </span>
-          </div>
-          <div className="py-2">
-            <div className="text-2xl font-bold font-mono text-ink tracking-tight tnum">
-              {counts.receivingPending}
-            </div>
-          </div>
-          <div className="text-[11px] text-ink-3 truncate">
-            En-Route Carrier
-          </div>
-        </Link>
-
-        {/* PDI Certified */}
-        <Link
-          to="/pdi"
-          className="bg-surface border border-line hover:border-accent/40 rounded-xl p-3 flex flex-col justify-between transition-colors group shadow-xs"
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-indigo-50 text-indigo-600 border border-indigo-100/60">
-              <Award className="w-3.5 h-3.5" />
-            </div>
-            <span className="text-[10px] font-bold text-ink-2 tracking-wider uppercase truncate">
-              PDI CERTIFIED
-            </span>
-          </div>
-          <div className="py-2">
-            <div className="text-2xl font-bold font-mono text-ink tracking-tight tnum">
-              {counts.pdiDone}
-            </div>
-          </div>
-          <div className="text-[11px] text-ink-3 truncate">
-            Ready for Delivery
-          </div>
-        </Link>
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-3">
+        <Stat 
+          label="Total Bookings" 
+          value={counts.totalBookings} 
+          note="Customer Orders" 
+          to="/bookings" 
+        />
+        <Stat 
+          label="VIN Allocated" 
+          value={counts.allocatedVehicles} 
+          note="Tagged to Chassis" 
+          to="/bookings" 
+          tone="ok" 
+        />
+        <Stat 
+          label="PBNA (In Stock)" 
+          value={counts.totalPbnaVehicle} 
+          note="Stock Available to Allot" 
+          tone={counts.totalPbnaVehicle > 0 ? 'warn' : 'default'} 
+          to="/bookings" 
+        />
+        <Stat 
+          label="Not in Stock (VNA)" 
+          value={counts.totalVnaVehicle} 
+          note="Factory Indent Needed" 
+          tone={counts.totalVnaVehicle > 0 ? 'danger' : 'default'} 
+          to="/bookings" 
+        />
+        <Stat 
+          label="Physical Yard Stock" 
+          value={counts.totalPhysicalStock} 
+          note="In Dealership Yards" 
+          to="/vehicles" 
+        />
+        <Stat 
+          label="Free Yard Stock" 
+          value={counts.totalFreeVehicle} 
+          note="Available Unassigned" 
+          tone="ok" 
+          to="/vehicles" 
+        />
+        <Stat 
+          label="In-Transit / Gate" 
+          value={counts.receivingPending} 
+          note="En-Route Carrier" 
+          to="/receiving" 
+        />
+        <Stat 
+          label="PDI Certified" 
+          value={counts.pdiDone} 
+          note="Ready for Delivery" 
+          tone="accent" 
+          to="/pdi" 
+        />
       </div>
 
-      {/* 3. Middle Section: Stockyard Facility Network & Stock Overview Donut */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-        
-        {/* Left: Stockyard Facility Network */}
-        <div className="lg:col-span-8 xl:col-span-9 bg-surface border border-line rounded-xl p-4 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-line">
-              <div className="flex items-center gap-2.5">
-                <Warehouse className="w-4 h-4 text-accent shrink-0" />
-                <h2 className="text-sm font-bold text-ink">Stockyard Facility Network</h2>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                  {yardFacilities.length} Active Yards
-                </span>
-              </div>
-              <Link
-                to="/vehicles"
-                className="text-ink-3 hover:text-accent transition-colors p-1 rounded hover:bg-canvas"
-                title="Open Stock Sheet"
-              >
-                <ArrowUpRight className="w-4 h-4" />
-              </Link>
-            </div>
-
-            <div className="overflow-x-auto mt-2">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-line text-ink-3 font-semibold uppercase tracking-[0.06em] text-[10px]">
-                    <th className="py-2.5 px-3 w-8 text-center">#</th>
-                    <th className="py-2.5 px-3">Stockyard Facility</th>
-                    <th className="py-2.5 px-3">Location (City)</th>
-                    <th className="py-2.5 px-3 text-right">Location / Capacity</th>
-                    <th className="py-2.5 px-3 text-right">VIN Allocated</th>
-                    <th className="py-2.5 px-3 text-right">Free Stock</th>
-                    <th className="py-2.5 px-3 w-36">Allocation Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line text-ink-2 text-xs">
-                  {yardFacilities.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-8 text-center text-ink-3">
-                        <Warehouse className="w-8 h-8 text-ink-3/40 mx-auto mb-2" />
-                        <p className="text-xs font-medium text-ink">0 Stockyards in Database</p>
-                        <p className="text-[11px] text-ink-3 mt-0.5">Configure your yard network in Admin Master Panel.</p>
-                        <Link to="/admin" className="mt-2 inline-block text-xs text-accent hover:underline font-semibold">
-                          Open Admin Master Panel &rarr;
-                        </Link>
-                      </td>
-                    </tr>
-                  ) : (
-                    yardFacilities.map((yard, idx) => (
-                    <tr key={yard.id || idx} className="hover:bg-canvas/80 transition-colors">
-                      <td className="py-2 px-3 text-center text-ink-3 font-mono tnum text-[11px]">
-                        {idx + 1}
-                      </td>
-                      <td className="py-2 px-3 font-semibold text-ink whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <Warehouse className="w-3.5 h-3.5 text-ink-3 shrink-0" />
-                          <span>{yard.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-2 px-3 text-ink-2 whitespace-nowrap">
-                        {yard.city}
-                      </td>
-                      <td className="py-2 px-3 text-right font-bold text-ink tnum">
-                        {yard.physicalStock}
-                      </td>
-                      <td className="py-2 px-3 text-right font-medium text-amber-600 tnum">
-                        {yard.allocated}
-                      </td>
-                      <td className="py-2 px-3 text-right font-medium text-emerald-600 tnum">
-                        {yard.freeStock}
-                      </td>
-                      <td className="py-2 px-3">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-                            <div
-                              className="h-full bg-accent rounded-full transition-all"
-                              style={{ width: `${Math.min(100, yard.allocationPct)}%` }}
-                            />
-                          </div>
-                          <span className="w-8 text-right text-ink font-mono font-medium text-[11px] tnum">
-                            {yard.allocationPct}%
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  )))}
-                </tbody>
-              </table>
-            </div>
+      {/* 3. Section: Stockyard & Facility Network */}
+      <Panel 
+        title={
+          <div className="flex items-center gap-2">
+            <Warehouse className="w-4 h-4 text-accent" />
+            <span>Stockyard Facility Network</span>
+            <Badge tone="accent">{yardFacilities.length} Active Yards</Badge>
           </div>
+        }
+        action={
+          <Link to="/vehicles" className="text-xs text-accent hover:underline font-semibold flex items-center gap-1">
+            <span>Open Stock Sheet</span>
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+        }
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead className="bg-canvas border-b border-line text-ink font-semibold uppercase tracking-[0.06em] text-xs">
+              <tr>
+                <th className="py-2.5 px-3 w-10 text-center">#</th>
+                <th className="py-2.5 px-3">Stockyard Facility</th>
+                <th className="py-2.5 px-3">Location / City</th>
+                <th className="py-2.5 px-3 text-right">Physical Stock</th>
+                <th className="py-2.5 px-3 text-right">VIN Allocated</th>
+                <th className="py-2.5 px-3 text-right">Free Stock</th>
+                <th className="py-2.5 px-3 text-right">Gate Inward</th>
+                <th className="py-2.5 px-3 w-48">Allocation Utilization</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line text-ink-2 text-xs">
+              {yardFacilities.map((yard, idx) => (
+                <tr key={yard.id || idx} className="hover:bg-canvas transition-colors">
+                  <td className="py-2.5 px-3 text-center text-ink-3 font-mono tnum">
+                    {idx + 1}
+                  </td>
+                  <td className="py-2.5 px-3 font-semibold text-ink whitespace-nowrap">
+                    <div className="flex items-center gap-1.5">
+                      <Warehouse className="w-3.5 h-3.5 text-accent shrink-0" />
+                      <span>{yard.name}</span>
+                    </div>
+                  </td>
+                  <td className="py-2.5 px-3 text-ink-2 whitespace-nowrap">
+                    {yard.city}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-bold text-ink tnum">
+                    {yard.physicalStock}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-medium text-ink tnum">
+                    {yard.allocated}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-bold text-ok tnum">
+                    {yard.freeStock}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-medium text-warn tnum">
+                    {yard.gateInward}
+                  </td>
+                  <td className="py-2.5 px-3">
+                    <div className="flex items-center gap-2">
+                      <Bar pct={yard.allocationPct} className="flex-1" />
+                      <span className="w-10 text-right text-ink font-bold tnum text-[11px]">{yard.allocationPct}%</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+      </Panel>
 
-        {/* Right: STOCK OVERVIEW Donut Chart */}
-        <div className="lg:col-span-4 xl:col-span-3 bg-surface border border-line rounded-xl p-5 shadow-xs flex flex-col justify-between">
-          <div className="pb-3 border-b border-line">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-ink">
-              STOCK OVERVIEW
-            </h3>
+      {/* 4. Section: Model-Wise Demand & PBNA/VNA Allocation Ledger */}
+      <Panel 
+        title={
+          <div className="flex items-center gap-2">
+            <Car className="w-4 h-4 text-accent" />
+            <span>Model Demand & PBNA / VNA Allocation Ledger</span>
+            <Badge tone="accent">{modelMatrix.length} Models</Badge>
           </div>
-
-          <div className="py-4 flex flex-col items-center justify-center gap-4">
-            <StockDonutChart
-              physical={counts.totalPhysicalStock}
-              allocated={counts.allocatedVehicles}
-              freeStock={counts.totalFreeVehicle}
-              gateInward={counts.receivingPending}
-            />
-
-            <div className="space-y-2.5 w-full pt-1">
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-                  <span className="text-ink-2 font-medium">Physical</span>
-                </div>
-                <span className="font-mono font-bold text-ink tnum">{counts.totalPhysicalStock}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0" />
-                  <span className="text-ink-2 font-medium">VIN Allocated</span>
-                </div>
-                <span className="font-mono font-bold text-ink tnum">{counts.allocatedVehicles}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
-                  <span className="text-ink-2 font-medium">Free Stock</span>
-                </div>
-                <span className="font-mono font-bold text-ink tnum">{counts.totalFreeVehicle}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0" />
-                  <span className="text-ink-2 font-medium">Gate Inward</span>
-                </div>
-                <span className="font-mono font-bold text-ink tnum">{counts.receivingPending}</span>
-              </div>
-            </div>
+        }
+        action={
+          <div className="flex items-center gap-3">
+            <Link to="/bookings" className="text-xs text-accent hover:underline font-semibold flex items-center gap-1">
+              <span>View All Bookings</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
-
-          <div className="pt-2 border-t border-line text-[11px] text-ink-3 text-center">
-            Live Yard Network Capacity &amp; Inward Feed
-          </div>
-        </div>
-
-      </div>
-
-      {/* 4. Bottom Section: Model Demand Ledger & Drive Your Dreams Card */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-        
-        {/* Left: Model Demand Ledger */}
-        <div className="lg:col-span-8 xl:col-span-9 bg-surface border border-line rounded-xl p-4 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-line">
-              <div className="flex items-center gap-2.5">
-                <Car className="w-4 h-4 text-accent shrink-0" />
-                <h2 className="text-sm font-bold text-ink">Model Demand &amp; PBNA / VNA Allocation Ledger</h2>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                  {modelMatrix.length} Models
-                </span>
-              </div>
-              <Link
-                to="/bookings"
-                className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1"
-              >
-                <span>View All Bookings</span>
-                <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
-
-            <div className="overflow-x-auto mt-2">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-line text-ink-3 font-semibold uppercase tracking-[0.06em] text-[10px]">
-                    <th className="py-2.5 px-3 w-8 text-center">#</th>
-                    <th className="py-2.5 px-3">Vehicle Model</th>
-                    <th className="py-2.5 px-3 text-right">Customer Orders</th>
-                    <th className="py-2.5 px-3 text-right">VIN Allocated</th>
-                    <th className="py-2.5 px-3 text-right">PBNA (In Stock)</th>
-                    <th className="py-2.5 px-3 text-right">Not In Stock (VNA)</th>
-                    <th className="py-2.5 px-3 w-36">Allocation Rate</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line text-ink-2 text-xs">
-                  {modelMatrix.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-8 text-center text-ink-3">
-                        <Car className="w-8 h-8 text-ink-3/40 mx-auto mb-2" />
-                        <p className="text-xs font-medium text-ink">0 Vehicle Models or Bookings Found</p>
-                        <p className="text-[11px] text-ink-3 mt-0.5">Import stock or bookings from Excel to view PBNA/VNA demand matrix.</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    modelMatrix.map((item, idx) => (
-                    <tr
-                      key={idx}
-                      onClick={() => {
+        }
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead className="bg-canvas border-b border-line text-ink font-semibold uppercase tracking-[0.06em] text-xs">
+              <tr>
+                <th className="py-2.5 px-3 w-10 text-center">#</th>
+                <th className="py-2.5 px-3">Vehicle Model</th>
+                <th className="py-2.5 px-3 text-right">Customer Orders</th>
+                <th className="py-2.5 px-3 text-right">VIN Allocated</th>
+                <th className="py-2.5 px-3 text-right">PBNA (In Stock)</th>
+                <th className="py-2.5 px-3 text-right">Not in Stock (VNA)</th>
+                <th className="py-2.5 px-3 text-right">Physical Yard Stock</th>
+                <th className="py-2.5 px-3 text-right">Free Stock</th>
+                <th className="py-2.5 px-3 text-right">In-Transit</th>
+                <th className="py-2.5 px-3 w-36">Allocation Rate</th>
+                <th className="py-2.5 px-3 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line text-ink-2 text-xs">
+              {modelMatrix.map((item, idx) => (
+                <tr 
+                  key={idx} 
+                  onClick={() => {
+                    setSelectedModalModel(item.name);
+                    setModalActiveTab('MATRIX');
+                    setDrilldownSearch('');
+                    setVariantFilter('ALL');
+                    setColourFilter('ALL');
+                    setStatusFilter('ALL');
+                  }}
+                  className="hover:bg-accent/5 cursor-pointer transition-colors group"
+                >
+                  <td className="py-2.5 px-3 text-center text-ink-3 font-mono tnum">
+                    {idx + 1}
+                  </td>
+                  <td className="py-2.5 px-3 font-semibold text-ink whitespace-nowrap">
+                    <div className="flex items-center gap-1.5">
+                      <Car className="w-3.5 h-3.5 text-accent shrink-0" />
+                      <span className="text-accent group-hover:underline font-bold">{item.name}</span>
+                    </div>
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-medium text-ink tnum">
+                    {item.totalBookings}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-medium text-ok tnum">
+                    {item.allocatedBookings}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-bold text-warn tnum">
+                    {item.pbna}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-bold tnum">
+                    {item.vna > 0 ? (
+                      <span className="text-danger font-bold">+{item.vna}</span>
+                    ) : (
+                      <span className="text-ink-3">0</span>
+                    )}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-medium text-ink tnum">
+                    {item.physicalInYard}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-bold text-ok tnum">
+                    {item.freeYardStock}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-medium text-ink-3 tnum">
+                    {item.inTransit}
+                  </td>
+                  <td className="py-2.5 px-3">
+                    <div className="flex items-center gap-2">
+                      <Bar pct={item.allocRate} className="flex-1" />
+                      <span className="w-10 text-right text-ink font-bold tnum text-[11px]">{item.allocRate}%</span>
+                    </div>
+                  </td>
+                  <td className="py-2.5 px-3 text-center">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setSelectedModalModel(item.name);
                         setModalActiveTab('MATRIX');
                         setDrilldownSearch('');
@@ -1100,67 +713,18 @@ export const DashboardPage: React.FC = () => {
                         setColourFilter('ALL');
                         setStatusFilter('ALL');
                       }}
-                      className="hover:bg-canvas/80 cursor-pointer transition-colors group"
+                      className="px-2.5 py-1 rounded bg-surface border border-line hover:border-accent text-accent text-[11px] font-semibold flex items-center gap-1 mx-auto shadow-xs"
                     >
-                      <td className="py-2.5 px-3 text-center text-ink-3 font-mono tnum text-[11px]">
-                        {idx + 1}
-                      </td>
-                      <td className="py-2.5 px-3 font-semibold text-ink whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <Car className="w-3.5 h-3.5 text-ink-3 shrink-0" />
-                          <span className="group-hover:text-accent transition-colors font-bold">{item.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-medium text-ink tnum">
-                        {item.totalBookings}
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-medium text-emerald-600 tnum">
-                        {item.allocatedBookings}
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-medium text-amber-600 tnum">
-                        {item.pbna}
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-medium text-amber-700 tnum">
-                        {item.vna}
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-                            <div
-                              className="h-full bg-accent rounded-full transition-all"
-                              style={{ width: `${Math.min(100, item.allocRate)}%` }}
-                            />
-                          </div>
-                          <span className="w-8 text-right text-ink font-mono font-medium text-[11px] tnum">
-                            {item.allocRate}%
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  )))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                      <Layers className="w-3 h-3" />
+                      <span>View Matrix</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-
-        {/* Right: Drive Your Dreams Showcase Card */}
-        <div className="lg:col-span-4 xl:col-span-3 bg-surface border border-line rounded-xl p-5 shadow-xs flex flex-col items-center justify-between text-center overflow-hidden">
-          <div className="w-full flex-1 flex flex-col items-center justify-center">
-            <DriveDreamsGraphic />
-          </div>
-
-          <div className="pt-2 pb-1">
-            <h3 className="text-lg font-bold text-ink tracking-tight">
-              Drive Your Dreams
-            </h3>
-            <p className="text-xs text-ink-3 font-medium mt-1">
-              More Bookings • More Deliveries • Greater Growth
-            </p>
-          </div>
-        </div>
-
-      </div>
+      </Panel>
 
       {/* ========================================================================= */}
       {/* MODEL VARIANT & COLOUR MATRIX + CUSTOMER INDENT ORDERS MODAL              */}
@@ -1371,7 +935,7 @@ export const DashboardPage: React.FC = () => {
                 <div className="border border-line rounded overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs min-w-[1050px]">
-                      <thead className="bg-accent-soft border-b border-accent-line text-accent font-semibold uppercase tracking-[0.06em] text-label">
+                      <thead className="bg-canvas border-b border-line text-ink font-semibold uppercase tracking-[0.06em] text-xs">
                         <tr>
                           <th className="py-2.5 px-3 w-8 text-center whitespace-nowrap">#</th>
                           <th className="py-2.5 px-3 whitespace-nowrap">Variant Specification</th>
@@ -1494,7 +1058,7 @@ export const DashboardPage: React.FC = () => {
                 <div className="border border-line rounded overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs min-w-[1100px]">
-                      <thead className="bg-accent-soft border-b border-accent-line text-accent font-semibold uppercase tracking-[0.06em] text-label">
+                      <thead className="bg-canvas border-b border-line text-ink font-semibold uppercase tracking-[0.06em] text-xs">
                         <tr>
                           <th className="py-2.5 px-3 w-8 text-center whitespace-nowrap">#</th>
                           <th className="py-2.5 px-3 whitespace-nowrap">Receipt No & Date</th>
@@ -1669,7 +1233,7 @@ export const DashboardPage: React.FC = () => {
 
               <div className="border border-line rounded overflow-hidden">
                 <table className="w-full text-left border-collapse text-xs">
-                  <thead className="bg-accent-soft border-b border-accent-line text-accent font-semibold uppercase tracking-[0.06em] text-label">
+                  <thead className="bg-canvas border-b border-line text-ink font-semibold uppercase tracking-[0.06em] text-xs">
                     <tr>
                       <th className="py-2.5 px-3 w-8 text-center">#</th>
                       <th className="py-2.5 px-3">Chassis VIN Number</th>
