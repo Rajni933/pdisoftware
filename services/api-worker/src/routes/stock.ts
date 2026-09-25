@@ -1,5 +1,6 @@
 import { Env } from '../index';
 import { Hono } from 'hono';
+import { createClient } from '@supabase/supabase-js';
 
 export const stockRouter = new Hono<{ Bindings: Env; Variables: any }>();
 
@@ -11,6 +12,24 @@ stockRouter.get('/', async (c) => {
   const search = c.req.query('search');
 
   let results: any[] = [...localVehiclesStore];
+
+  try {
+    const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY || c.env.SUPABASE_ANON_KEY);
+    let query = supabase.from('vehicles').select('*').order('created_at', { ascending: false });
+    if (orgId && orgId !== 'ALL') {
+      query = query.eq('organization_id', orgId);
+    }
+    const { data: dbData, error } = await query;
+    if (!error && dbData && Array.isArray(dbData) && dbData.length > 0) {
+      // Merge dbData with localVehiclesStore, preferring dbData
+      const map = new Map<string, any>();
+      localVehiclesStore.forEach(v => { if (v.vin) map.set(v.vin.toUpperCase().trim(), v); });
+      dbData.forEach(v => { if (v.vin) map.set(v.vin.toUpperCase().trim(), v); });
+      results = Array.from(map.values());
+    }
+  } catch (e) {
+    console.warn('Supabase stock read note:', e);
+  }
 
   if (orgId && orgId !== 'ALL') {
     results = results.filter(v => v.organization_id === orgId);
@@ -57,6 +76,33 @@ stockRouter.post('/bulk-import', async (c) => {
   });
 
   localVehiclesStore = Array.from(map.values());
+
+  // Upsert to Supabase Database
+  try {
+    const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY || c.env.SUPABASE_ANON_KEY);
+    const sanitized = items.map((r: any) => ({
+      vin: r.vin?.toUpperCase().trim(),
+      model: r.model || 'Unknown Model',
+      variant: r.variant || 'Standard',
+      color: r.color || 'Standard',
+      fuel_type: r.fuel_type || 'PETROL',
+      manufacturing_year: parseInt(r.manufacturing_year) || 2026,
+      status: r.status || 'RECEIVED',
+      location: r.location || 'Central Stockyard',
+      customer_name: r.customer_name || null,
+      sales_consultant: r.sales_consultant || null,
+      brand: r.brand || (r.model?.toLowerCase().includes('hyundai') ? 'Hyundai Motor' : 'Tata Motors'),
+      organization_id: r.organization_id || '11111111-1111-1111-1111-111111111111',
+      created_at: r.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })).filter((v: any) => !!v.vin);
+
+    if (sanitized.length > 0) {
+      await supabase.from('vehicles').upsert(sanitized, { onConflict: 'vin' });
+    }
+  } catch (err) {
+    console.warn('Supabase stock bulk upsert notice:', err);
+  }
 
   return c.json({ 
     success: true, 
