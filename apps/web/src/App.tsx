@@ -120,6 +120,30 @@ export const App: React.FC = () => {
             }
           />
           <Route
+            path="/certificate"
+            element={
+              <ProtectedRoute>
+                <CertificateViewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/certificates"
+            element={
+              <ProtectedRoute>
+                <CertificateViewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/certificate/:id"
+            element={
+              <ProtectedRoute>
+                <CertificateViewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/certificates/:id"
             element={
               <ProtectedRoute>

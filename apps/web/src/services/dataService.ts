@@ -120,6 +120,13 @@ export interface StockVehicle {
   received_amount?: number;
   purchase_date?: string;
   created_at?: string;
+  certificate_no?: string;
+  chassis_no?: string;
+  engine_no?: string;
+  odometer_reading?: number;
+  odometer?: number;
+  inspector_name?: string;
+  pdi_date?: string;
 }
 
 export interface BookingRecord {
@@ -1255,6 +1262,32 @@ export const fetchPdiQueue = async (brandCode?: string): Promise<PdiInspectionIt
 
 export const fetchRepairs = async (brandCode?: string): Promise<RepairTicketItem[]> => {
   try {
+    // 1. Primary: repair_tickets table from database
+    const { data: tickets, error: ticketErr } = await supabase
+      .from('repair_tickets')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!ticketErr && Array.isArray(tickets) && tickets.length > 0) {
+      const mapped = tickets.map((t: any) => ({
+        id: t.id,
+        vin: t.vin || 'VIN-UNKNOWN',
+        brand: t.brand || 'TATA',
+        model: t.model || 'Vehicle',
+        defectArea: t.area || t.defectArea || t.part_area || 'Exterior Body',
+        area: t.area || t.defectArea || t.part_area || 'Exterior Body',
+        severity: t.severity || 'MAJOR',
+        description: t.description || 'Inspection finding requiring rectification',
+        technician: t.assigned_to || t.assignedTo || t.technician || 'Senior Bodyshop Tech',
+        assignedTo: t.assigned_to || t.assignedTo || t.technician || 'Senior Bodyshop Tech',
+        bay: t.bay || 'Bay 1',
+        status: t.status || 'OPEN',
+        createdAt: t.created_at || t.createdAt || new Date().toISOString()
+      }));
+      return filterByBrand(mapped, brandCode);
+    }
+
+    // 2. Secondary: pdi_findings table fallback
     const { data, error } = await supabase.from('pdi_findings').select('*').order('created_at', { ascending: false });
     if (!error && Array.isArray(data) && data.length > 0) {
       const mapped = data.map((f: any) => ({
@@ -1262,13 +1295,15 @@ export const fetchRepairs = async (brandCode?: string): Promise<RepairTicketItem
         vin: f.vin || 'VIN-UNKNOWN',
         brand: f.brand || 'TATA',
         model: f.model || 'Vehicle',
-        defectArea: f.part_area || 'Exterior Body',
+        defectArea: f.part_area || f.area || 'Exterior Body',
+        area: f.part_area || f.area || 'Exterior Body',
         severity: f.severity || 'MAJOR',
         description: f.description || 'Inspection finding requiring rectification',
         technician: f.assigned_to || 'Senior Bodyshop Tech',
-        bay: 'Bay 3',
+        assignedTo: f.assigned_to || 'Senior Bodyshop Tech',
+        bay: f.bay || 'Bay 3',
         status: f.status || 'OPEN',
-        createdAt: f.created_at
+        createdAt: f.created_at || new Date().toISOString()
       }));
       return filterByBrand(mapped, brandCode);
     }
@@ -1278,6 +1313,8 @@ export const fetchRepairs = async (brandCode?: string): Promise<RepairTicketItem
 
 export const updateRepairStatus = async (findingId: string, status: 'OPEN' | 'IN_PROGRESS' | 'COMPLETED'): Promise<boolean> => {
   try {
+    const { error: err1 } = await supabase.from('repair_tickets').update({ status }).eq('id', findingId);
+    if (!err1) return true;
     await supabase.from('pdi_findings').update({ status }).eq('id', findingId);
     return true;
   } catch (e) {

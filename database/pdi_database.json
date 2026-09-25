@@ -283,6 +283,54 @@
       "manager": "Nitin Kale",
       "phone": "9822009900",
       "status": "ACTIVE"
+    },
+    {
+      "id": "44444444-4444-4444-4444-444444444444",
+      "code": "YARD-JDH-BASNI",
+      "name": "Jodhpur (Basni)",
+      "brand": "Tata Motors",
+      "city": "Jodhpur",
+      "state": "Rajasthan",
+      "capacity": "600 Units",
+      "manager": "Mahendra Gehlot",
+      "phone": "0291-2741122",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "44444444-4444-4444-4444-444444444445",
+      "code": "YARD-JDH-BASNI-02",
+      "name": "Basni Yard",
+      "brand": "Tata Motors",
+      "city": "Jodhpur",
+      "state": "Rajasthan",
+      "capacity": "350 Units",
+      "manager": "Sunil Bishnoi",
+      "phone": "0291-2741123",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "44444444-4444-4444-4444-444444444446",
+      "code": "YARD-JDH-PRATAP",
+      "name": "Pratap Nagar Yard",
+      "brand": "Tata Motors",
+      "city": "Jodhpur",
+      "state": "Rajasthan",
+      "capacity": "200 Units",
+      "manager": "Virendra Singh",
+      "phone": "0291-2741124",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "44444444-4444-4444-4444-444444444447",
+      "code": "YARD-JDH-SHANTINATH",
+      "name": "Shantinath Yard",
+      "brand": "Tata Motors",
+      "city": "Jodhpur",
+      "state": "Rajasthan",
+      "capacity": "250 Units",
+      "manager": "Dharmendra Jain",
+      "phone": "0291-2741125",
+      "status": "ACTIVE"
     }
   ],
   "master_vehicle_models": [

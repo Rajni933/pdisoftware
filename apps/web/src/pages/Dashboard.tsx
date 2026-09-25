@@ -87,7 +87,30 @@ export const DashboardPage: React.FC = () => {
 
   // 1. Dynamic Stockyard Network Matrix
   const yardFacilities = useMemo(() => {
-    const activeYards = getActiveStockyards(currentBrand?.code);
+    const activeYards = [...getActiveStockyards(currentBrand?.code)];
+
+    // Dynamically discover any stockyard locations present in fleetList
+    const discoveredLocations = Array.from(new Set(fleetList.map(v => v.location).filter(Boolean)));
+    discoveredLocations.forEach(loc => {
+      const cleanLoc = cleanStr(loc);
+      if (cleanLoc && cleanLoc !== 'intransit' && !activeYards.some(y => {
+        const yn = cleanStr(y.name);
+        return yn === cleanLoc || yn.includes(cleanLoc) || cleanLoc.includes(yn);
+      })) {
+        activeYards.push({
+          id: `discovered-${cleanLoc}`,
+          code: `YARD-${cleanLoc.toUpperCase()}`,
+          name: loc,
+          brand: (currentBrand.name?.toLowerCase().includes('hyundai') ? 'Hyundai' : 'Tata Motors') as 'Tata Motors' | 'Hyundai' | 'Shared',
+          city: loc.toLowerCase().includes('jodhpur') ? 'Jodhpur' : 'Pune',
+          state: loc.toLowerCase().includes('jodhpur') ? 'Rajasthan' : 'Maharashtra',
+          capacity: '600 Units',
+          manager: 'Yard In-Charge',
+          phone: '0291-2741122',
+          status: 'ACTIVE'
+        });
+      }
+    });
 
     return activeYards.map(yard => {
       const yardNameNorm = cleanStr(yard.name);
@@ -117,7 +140,7 @@ export const DashboardPage: React.FC = () => {
         allocationPct
       };
     });
-  }, [currentBrand?.code, fleetList]);
+  }, [currentBrand?.code, currentBrand?.name, fleetList]);
 
   // 2. Comprehensive Model-Wise Demand & PBNA/VNA Ledger
   const modelMatrix = useMemo(() => {

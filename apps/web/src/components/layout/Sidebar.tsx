@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Truck, Car, ClipboardCheck, ShieldCheck,
-  Bookmark, Wrench, Receipt, FileCheck, Settings2, PieChart
+  LayoutGrid, PieChart, Truck, Car, ClipboardCheck,
+  Wrench, FileText, Settings2, ChevronDown, ChevronRight,
+  RotateCw, ShieldCheck, BookOpen, Receipt
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -28,19 +29,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
       items: [
         { label: 'Overview', path: '/dashboard', icon: LayoutDashboard, roles: ['ALL'] },
         { label: 'Reports', path: '/reports', icon: PieChart, roles: ['ALL'] },
-        { label: 'Inward', path: '/receiving', icon: Truck, roles: ['SYSTEM_ADMIN', 'BRANCH_MANAGER', 'YARD_MANAGER', 'PDI_ENGINEER'] },
-        { label: 'Stock', path: '/vehicles', icon: Car, roles: ['ALL'] },
-        { label: 'Inspections', path: '/pdi', icon: ClipboardCheck, roles: ['SYSTEM_ADMIN', 'BRANCH_MANAGER', 'YARD_MANAGER', 'PDI_ENGINEER', 'QA_MANAGER'] },
-        { label: 'Quality', path: '/qa', icon: ShieldCheck, roles: ['SYSTEM_ADMIN', 'BRANCH_MANAGER', 'QA_MANAGER'] },
-        { label: 'Workshop', path: '/repairs', icon: Wrench, roles: ['SYSTEM_ADMIN', 'BRANCH_MANAGER', 'WORKSHOP_SUPERVISOR', 'PDI_ENGINEER'] },
+        { label: 'Inward', path: '/receiving', icon: Truck, roles: ['ALL'] },
+        { label: 'Vehicles', path: '/vehicles', icon: Car, roles: ['ALL'] },
+        { label: 'PDI Queue', path: '/pdi', icon: ClipboardCheck, roles: ['ALL'] },
+        { label: 'QA Approvals', path: '/qa', icon: ShieldCheck, roles: ['ALL'] },
+        { label: 'Repairs', path: '/repairs', icon: Wrench, roles: ['ALL'] },
       ],
     },
     {
-      heading: 'Sales',
+      heading: 'SALES & BILLING',
       items: [
-        { label: 'Bookings', path: '/bookings', icon: Bookmark, roles: ['SYSTEM_ADMIN', 'BRANCH_MANAGER', 'SALES_CONSULTANT', 'ACCOUNTS_EXECUTIVE'] },
-        { label: 'Invoicing', path: '/invoicing', icon: Receipt, roles: ['SYSTEM_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTS_EXECUTIVE', 'SALES_CONSULTANT'] },
-        { label: 'Certificates', path: '/certificates/cert-101', icon: FileCheck, roles: ['ALL'] },
+        { label: 'Bookings', path: '/bookings', icon: BookOpen, roles: ['ALL'] },
+        { label: 'Invoicing & Challans', path: '/invoicing', icon: Receipt, roles: ['ALL'] },
+        { label: 'Certificates', path: '/certificates', icon: FileText, roles: ['ALL'] },
       ],
     },
     {

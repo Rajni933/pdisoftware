@@ -40,7 +40,7 @@ export const PdiQueuePage: React.FC = () => {
 
   const mapPdi = (rows: any[]) => {
     return rows
-      .filter((v: any) => v.status === 'PDI_PENDING' || v.status === 'PDI_IN_PROGRESS' || v.status === 'RECEIVED')
+      .filter((v: any) => v.status === 'PDI_PENDING' || v.status === 'PDI_IN_PROGRESS' || v.status === 'RECEIVED' || v.status === 'NEW CAR' || !v.status)
       .map((v: any) => ({
         id: v.id || v.vin,
         vin: v.vin,
@@ -48,14 +48,14 @@ export const PdiQueuePage: React.FC = () => {
         model: v.model || 'OEM Vehicle',
         variant: v.variant || 'Standard',
         color: v.color || 'White',
-        yardLocation: v.location || 'Central Yard • Bay 1',
+        yardLocation: v.location || 'Jodhpur (Basni) • Staging',
         inspector: v.inspector_name || 'Senior PDI Inspector',
         progress: v.status === 'PDI_IN_PROGRESS' ? 65 : 0,
         passed: v.status === 'PDI_IN_PROGRESS' ? 42 : 0,
         failed: 0,
         total: 64,
-        status: v.status === 'RECEIVED' ? 'PENDING_START' : v.status,
-        startedAt: '10:30 AM',
+        status: (v.status === 'RECEIVED' || v.status === 'NEW CAR' || !v.status) ? 'PENDING_START' : v.status,
+        startedAt: v.status === 'PDI_IN_PROGRESS' ? '10:30 AM' : '—',
         elapsedTime: v.status === 'PDI_IN_PROGRESS' ? '24 mins' : 'Not Started'
       }));
   };
