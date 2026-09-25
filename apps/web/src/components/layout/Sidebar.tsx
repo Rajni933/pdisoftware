@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  LayoutGrid, PieChart, Truck, Car, ClipboardCheck,
+  LayoutDashboard, LayoutGrid, PieChart, Truck, Car, ClipboardCheck,
   Wrench, FileText, Settings2, ChevronDown, ChevronRight,
   RotateCw, ShieldCheck, BookOpen, Receipt
 } from 'lucide-react';
