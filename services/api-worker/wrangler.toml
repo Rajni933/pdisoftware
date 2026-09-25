@@ -9,7 +9,3 @@ SUPABASE_URL = "https://ckwzbaazgbheeeuclbci.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrd3piYWF6Z2JoZWVldWNsYmNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNzQzMTYsImV4cCI6MjEwNDg1MDMxNn0.uv_oLFH_uybZJEYZ3x_-OfT3g_7vPBmbmwk5HTUdpqI"
 SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrd3piYWF6Z2JoZWVldWNsYmNpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTI3NDMxNiwiZXhwIjoyMTA0ODUwMzE2fQ.AnalBl5DWwKc-HO_H6Ychr3AbMXX_3Xtf0wGNaSN5TU"
 
-# Cloudflare R2 bucket binding for vehicle media attachments & inspection photos
-[[r2_buckets]]
-binding = "MEDIA_BUCKET"
-bucket_name = "pdi-media-storage"
