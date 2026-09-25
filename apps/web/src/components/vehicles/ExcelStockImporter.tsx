@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
-import { saveStockInventory, isHyundaiItem } from '../../data/seedData';
+import { saveStockInventory, getAllVehicles, isHyundaiItem, isTataItem, TATA_ORG_ID, HYUNDAI_ORG_ID } from '../../data/seedData';
 import { formatDate } from '../../utils/dateUtils';
 import { StockVehicle } from '../../pages/Vehicles';
 import { getApiUrl } from '../../utils/apiConfig';
@@ -25,6 +25,12 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
   const { currentBrand } = useAuth();
   const [csvText, setCsvText] = useState('');
   const [parsedRows, setParsedRows] = useState<any[]>([]);
+  const [rawGrid, setRawGrid] = useState<any[][]>([]);
+  const [targetBrand, setTargetBrand] = useState<'AUTO' | 'TATA' | 'HYUNDAI'>(() => {
+    if (currentBrand.code === 'DHOOT-HYUNDAI') return 'HYUNDAI';
+    if (currentBrand.code === 'DHOOT-TATA') return 'TATA';
+    return 'AUTO';
+  });
   const [isImporting, setIsImporting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successCount, setSuccessCount] = useState<number | null>(null);
@@ -78,20 +84,26 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
     document.body.removeChild(link);
   };
 
-  // Helper to get existing VIN list from localStorage
+  // Helper to get existing VIN list from all stock (including seed stock)
   const getExistingVins = (): Set<string> => {
     try {
-      const saved = localStorage.getItem('dhoot_stock_inventory');
-      if (saved) {
-        const list = JSON.parse(saved);
-        if (Array.isArray(list)) {
-          return new Set(list.map((v: any) => (v.vin || '').toUpperCase().trim()).filter(Boolean));
-        }
-      }
+      const list = getAllVehicles();
+      return new Set(list.map((v: any) => (v.vin || '').toUpperCase().trim()).filter(Boolean));
     } catch (e) {
       console.warn('Error reading existing vins:', e);
     }
     return new Set();
+  };
+
+  const existingAllVehicles = getAllVehicles();
+  const existingTataCount = existingAllVehicles.filter(isTataItem).length;
+  const existingHyundaiCount = existingAllVehicles.filter(isHyundaiItem).length;
+
+  const handleBrandModeChange = (mode: 'AUTO' | 'TATA' | 'HYUNDAI') => {
+    setTargetBrand(mode);
+    if (rawGrid.length > 1) {
+      processRawDataGrid(rawGrid, mode);
+    }
   };
 
   // Clean and match header name
@@ -111,7 +123,9 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
   };
 
   // Process 2D Array of rows from SheetJS or Text Split
-  const processRawDataGrid = (grid: any[][]) => {
+  const processRawDataGrid = (grid: any[][], overrideBrandMode?: 'AUTO' | 'TATA' | 'HYUNDAI') => {
+    setRawGrid(grid);
+    const activeMode = overrideBrandMode || targetBrand;
     if (!grid || grid.length <= 1) {
       setParsedRows([]);
       return;
@@ -256,8 +270,19 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
       const rawDeliveryDate = isDealership22Col ? getVal(18) : getVal(idxDeliveryDate);
       const rawAllocationDate = isDealership22Col ? getVal(19) : getVal(idxAllocationDate);
 
-      const modelVal = isDealership22Col ? getVal(1) : (getVal(idxModel) || (currentBrand.code === 'DHOOT-HYUNDAI' ? 'Hyundai Creta' : 'Tata Safari'));
-      const isHyundai = isHyundaiItem({ model: modelVal, vin: vinRaw }) || currentBrand.code === 'DHOOT-HYUNDAI';
+      const modelVal = isDealership22Col ? getVal(1) : (getVal(idxModel) || (activeMode === 'HYUNDAI' ? 'Hyundai Creta' : 'Tata Safari'));
+
+      let isHyundai = false;
+      if (activeMode === 'HYUNDAI') {
+        isHyundai = true;
+      } else if (activeMode === 'TATA') {
+        isHyundai = false;
+      } else {
+        isHyundai = isHyundaiItem({ model: modelVal, vin: vinRaw });
+      }
+
+      const assignedBrand = isHyundai ? 'Hyundai' : 'Tata Motors';
+      const assignedOrgId = isHyundai ? HYUNDAI_ORG_ID : TATA_ORG_ID;
       const defaultYard = isHyundai ? 'Shantinath Yard' : 'Jodhpur (Basni)';
 
       let colorVal = '';
@@ -278,8 +303,8 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
         _isDuplicateInFile: isDuplicateInFile,
         _isAlreadyInDb: isAlreadyInDb,
         vin: vinRaw || `VIN-TEMP-${i}`,
-        brand: isHyundai ? 'Hyundai' : 'Tata Motors',
-        organization_id: isHyundai ? '11111111-1111-1111-1111-111111111112' : '11111111-1111-1111-1111-111111111111',
+        brand: assignedBrand,
+        organization_id: assignedOrgId,
         model: modelVal,
         variant: (isDealership22Col ? getVal(2) : getVal(idxVariant)) || 'Standard Variant',
         color: colorVal,
@@ -394,17 +419,8 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
 
       const deduplicatedIncoming = Array.from(vinMap.values());
 
-      // 2. Load existing stock from localStorage
-      let existingStock: any[] = [];
-      try {
-        const saved = localStorage.getItem('dhoot_stock_inventory');
-        if (saved) {
-          existingStock = JSON.parse(saved);
-          if (!Array.isArray(existingStock)) existingStock = [];
-        }
-      } catch (e) {
-        console.warn('Local stock read note:', e);
-      }
+      // 2. Load complete existing stock across all brands
+      const existingStock = getAllVehicles();
 
       // 3. Merge or Append based on updateExisting toggle
       let finalStock: any[] = [];
@@ -417,12 +433,13 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
         deduplicatedIncoming.forEach(item => {
           const key = item.vin.toUpperCase().trim();
           const prev = combinedMap.get(key) || {};
+          const isHyn = item.brand === 'Hyundai' || isHyundaiItem(item);
           combinedMap.set(key, {
             ...prev,
             id: prev.id || `v-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
             vin: item.vin,
-            brand: item.brand || (isHyundaiItem(item) ? 'Hyundai' : 'Tata Motors'),
-            organization_id: item.organization_id || (isHyundaiItem(item) ? '11111111-1111-1111-1111-111111111112' : '11111111-1111-1111-1111-111111111111'),
+            brand: item.brand || (isHyn ? 'Hyundai' : 'Tata Motors'),
+            organization_id: item.organization_id || (isHyn ? HYUNDAI_ORG_ID : TATA_ORG_ID),
             model: item.model,
             variant: item.variant,
             color: item.color,
@@ -452,33 +469,36 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
         // Only insert truly new VINs
         const existingVinSet = new Set(existingStock.map(v => (v.vin || '').toUpperCase().trim()));
         const newOnly = deduplicatedIncoming.filter(r => !existingVinSet.has(r.vin.toUpperCase().trim()));
-        const newObjects = newOnly.map(item => ({
-          id: `v-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-          vin: item.vin,
-          brand: item.brand || (isHyundaiItem(item) ? 'Hyundai' : 'Tata Motors'),
-          organization_id: item.organization_id || (isHyundaiItem(item) ? '11111111-1111-1111-1111-111111111112' : '11111111-1111-1111-1111-111111111111'),
-          model: item.model,
-          variant: item.variant,
-          color: item.color,
-          fuel_type: item.fuel_type,
-          fsc_code: item.fsc_code,
-          dealer_code: item.dealer_code,
-          plant_code: item.plant_code,
-          manufacturing_year: item.manufacturing_year,
-          status: item.status,
-          quantity: item.quantity,
-          location: item.location,
-          customer_name: item.customer_name,
-          sales_consultant: item.sales_consultant,
-          accessories_amount: item.accessories_amount,
-          vehicle_status: item.vehicle_status,
-          delivery_date: item.delivery_date,
-          allocation_date: item.allocation_date,
-          allocated_days: item.allocated_days,
-          received_amount: item.received_amount,
-          purchase_date: item.purchase_date,
-          created_at: new Date().toISOString()
-        }));
+        const newObjects = newOnly.map(item => {
+          const isHyn = item.brand === 'Hyundai' || isHyundaiItem(item);
+          return {
+            id: `v-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+            vin: item.vin,
+            brand: item.brand || (isHyn ? 'Hyundai' : 'Tata Motors'),
+            organization_id: item.organization_id || (isHyn ? HYUNDAI_ORG_ID : TATA_ORG_ID),
+            model: item.model,
+            variant: item.variant,
+            color: item.color,
+            fuel_type: item.fuel_type,
+            fsc_code: item.fsc_code,
+            dealer_code: item.dealer_code,
+            plant_code: item.plant_code,
+            manufacturing_year: item.manufacturing_year,
+            status: item.status,
+            quantity: item.quantity,
+            location: item.location,
+            customer_name: item.customer_name,
+            sales_consultant: item.sales_consultant,
+            accessories_amount: item.accessories_amount,
+            vehicle_status: item.vehicle_status,
+            delivery_date: item.delivery_date,
+            allocation_date: item.allocation_date,
+            allocated_days: item.allocated_days,
+            received_amount: item.received_amount,
+            purchase_date: item.purchase_date,
+            created_at: new Date().toISOString()
+          };
+        });
         finalStock = [...existingStock, ...newObjects];
       }
 
@@ -492,18 +512,17 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
         return copy;
       });
 
-      // Save to localStorage & notify all components
+      // Save to localStorage with safe merge & notify all components
       saveStockInventory(finalStock);
 
       // Direct Live Supabase Database Upsert
       await bulkImportVehicles(cleanIncoming);
 
-      // 1. Sync to Backend Edge API (Cloudflare Worker API)
+      // 1. Sync to Backend Edge API (Cloudflare Worker API) with proper organization_id
       try {
-        const targetOrg = '11111111-1111-1111-1111-111111111111';
-
         const payload = deduplicatedIncoming.map(r => ({
           vin: r.vin,
+          brand: r.brand,
           model: r.model,
           variant: r.variant,
           color: r.color,
@@ -522,7 +541,7 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
           allocated_days: r.allocated_days,
           accessories_amount: r.accessories_amount,
           received_amount: r.received_amount,
-          organization_id: targetOrg
+          organization_id: r.organization_id || (r.brand === 'Hyundai' ? HYUNDAI_ORG_ID : TATA_ORG_ID)
         }));
 
         fetch(getApiUrl('/api/v1/stock/bulk-import'), {
@@ -606,6 +625,48 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
             </p>
           </div>
 
+          {/* Target OEM Franchise Selector */}
+          <div className="p-2.5 bg-canvas border border-line rounded flex items-center justify-between gap-3 flex-wrap text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-ink">Upload for Franchise:</span>
+              <div className="inline-flex items-center p-0.5 bg-surface border border-line rounded">
+                <button
+                  type="button"
+                  onClick={() => handleBrandModeChange('AUTO')}
+                  className={`px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
+                    targetBrand === 'AUTO' ? 'bg-accent text-white font-semibold shadow-xs' : 'text-ink-3 hover:text-ink'
+                  }`}
+                >
+                  ⚡ Auto-Detect (VIN & Model)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleBrandModeChange('TATA')}
+                  className={`px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
+                    targetBrand === 'TATA' ? 'bg-accent text-white font-semibold shadow-xs' : 'text-ink-3 hover:text-ink'
+                  }`}
+                >
+                  Tata Motors
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleBrandModeChange('HYUNDAI')}
+                  className={`px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
+                    targetBrand === 'HYUNDAI' ? 'bg-accent text-white font-semibold shadow-xs' : 'text-ink-3 hover:text-ink'
+                  }`}
+                >
+                  Hyundai
+                </button>
+              </div>
+            </div>
+            <div className="text-[11px] text-ink-3 flex items-center gap-2">
+              <span>Existing in Stock:</span>
+              <span className="font-mono text-accent font-semibold">{existingTataCount} Tata</span>
+              <span>•</span>
+              <span className="font-mono text-ok font-semibold">{existingHyundaiCount} Hyundai</span>
+            </div>
+          </div>
+
           {/* Paste or Upload Area */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -660,6 +721,21 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
                     {duplicatesInFileCount + parsedRows.filter(r => !r._isValid).length}
                   </div>
                 </div>
+
+                <div className="p-2 bg-canvas border border-line rounded col-span-2 sm:col-span-4 flex items-center justify-between text-xs flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-ink">Detected OEM Split:</span>
+                    <span className="px-2 py-0.5 rounded bg-accent-soft text-accent border border-accent-line font-bold font-mono tnum text-[11px]">
+                      {parsedRows.filter(r => r.brand === 'Tata Motors').length} Tata Motors
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-ok/10 text-ok border border-ok/20 font-bold font-mono tnum text-[11px]">
+                      {parsedRows.filter(r => r.brand === 'Hyundai').length} Hyundai
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-ink-3">
+                    Existing stock of both brands is safely preserved during import
+                  </span>
+                </div>
               </div>
 
               {/* Duplicate Handling Option */}
@@ -686,6 +762,7 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
                     <thead className="bg-accent-soft border-b border-accent-line text-accent font-semibold uppercase tracking-[0.06em] text-[11px] sticky top-0">
                       <tr>
                         <th className="py-2 px-3 whitespace-nowrap">Status</th>
+                        <th className="py-2 px-3 whitespace-nowrap">Brand</th>
                         <th className="py-2 px-3 whitespace-nowrap">VIN No</th>
                         <th className="py-2 px-3 whitespace-nowrap">Model</th>
                         <th className="py-2 px-3 whitespace-nowrap">Variant</th>
@@ -715,6 +792,17 @@ export const ExcelStockImporter: React.FC<ExcelStockImporterProps> = ({
                             ) : (
                               <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-ok/10 text-ok border border-ok/20">
                                 New VIN
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-1 px-3 whitespace-nowrap">
+                            {r.brand === 'Hyundai' ? (
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-ok/10 text-ok border border-ok/20">
+                                Hyundai
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-accent-soft text-accent border border-accent-line">
+                                Tata Motors
                               </span>
                             )}
                           </td>

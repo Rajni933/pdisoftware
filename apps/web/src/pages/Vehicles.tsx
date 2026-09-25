@@ -9,7 +9,16 @@ import { useAuth } from '../context/AuthContext';
 import { NewVehicleModal } from '../components/vehicles/NewVehicleModal';
 import { ExcelStockImporter } from '../components/vehicles/ExcelStockImporter';
 import { getApiUrl } from '../utils/apiConfig';
-import { getVehiclesForBrand, clearStockInventory, getActiveStockyards, syncWithSupabase, isTataItem, isHyundaiItem } from '../data/seedData';
+import { 
+  getAllVehicles, 
+  getVehiclesForBrand, 
+  saveStockInventory, 
+  clearStockInventory, 
+  getActiveStockyards, 
+  syncWithSupabase, 
+  isTataItem, 
+  isHyundaiItem 
+} from '../data/seedData';
 import { supabase } from '../lib/supabase';
 import { Panel, Stat, Badge, Empty, PageHeader } from '../components/ui/primitives';
 
@@ -96,7 +105,7 @@ export const VehiclesPage: React.FC = () => {
 
   const [selectedStock, setSelectedStock] = useState<StockVehicle | null>(null);
 
-  const [vehicles, setVehicles] = useState<StockVehicle[]>(() => getVehiclesForBrand(currentBrand.code) as StockVehicle[]);
+  const [vehicles, setVehicles] = useState<StockVehicle[]>(() => getAllVehicles() as StockVehicle[]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -104,8 +113,7 @@ export const VehiclesPage: React.FC = () => {
     setBrandFilter(brand);
     
     // 1. Sync immediately from in-memory cache
-    const currentList = getVehiclesForBrand(currentBrand.code);
-    setVehicles(currentList as StockVehicle[]);
+    setVehicles(getAllVehicles() as StockVehicle[]);
     setLoading(false);
 
     // 2. Trigger background cloud sync once
@@ -113,8 +121,7 @@ export const VehiclesPage: React.FC = () => {
     
     // 3. Listen for updates without infinite re-fetch loop
     const handleStockUpdate = () => {
-      const updated = getVehiclesForBrand(currentBrand.code);
-      setVehicles(updated as StockVehicle[]);
+      setVehicles(getAllVehicles() as StockVehicle[]);
       setLoading(false);
     };
 
@@ -123,8 +130,7 @@ export const VehiclesPage: React.FC = () => {
   }, [currentBrand.code]);
 
   const fetchStock = () => {
-    const list = getVehiclesForBrand(currentBrand.code);
-    setVehicles(list as StockVehicle[]);
+    setVehicles(getAllVehicles() as StockVehicle[]);
     setLoading(false);
   };
 
@@ -137,8 +143,7 @@ export const VehiclesPage: React.FC = () => {
       return v;
     });
     setVehicles(updated);
-    localStorage.setItem('dhoot_stock_inventory', JSON.stringify(updated));
-    window.dispatchEvent(new Event('stock-updated'));
+    saveStockInventory(updated);
 
     try {
       await supabase.from('vehicles').update({ location: newYard }).eq('vin', vin);
@@ -319,11 +324,11 @@ export const VehiclesPage: React.FC = () => {
                 setModelFilter('ALL');
                 setLocationFilter('ALL');
               }}
-              className="h-7 text-xs bg-canvas border border-line rounded px-2.5 text-ink focus:outline-none focus:border-accent font-bold cursor-pointer shadow-xs"
+              className="h-7 text-xs bg-canvas border border-line rounded px-2.5 text-ink focus:outline-none focus:border-accent font-semibold cursor-pointer shadow-xs"
             >
-              <option value="ALL">🏢 All Brands</option>
-              <option value="DHOOT-TATA">Tata Motors</option>
-              <option value="DHOOT-HYUNDAI">Hyundai</option>
+              <option value="ALL">🏢 All Brands ({vehicles.length})</option>
+              <option value="DHOOT-TATA">Tata Motors ({vehicles.filter(isTataItem).length})</option>
+              <option value="DHOOT-HYUNDAI">Hyundai ({vehicles.filter(isHyundaiItem).length})</option>
             </select>
 
             {/* Search */}

@@ -866,6 +866,48 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // 4. API Endpoints (/api/v1/stock/bulk-import & /api/v1/stock)
+  if (pathname === '/api/v1/stock/bulk-import' && req.method === 'POST') {
+    const body = await readBody();
+    const items = body.vehicles || body.rows || (Array.isArray(body) ? body : []);
+    if (!db.vehicles) db.vehicles = [];
+
+    const inserted = [];
+    for (const rec of items) {
+      if (!rec || !rec.vin) continue;
+      const cleanVin = String(rec.vin).toUpperCase().trim();
+      const newRecord = {
+        id: rec.id || `veh-live-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+        created_at: rec.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...rec,
+        vin: cleanVin
+      };
+
+      const existingIdx = db.vehicles.findIndex(item => (item.vin || '').toUpperCase().trim() === cleanVin);
+      if (existingIdx >= 0) {
+        db.vehicles[existingIdx] = { ...db.vehicles[existingIdx], ...newRecord };
+        inserted.push(db.vehicles[existingIdx]);
+      } else {
+        db.vehicles.push(newRecord);
+        inserted.push(newRecord);
+      }
+    }
+
+    saveDb();
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ success: true, data: { imported_count: inserted.length } }));
+    return;
+  }
+
+  if (pathname === '/api/v1/stock' && req.method === 'GET') {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ success: true, data: db.vehicles || [], meta: { total: (db.vehicles || []).length } }));
+    return;
+  }
+
   // Fallback 404
   res.statusCode = 404;
   res.setHeader('Content-Type', 'application/json');

@@ -190,65 +190,129 @@ export const saveBranches = (branches: BranchItem[]) => {
 // ============================================================================
 // SMART BRAND CLASSIFICATION ENGINE
 // ============================================================================
+export const isHyundaiItem = (item: any): boolean => {
+  if (!item) return false;
+  const vin = String(item.vin || item.allocated_vin_no || item.vin_no || '').toUpperCase().trim();
+  if (vin.startsWith('MAL') || vin.startsWith('KMH')) return true;
+
+  const m = String(item.model || item.model_name || '').toLowerCase();
+  const hyundaiKeywords = ['hyundai', 'creta', 'venue', 'verna', 'ioniq', 'exter', 'i20', 'i10', 'tucson', 'alcazar', 'aura', 'grand', 'santro', 'kona'];
+  if (hyundaiKeywords.some(kw => m.includes(kw))) return true;
+
+  if (item.brand && String(item.brand).toLowerCase().includes('hyundai')) return true;
+  if (item.organization_id === HYUNDAI_ORG_ID) return true;
+
+  return false;
+};
+
 export const isTataItem = (item: any): boolean => {
   if (!item) return false;
-  if (item.organization_id === TATA_ORG_ID) return true;
-  if (item.brand && String(item.brand).toLowerCase().includes('tata')) return true;
-  
+  if (isHyundaiItem(item)) return false;
+
   const vin = String(item.vin || item.allocated_vin_no || item.vin_no || '').toUpperCase().trim();
   if (vin.startsWith('MAT')) return true;
 
-  const m = String(item.model || '').toLowerCase();
+  const m = String(item.model || item.model_name || '').toLowerCase();
   const tataKeywords = ['tata', 'nexon', 'harrier', 'safari', 'curvv', 'punch', 'tiago', 'tigor', 'altroz', 'sierra', 'aeris', 'xpres'];
-  return tataKeywords.some(kw => m.includes(kw));
-};
+  if (tataKeywords.some(kw => m.includes(kw))) return true;
 
-export const isHyundaiItem = (item: any): boolean => {
-  if (!item) return false;
-  if (item.organization_id === HYUNDAI_ORG_ID) return true;
-  if (item.brand && String(item.brand).toLowerCase().includes('hyundai')) return true;
+  if (item.brand && String(item.brand).toLowerCase().includes('tata')) return true;
+  if (item.organization_id === TATA_ORG_ID) return true;
 
-  const vin = String(item.vin || item.allocated_vin_no || item.vin_no || '').toUpperCase().trim();
-  if (vin.startsWith('MAL')) return true;
-
-  const m = String(item.model || '').toLowerCase();
-  const hyundaiKeywords = ['hyundai', 'creta', 'venue', 'verna', 'ioniq', 'exter', 'i20', 'i10', 'tucson', 'alcazar', 'aura', 'grand'];
-  return hyundaiKeywords.some(kw => m.includes(kw));
+  return true;
 };
 
 // ============================================================================
 // STOCK INVENTORY METHODS
 // ============================================================================
-export const getVehiclesForBrand = (brandCode: string) => {
-  let list: any[] = [];
+export const getAllVehicles = (): any[] => {
+  const map = new Map<string, any>();
+
+  // 1. Preload verified seed stock (543+ vehicles)
+  if (Array.isArray(SEED_STOCK_VEHICLES)) {
+    SEED_STOCK_VEHICLES.forEach(v => {
+      if (v && v.vin) {
+        const key = v.vin.toUpperCase().trim();
+        const isHyn = isHyundaiItem(v);
+        map.set(key, {
+          ...v,
+          brand: v.brand || (isHyn ? 'Hyundai' : 'Tata Motors'),
+          organization_id: v.organization_id || (isHyn ? HYUNDAI_ORG_ID : TATA_ORG_ID),
+        });
+      }
+    });
+  }
+
+  // 2. Overlay any vehicles in localStorage
   try {
     const saved = localStorage.getItem('dhoot_stock_inventory');
     if (saved) {
       const parsed: any[] = JSON.parse(saved);
       if (Array.isArray(parsed)) {
-        list = parsed;
+        parsed.forEach(v => {
+          if (v && v.vin) {
+            const key = v.vin.toUpperCase().trim();
+            const existing = map.get(key) || {};
+            const isHyn = isHyundaiItem(v) || isHyundaiItem(existing);
+            map.set(key, {
+              ...existing,
+              ...v,
+              brand: v.brand || existing.brand || (isHyn ? 'Hyundai' : 'Tata Motors'),
+              organization_id: v.organization_id || existing.organization_id || (isHyn ? HYUNDAI_ORG_ID : TATA_ORG_ID),
+            });
+          }
+        });
       }
     }
   } catch (e) {
     console.warn('Error reading stock from storage:', e);
   }
 
-  if (list.length === 0) {
-    list = SEED_STOCK_VEHICLES;
-  }
+  return Array.from(map.values());
+};
 
+export const getVehiclesForBrand = (brandCode?: string) => {
+  const list = getAllVehicles();
+  if (!brandCode || brandCode === 'DHOOT-ALL' || brandCode === 'ALL') {
+    return list;
+  }
   if (brandCode === 'DHOOT-TATA' || brandCode.toLowerCase().includes('tata')) {
     return list.filter(isTataItem);
   }
   if (brandCode === 'DHOOT-HYUNDAI' || brandCode.toLowerCase().includes('hyundai')) {
     return list.filter(isHyundaiItem);
   }
-  return list; // DHOOT-ALL
+  return list;
 };
 
 export const saveStockInventory = (vehicles: any[]) => {
-  localStorage.setItem('dhoot_stock_inventory', JSON.stringify(vehicles));
+  // Always merge with existing stock so uploading one brand never deletes the other
+  const allCurrent = getAllVehicles();
+  const map = new Map<string, any>();
+  allCurrent.forEach(v => {
+    if (v && v.vin) map.set(v.vin.toUpperCase().trim(), v);
+  });
+
+  if (Array.isArray(vehicles)) {
+    vehicles.forEach(v => {
+      if (v && v.vin) {
+        const key = v.vin.toUpperCase().trim();
+        const existing = map.get(key) || {};
+        const isHyn = isHyundaiItem(v) || isHyundaiItem(existing);
+        map.set(key, {
+          ...existing,
+          ...v,
+          brand: v.brand || existing.brand || (isHyn ? 'Hyundai' : 'Tata Motors'),
+          organization_id: v.organization_id || existing.organization_id || (isHyn ? HYUNDAI_ORG_ID : TATA_ORG_ID),
+        });
+      }
+    });
+  }
+
+  const merged = Array.from(map.values());
+  localStorage.setItem('dhoot_stock_inventory', JSON.stringify(merged));
   window.dispatchEvent(new Event('stock-updated'));
+  return merged;
 };
 
 export const clearStockInventory = () => {
@@ -353,12 +417,16 @@ export const syncWithSupabase = async () => {
 
     // 2. Fetch Live Vehicles from Database / Worker API
     try {
-      const res = await fetch(`${API_BASE}/api/v1/stock`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.data && Array.isArray(json.data) && json.data.length > 0) {
-          localStorage.setItem('dhoot_stock_inventory', JSON.stringify(json.data));
-          window.dispatchEvent(new Event('stock-updated'));
+      const { data: dbVehicles } = await supabase.from('vehicles').select('*');
+      if (dbVehicles && Array.isArray(dbVehicles) && dbVehicles.length > 0) {
+        saveStockInventory(dbVehicles);
+      } else {
+        const res = await fetch(`${API_BASE}/api/v1/stock`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+            saveStockInventory(json.data);
+          }
         }
       }
     } catch (e) {}

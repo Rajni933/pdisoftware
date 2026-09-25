@@ -90,9 +90,8 @@ stockRouter.post('/bulk-import', async (c) => {
       status: r.status || 'RECEIVED',
       location: r.location || 'Central Stockyard',
       customer_name: r.customer_name || null,
-      sales_consultant: r.sales_consultant || null,
-      brand: r.brand || (r.model?.toLowerCase().includes('hyundai') ? 'Hyundai Motor' : 'Tata Motors'),
-      organization_id: r.organization_id || '11111111-1111-1111-1111-111111111111',
+      brand: r.brand || ((r.model?.toLowerCase().includes('hyundai') || r.vin?.toUpperCase().startsWith('MAL') || r.vin?.toUpperCase().startsWith('KMH')) ? 'Hyundai' : 'Tata Motors'),
+      organization_id: r.organization_id || ((r.model?.toLowerCase().includes('hyundai') || r.vin?.toUpperCase().startsWith('MAL') || r.vin?.toUpperCase().startsWith('KMH')) ? '11111111-1111-1111-1111-111111111112' : '11111111-1111-1111-1111-111111111111'),
       created_at: r.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString()
     })).filter((v: any) => !!v.vin);

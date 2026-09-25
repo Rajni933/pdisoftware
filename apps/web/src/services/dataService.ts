@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { TATA_ORG_ID, HYUNDAI_ORG_ID } from '../data/seedData';
+import { TATA_ORG_ID, HYUNDAI_ORG_ID, getAllVehicles, getVehiclesForBrand, saveStockInventory } from '../data/seedData';
 import initialStockVehicles from '../data/initialVehicles.json';
 
 // ============================================================================
@@ -869,37 +869,25 @@ export const fetchVehicles = async (brandCode?: string): Promise<StockVehicle[]>
   try {
     const { data, error } = await supabase.from('vehicles').select('*').order('created_at', { ascending: false });
     if (!error && Array.isArray(data) && data.length > 0) {
-      localStorage.setItem('dhoot_stock_inventory', JSON.stringify(data));
-      return filterByBrand(data, brandCode);
+      saveStockInventory(data);
+      return getVehiclesForBrand(brandCode) as StockVehicle[];
     }
   } catch (e) {
     console.warn('DB vehicles fetch notice:', e);
   }
 
-  const cached = localStorage.getItem('dhoot_stock_inventory');
-  if (cached) {
-    try {
-      const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed) && parsed.length > 0) return filterByBrand(parsed, brandCode);
-    } catch (e) {}
-  }
-
-  // Preloaded verified dealership stock
-  if (Array.isArray(initialStockVehicles) && initialStockVehicles.length > 0) {
-    localStorage.setItem('dhoot_stock_inventory', JSON.stringify(initialStockVehicles));
-    return filterByBrand(initialStockVehicles as unknown as StockVehicle[], brandCode);
-  }
-
-  return [];
+  return getVehiclesForBrand(brandCode) as StockVehicle[];
 };
 
 export const saveVehicle = async (vehicle: Partial<StockVehicle>): Promise<boolean> => {
-  const orgId = isHyundai(vehicle) ? HYUNDAI_ORG_ID : TATA_ORG_ID;
+  const isHyn = isHyundai(vehicle);
+  const orgId = isHyn ? HYUNDAI_ORG_ID : TATA_ORG_ID;
   const payload = {
     ...vehicle,
+    brand: vehicle.brand || (isHyn ? 'Hyundai' : 'Tata Motors'),
     organization_id: vehicle.organization_id || orgId,
     status: vehicle.status || 'RECEIVED',
-    location: vehicle.location || 'Basni Yard'
+    location: vehicle.location || (isHyn ? 'Shantinath Yard' : 'Basni Yard')
   };
 
   let synced = false;
@@ -916,10 +904,7 @@ export const saveVehicle = async (vehicle: Partial<StockVehicle>): Promise<boole
     });
   }
 
-  const current = await fetchVehicles();
-  const updated = [payload as StockVehicle, ...current.filter(v => v.vin !== vehicle.vin)];
-  localStorage.setItem('dhoot_stock_inventory', JSON.stringify(updated));
-  window.dispatchEvent(new Event('stock-updated'));
+  saveStockInventory([payload]);
   return synced;
 };
 
@@ -956,12 +941,8 @@ export const bulkImportVehicles = async (vehicles: Partial<StockVehicle>[]): Pro
     console.warn('Batch DB upsert exception:', e);
   }
 
-  // Merge with local state
-  const current = await fetchVehicles();
-  const vinSet = new Set(sanitized.map(v => v.vin));
-  const merged = [...sanitized, ...current.filter(v => !vinSet.has(v.vin))];
-  localStorage.setItem('dhoot_stock_inventory', JSON.stringify(merged));
-  window.dispatchEvent(new Event('stock-updated'));
+  // Safe merge with existing stock - never erases other brands
+  saveStockInventory(sanitized);
 
   return { count: sanitized.length };
 };
@@ -971,10 +952,9 @@ export const updateVehicleLocation = async (vin: string, newLocation: string): P
     await supabase.from('vehicles').update({ location: newLocation }).eq('vin', vin);
   } catch (e) {}
 
-  const current = await fetchVehicles();
-  const updated = current.map(v => v.vin === vin ? { ...v, location: newLocation } : v);
-  localStorage.setItem('dhoot_stock_inventory', JSON.stringify(updated));
-  window.dispatchEvent(new Event('stock-updated'));
+  const all = getAllVehicles();
+  const updated = all.map(v => v.vin === vin ? { ...v, location: newLocation } : v);
+  saveStockInventory(updated);
   return true;
 };
 
