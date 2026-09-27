@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, LayoutGrid, PieChart, Truck, Car, ClipboardCheck,
   Wrench, FileText, Settings2, ChevronDown, ChevronRight,
-  RotateCw, ShieldCheck, BookOpen, Receipt
+  RotateCw, ShieldCheck, BookOpen, Receipt, MapPin
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -31,6 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
         { label: 'Reports', path: '/reports', icon: PieChart, roles: ['ALL'] },
         { label: 'Inward', path: '/receiving', icon: Truck, roles: ['ALL'] },
         { label: 'Vehicles', path: '/vehicles', icon: Car, roles: ['ALL'] },
+        { label: 'Yard & Movements', path: '/movements', icon: MapPin, roles: ['ALL'] },
         { label: 'PDI Queue', path: '/pdi', icon: ClipboardCheck, roles: ['ALL'] },
         { label: 'QA Approvals', path: '/qa', icon: ShieldCheck, roles: ['ALL'] },
         { label: 'Repairs', path: '/repairs', icon: Wrench, roles: ['ALL'] },
@@ -47,8 +48,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
     {
       heading: 'Setup',
       items: [
-        { label: 'Administration', path: '/admin', icon: Settings2, roles: ['SYSTEM_ADMIN', 'BRANCH_MANAGER'] },
+        { label: 'Administration', path: '/admin', icon: Settings2, roles: ['ALL'] },
       ],
+
     },
   ];
 

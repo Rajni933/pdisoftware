@@ -2,7 +2,7 @@ import { formatDate } from '../utils/dateUtils';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  FileText, Search, Check, FileSpreadsheet
+  FileText, Search, Check, Download
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../utils/apiConfig';
@@ -12,13 +12,15 @@ import { Panel, Stat, Badge, Empty, PageHeader } from '../components/ui/primitiv
 export const QaQueuePage: React.FC = () => {
   const { currentBrand } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'APPROVED'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'APPROVED'>('PENDING');
   const [queue, setQueue] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [approvedList, setApprovedList] = useState<string[]>([]);
 
   useEffect(() => {
     fetchQaQueue();
+    const handleStockUpdated = () => fetchQaQueue();
+    window.addEventListener('stock-updated', handleStockUpdated);
+    return () => window.removeEventListener('stock-updated', handleStockUpdated);
   }, [currentBrand?.code]);
 
   const mapQa = (rows: any[]) => {
@@ -35,13 +37,27 @@ export const QaQueuePage: React.FC = () => {
         failed: 0,
         submittedAt: 'Today, 11:30 AM',
         status: v.status === 'PDI_APPROVED' || v.status === 'DELIVERY_READY' ? 'APPROVED' : 'PENDING',
-        certId: `CERT-${v.vin.slice(-6)}`
+        certId: `CERT-${(v.vin || '').slice(-6)}`
       }));
   };
 
   const fetchQaQueue = async () => {
     setLoading(true);
     try {
+      // 1. Check Supabase DB first
+      const { supabase } = await import('../lib/supabase');
+      let query = supabase.from('vehicles').select('*');
+      if (currentBrand && currentBrand.code !== 'DHOOT-ALL' && currentBrand.orgId && currentBrand.orgId !== 'ALL') {
+        query = query.eq('organization_id', currentBrand.orgId);
+      }
+      const { data: dbData } = await query;
+      if (dbData && Array.isArray(dbData) && dbData.length > 0) {
+        setQueue(mapQa(dbData));
+        setLoading(false);
+        return;
+      }
+
+      // 2. Fallback to API worker
       const orgParam = currentBrand && currentBrand.code !== 'DHOOT-ALL' ? `?organization_id=${currentBrand.orgId}` : '';
       const res = await fetch(getApiUrl(`/api/v1/stock${orgParam}`));
       if (res.ok) {
@@ -61,10 +77,6 @@ export const QaQueuePage: React.FC = () => {
     }
   };
 
-  const handleApprove = (id: string) => {
-    setApprovedList(prev => [...prev, id]);
-  };
-
   const filteredQueue = queue.filter(item => {
     const vin = (item.vin || '').toLowerCase();
     const model = (item.model || '').toLowerCase();
@@ -72,14 +84,48 @@ export const QaQueuePage: React.FC = () => {
     const search = searchTerm.toLowerCase();
 
     const matchesSearch = vin.includes(search) || model.includes(search) || inspector.includes(search);
-    const isApproved = approvedList.includes(item.id) || item.status === 'APPROVED';
+    const isApproved = item.status === 'APPROVED';
     if (statusFilter === 'PENDING') return matchesSearch && !isApproved;
     if (statusFilter === 'APPROVED') return matchesSearch && isApproved;
     return matchesSearch;
   });
 
-  const pendingCount = queue.filter(item => !approvedList.includes(item.id) && item.status !== 'APPROVED').length;
-  const approvedCount = queue.filter(item => approvedList.includes(item.id) || item.status === 'APPROVED').length;
+  const pendingCount = queue.filter(item => item.status !== 'APPROVED').length;
+  const approvedCount = queue.filter(item => item.status === 'APPROVED').length;
+
+  const handleExportQaCSV = () => {
+    if (queue.length === 0) return;
+    const headers = [
+      'VIN / Chassis',
+      'Model & Variant',
+      'Assigned Inspector',
+      'Passed Checkpoints',
+      'Defects Found',
+      'QA Status',
+      'Certificate Number',
+      'Submission Timestamp'
+    ];
+
+    const rows = queue.map(item => [
+      `"${item.vin || ''}"`,
+      `"${item.model || ''} ${item.variant || ''}"`,
+      `"${item.inspector || ''}"`,
+      `"${item.passed || 64}"`,
+      `"${item.failed || 0}"`,
+      `"${item.status || ''}"`,
+      `"${item.certId || 'N/A'}"`,
+      `"${item.submittedAt || ''}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `QA_Approvals_Ledger_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto select-none">
@@ -90,11 +136,11 @@ export const QaQueuePage: React.FC = () => {
         subtitle="Review completed inspections, sign off quality dockets, and issue digital PDI certificates"
         action={
           <button
-            onClick={() => alert('Exporting QA review ledger to Excel...')}
+            onClick={handleExportQaCSV}
             className="h-8 px-3 rounded bg-surface border border-line hover:border-line-strong text-xs font-medium text-ink transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-ok" />
-            <span>Export Excel</span>
+            <Download className="w-3.5 h-3.5 text-ok" />
+            <span>Export CSV</span>
           </button>
         }
       />
@@ -165,7 +211,7 @@ export const QaQueuePage: React.FC = () => {
                 </tr>
               ) : (
                 filteredQueue.map((item, idx) => {
-                  const isApproved = approvedList.includes(item.id) || item.status === 'APPROVED';
+                  const isApproved = item.status === 'APPROVED';
                   const isHyundai = item.model.toLowerCase().includes('hyundai') || item.vin.startsWith('MAL');
                   return (
                     <tr key={item.id} className="hover:bg-canvas transition-colors">
@@ -202,20 +248,7 @@ export const QaQueuePage: React.FC = () => {
                       <td className="py-2.5 px-3 text-center whitespace-nowrap">
                         {!isApproved ? (
                           <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
-                            <button
-                              type="button"
-                              onClick={() => handleApprove(item.id)}
-                              className="h-7 px-2.5 rounded bg-ok text-white text-xs font-semibold transition-colors inline-flex items-center gap-1 whitespace-nowrap shadow-xs cursor-pointer"
-                            >
-                              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                              <span>Approve</span>
-                            </button>
-                            <button
-                              type="button"
-                              className="h-7 px-2.5 rounded bg-surface border border-danger/30 text-danger hover:bg-danger/10 text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer"
-                            >
-                              Reject
-                            </button>
+                            <Link to={`/qa/review/${item.id}`} className="h-7 px-2.5 rounded bg-accent hover:bg-accent-600 text-white text-xs font-semibold transition-colors inline-flex items-center gap-1 whitespace-nowrap shadow-xs cursor-pointer"><span>Review & Decide</span></Link>
                           </div>
                         ) : (
                           <Link
@@ -239,3 +272,4 @@ export const QaQueuePage: React.FC = () => {
     </div>
   );
 };
+

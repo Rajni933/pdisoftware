@@ -153,7 +153,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
       list.push({
         id: 'notif-defect-sample',
         title: 'Defect Flagged in Workshop',
-        message: 'Rear bumper scratch reported during inspection (Bay 1). Minor buffing required.',
+        message: 'Rear bumper scratch reported during inspection (Stockyard Staging). Minor buffing required.',
         time: '2h ago',
         type: 'DEFECT',
         isUnread: true,

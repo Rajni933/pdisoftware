@@ -35,6 +35,7 @@ interface IncomingVehicle {
   odometerReading?: number;
   receivedAt?: string;
   yardBay?: string;
+  location?: string;
 }
 
 // Image Compressor (< 2MB)
@@ -76,7 +77,7 @@ const compressImageFile = async (file: File): Promise<string> => {
 };
 
 export const YardReceivingPage: React.FC = () => {
-  const { currentBrand } = useAuth();
+  const { currentBrand, user } = useAuth();
   
   const [vehicles, setVehicles] = useState<IncomingVehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +89,7 @@ export const YardReceivingPage: React.FC = () => {
   const [paperPdiPhoto, setPaperPdiPhoto] = useState<string | null>(null);
   const [unloadingVideo, setUnloadingVideo] = useState<string | null>(null);
   const [odometer, setOdometer] = useState<string>('6');
-  const [yardBay, setYardBay] = useState<string>('Bay 1 (Inspection Staging)');
+  const [yardBay, setYardBay] = useState<string>('Pune Central Stockyard');
   const [receivingNotes, setReceivingNotes] = useState<string>('Unloaded safely from carrier. Zero physical transit damages.');
   const [isReceivingSuccess, setIsReceivingSuccess] = useState(false);
 
@@ -138,7 +139,7 @@ export const YardReceivingPage: React.FC = () => {
         customer_name: v.customer_name || '',
         sales_consultant: v.sales_consultant || '',
         status: isPending ? ('YARD_RECEIVING_PENDING' as const) : ('RECEIVED_IN_YARD' as const),
-        yardBay: v.location || 'Bay 1 (Inspection Staging)',
+        yardBay: v.location || 'Central Stockyard',
         odometerReading: v.odometer || 6,
         paperPdiPhoto: v.paper_pdi_photo,
         unloadingVideo: v.unloading_video,
@@ -339,6 +340,43 @@ export const YardReceivingPage: React.FC = () => {
           });
 
           saveStockInventory(stockList);
+
+          // Local DB Server Sync
+          try {
+            fetch('http://localhost:54321/rest/v1/vehicles?vin=eq.' + selectedVehicle.vin, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                status: 'RECEIVED',
+                location: yardBay,
+                odometer_km: Number(odometer) || 8,
+                updated_at: new Date().toISOString()
+              })
+            });
+
+            fetch('http://localhost:54321/rest/v1/yard_inward_entries', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: crypto.randomUUID ? crypto.randomUUID() : `inw-${Date.now()}`,
+                vin: selectedVehicle.vin,
+                brand: selectedVehicle.brand,
+                model: selectedVehicle.model,
+                variant: selectedVehicle.variant,
+                location: yardBay,
+                odometer_km: Number(odometer) || 8,
+                received_by: user?.userName || 'Yard Supervisor',
+                carrier_transporter: selectedVehicle.transporter || 'Auto Carrier Logistics',
+                trailer_no: selectedVehicle.trailerNo || 'TR-LOG-01',
+                notes: receivingNotes,
+                received_at: new Date().toISOString()
+              })
+            });
+          } catch (err) {}
+
+          import('../lib/supabase').then(({ supabase }) => {
+            supabase.from('vehicles').update({ status: 'RECEIVED', location: yardBay }).eq('vin', selectedVehicle.vin);
+          });
         }
       }
     } catch (e) {
@@ -397,7 +435,7 @@ export const YardReceivingPage: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Stat label="Total Inward Fleet" value={vehicles.length} note="Units in Stock Ledger" />
         <Stat label="Pending In-Transit" value={pendingCount} note="Pending Gate Inward" tone={pendingCount > 0 ? "warn" : "default"} />
-        <Stat label="Received in Yard" value={receivedCount} note="Staged in Yard Bays" tone="ok" />
+        <Stat label="Received in Yard" value={receivedCount} note="Parked in Stockyard" tone="ok" />
         <Stat label="Ready for PDI" value={receivedCount} note="Available in PDI Queue" />
       </div>
 
@@ -478,7 +516,7 @@ export const YardReceivingPage: React.FC = () => {
                 <th className="py-2.5 px-3 whitespace-nowrap">Fuel</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Plant / Dealer</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Dispatch Date</th>
-                <th className="py-2.5 px-3 whitespace-nowrap">Staging Bay</th>
+                <th className="py-2.5 px-3 whitespace-nowrap">Stockyard Location</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Inward Status</th>
                 <th className="py-2.5 px-3 text-center whitespace-nowrap">Action</th>
               </tr>
@@ -553,7 +591,7 @@ export const YardReceivingPage: React.FC = () => {
                       </td>
 
                       <td className="py-2.5 px-3 text-ink whitespace-nowrap">
-                        {v.yardBay || 'Bay 1 (Inspection Staging)'}
+                        {v.yardBay || v.location || 'Central Stockyard'}
                       </td>
 
                       <td className="py-2.5 px-3 whitespace-nowrap">
@@ -750,12 +788,12 @@ export const YardReceivingPage: React.FC = () => {
 
                     <div>
                       <label className="block text-xs font-semibold text-ink mb-1">
-                        Assign Stockyard Staging Bay *
+                        Assign Stockyard *
                       </label>
                       <select
                         value={yardBay}
                         onChange={(e) => setYardBay(e.target.value)}
-                        className="w-full p-2 bg-canvas border border-line rounded text-xs font-semibold text-ink focus:outline-none focus:border-accent"
+                        className="w-full p-2 bg-canvas border border-line rounded text-xs font-semibold text-ink focus:outline-none focus:border-accent cursor-pointer"
                       >
                         <optgroup label="Transit & Plant">
                           <option value="In Transit">In Transit</option>
@@ -793,7 +831,7 @@ export const YardReceivingPage: React.FC = () => {
                   <div className="space-y-1">
                     <h3 className="text-sm font-semibold text-ink">Vehicle Successfully Received in Yard!</h3>
                     <p className="text-xs text-ink-3 max-w-md mx-auto leading-relaxed">
-                      Vehicle <strong>{selectedVehicle.vin}</strong> has been received, staged in <strong>{yardBay}</strong>, and synced with Stock Ledger and PDI Queue.
+                      Vehicle <strong>{selectedVehicle.vin}</strong> has been received, parked in <strong>{yardBay}</strong>, and synced with Stock Ledger and PDI Queue.
                     </p>
                   </div>
                   <div className="flex gap-2.5 justify-center pt-2">

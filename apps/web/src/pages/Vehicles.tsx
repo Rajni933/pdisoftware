@@ -37,6 +37,7 @@ export interface StockVehicle {
   status: string;
   quantity?: number;
   location?: string;
+  yard_bay?: string;
   customer_name?: string;
   sales_consultant?: string;
   accessories_amount?: number;
@@ -406,7 +407,7 @@ export const VehiclesPage: React.FC = () => {
                 <th className="py-2.5 px-3 whitespace-nowrap">Status</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Vin No</th>
                 <th className="py-2.5 px-3 whitespace-nowrap text-center">Qty</th>
-                <th className="py-2.5 px-3 whitespace-nowrap">Yard</th>
+                <th className="py-2.5 px-3 whitespace-nowrap">Stockyard</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Location (City)</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Vehicle Status</th>
                 <th className="py-2.5 px-3 whitespace-nowrap text-center">Ageing (Days)</th>

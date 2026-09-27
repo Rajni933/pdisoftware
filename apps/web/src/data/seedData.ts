@@ -118,7 +118,877 @@ export const SEED_STOCKYARDS: YardItem[] = [
     status: 'ACTIVE'
   }
 ];
-export const SEED_BRANCHES: BranchItem[] = [];
+export const SEED_BRANCHES: BranchItem[] = [
+  {
+    id: '55555555-5555-5555-5555-555555555551',
+    code: 'DHOOT-TATA-PUNE',
+    name: 'Autoprime Tata — Nagar Road Main Showroom',
+    brand: 'Tata Motors',
+    type: 'Main Showroom',
+    city: 'Pune',
+    state: 'Maharashtra',
+    capacity: '45 Units',
+    manager: 'Rajesh Dhoot',
+    phone: '020-26651234',
+    status: 'ACTIVE'
+  },
+  {
+    id: '55555555-5555-5555-5555-555555555552',
+    code: 'DHOOT-HYUNDAI-PUNE',
+    name: 'Raja Hyundai — Wakad Showroom',
+    brand: 'Hyundai',
+    type: 'Main Showroom',
+    city: 'Pune',
+    state: 'Maharashtra',
+    capacity: '35 Units',
+    manager: 'Pradeep Dhoot',
+    phone: '020-27712345',
+    status: 'ACTIVE'
+  },
+  {
+    id: '55555555-5555-5555-5555-555555555553',
+    code: 'DHOOT-TATA-JDH',
+    name: 'Autoprime Tata — Basni Showroom',
+    brand: 'Tata Motors',
+    type: 'Main Showroom',
+    city: 'Jodhpur',
+    state: 'Rajasthan',
+    capacity: '40 Units',
+    manager: 'Sunil Bishnoi',
+    phone: '0291-2741123',
+    status: 'ACTIVE'
+  },
+  {
+    id: '55555555-5555-5555-5555-555555555554',
+    code: 'DHOOT-TATA-CHAKAN',
+    name: 'Autoprime Tata — Chakan RSO Hub',
+    brand: 'Tata Motors',
+    type: 'RSO',
+    city: 'Pune',
+    state: 'Maharashtra',
+    capacity: '25 Units',
+    manager: 'Amit Shinde',
+    phone: '020-28821234',
+    status: 'ACTIVE'
+  },
+  {
+    id: '55555555-5555-5555-5555-555555555555',
+    code: 'DHOOT-HYUNDAI-HADAPSAR',
+    name: 'Raja Hyundai — Hadapsar Retail Branch',
+    brand: 'Hyundai',
+    type: 'RSO',
+    city: 'Pune',
+    state: 'Maharashtra',
+    capacity: '20 Units',
+    manager: 'Nitin Kale',
+    phone: '020-29931234',
+    status: 'ACTIVE'
+  },
+  {
+    id: '55555555-5555-5555-5555-555555555556',
+    code: 'DHOOT-HO-MANAGEMENT',
+    name: 'Dhoot Group Corporate HQ',
+    brand: 'Shared',
+    type: 'Main Showroom',
+    city: 'Pune',
+    state: 'Maharashtra',
+    capacity: '15 Units',
+    manager: 'System Admin',
+    phone: '020-26650000',
+    status: 'ACTIVE'
+  }
+];
+
+export interface PdiRuleItem {
+  id: string;
+  stage: 'Exterior' | 'Electricals' | 'Interior' | 'Engine Bay' | 'Underbody' | 'Road Test' | 'Wheels';
+  category?: string;
+  code?: string;
+  title: string;
+  description: string;
+  standardRemark?: string;
+  mandatory: boolean;
+  photosRequired: number;
+  videoRequired: boolean;
+  severity: 'CRITICAL' | 'MAJOR' | 'MINOR' | 'OBSERVATION';
+  toolRequired?: string;
+  status: 'ACTIVE' | 'INACTIVE';
+}
+
+export interface VehicleModelItem {
+  id: string;
+  brand: string;
+  model_name: string;
+  body_type: string;
+  base_ex_showroom: number;
+  fuel_types: string[];
+  transmission?: string;
+  seating_capacity?: string;
+  variants: string[];
+  colors: string[];
+  gst_rate: number;
+  is_active?: boolean;
+}
+
+export interface FinancierItem {
+  id: string;
+  name: string;
+  category: 'PRIVATE_BANK' | 'NATIONALISED_BANK' | 'OEM_CAPTIVE_NBFC' | 'NBFC';
+  code?: string;
+  contactPerson: string;
+  designation?: string;
+  phone: string;
+  email: string;
+  maxLtv?: number;
+  processingFee?: number;
+  activeStatus: string;
+}
+
+export interface InsuranceItem {
+  id: string;
+  name: string;
+  code?: string;
+  claimsHead: string;
+  surveyorName?: string;
+  surveyorContact: string;
+  cashlessTieUp: boolean;
+  discountPercentage: number;
+  policyTypes?: string;
+}
+
+// Master catalogs: pre-seeded with official PDI inspection checkpoints
+export const SEED_CHECKPOINTS: PdiRuleItem[] = [
+  {
+    id: 'chk-01',
+    stage: 'Exterior',
+    category: 'Exterior & Bodywork',
+    code: 'EXT-01',
+    title: 'Panel Gaps & Flush Alignment',
+    description: 'Check hood, doors, tailgate and bumper shutlines for uniform gap (3.5mm ± 0.5mm).',
+    standardRemark: 'Uniform gaps across all body panels, no misalignment',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'MAJOR',
+    toolRequired: 'Visual & Gap Gauge',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-02',
+    stage: 'Exterior',
+    category: 'Exterior & Bodywork',
+    code: 'EXT-02',
+    title: 'Paint Finish & Scratch Inspection',
+    description: 'Inspect panels under daylight for transit scratches, clear-coat swirl marks or paint chips.',
+    standardRemark: 'Factory gloss intact, zero transit scratches or dents',
+    mandatory: true,
+    photosRequired: 2,
+    videoRequired: false,
+    severity: 'CRITICAL',
+    toolRequired: 'Elcometer / Sunlight Inspection',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-03',
+    stage: 'Exterior',
+    category: 'Exterior & Bodywork',
+    code: 'EXT-03',
+    title: 'Windshield & Window Panes',
+    description: 'Verify front windshield, rear glass, and window panes are crack-free and date-coded.',
+    standardRemark: 'All glass panels crack-free and matching batch codes',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'CRITICAL',
+    toolRequired: 'Visual',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-04',
+    stage: 'Exterior',
+    category: 'Exterior & Bodywork',
+    code: 'EXT-04',
+    title: 'Wiper Blades & Washer Spray',
+    description: 'Operate front and rear wipers with washer spray. Check blade wiping quality.',
+    standardRemark: 'Wiper wipe clean, washer spray jets targeted correctly',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'MINOR',
+    toolRequired: 'Operational',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-05',
+    stage: 'Electricals',
+    category: 'Lighting & Electricals',
+    code: 'LGT-01',
+    title: 'LED DRLs & Headlamp High/Low Beam',
+    description: 'Turn on low beam, high beam, projector lamps and fog lamps. Verify leveler.',
+    standardRemark: 'Full LED illumination functional with correct beam cut-off',
+    mandatory: true,
+    photosRequired: 2,
+    videoRequired: false,
+    severity: 'CRITICAL',
+    toolRequired: 'Beam Tester / Visual',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-06',
+    stage: 'Electricals',
+    category: 'Lighting & Electricals',
+    code: 'LGT-02',
+    title: 'Turn Indicators & Hazard Flashers',
+    description: 'Verify front, mirror, and rear indicator LED sequences and hazard switch.',
+    standardRemark: 'Sequential LED indicators and hazard switch working',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'CRITICAL',
+    toolRequired: 'Visual',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-07',
+    stage: 'Electricals',
+    category: 'Lighting & Electricals',
+    code: 'LGT-03',
+    title: 'Tail Lamps & Connected Lightbar',
+    description: 'Verify rear connected lightbar glow, high-mount stop lamp and reverse white lamps.',
+    standardRemark: 'Rear signature illumination and brake lamps functioning',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'MAJOR',
+    toolRequired: 'Visual',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-08',
+    stage: 'Electricals',
+    category: 'Lighting & Electricals',
+    code: 'LGT-04',
+    title: 'Dual Horn Sound & Pitch',
+    description: 'Press horn pad on steering. Test dual trumpet tone output.',
+    standardRemark: 'Dual horn pitch loud and clear (> 93 dB)',
+    mandatory: true,
+    photosRequired: 0,
+    videoRequired: false,
+    severity: 'MAJOR',
+    toolRequired: 'Audible Check',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-09',
+    stage: 'Engine Bay',
+    category: 'Underhood & Fluid Levels',
+    code: 'ENG-01',
+    title: 'Engine Oil Level & Dipstick',
+    description: 'Pull dipstick; verify oil level is between MIN and MAX marks. Oil clean and amber.',
+    standardRemark: 'Oil level at MAX mark, amber color, no contamination',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'CRITICAL',
+    toolRequired: 'Dipstick',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-10',
+    stage: 'Engine Bay',
+    category: 'Underhood & Fluid Levels',
+    code: 'ENG-02',
+    title: 'Coolant Reservoir Level',
+    description: 'Check coolant expansion tank level (cold engine). Inspect for hose leaks.',
+    standardRemark: 'Coolant filled to MAX line, hoses firm with no leaks',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'CRITICAL',
+    toolRequired: 'Visual',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-11',
+    stage: 'Engine Bay',
+    category: 'Underhood & Fluid Levels',
+    code: 'ENG-03',
+    title: 'Brake & Clutch Fluid Level',
+    description: 'Verify master cylinder reservoir fluid level is at MAX mark.',
+    standardRemark: 'DOT 4 fluid level at MAX, reservoir sealed tight',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'CRITICAL',
+    toolRequired: 'Visual',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-12',
+    stage: 'Engine Bay',
+    category: 'Underhood & Fluid Levels',
+    code: 'ENG-04',
+    title: '12V Battery Voltage Check',
+    description: 'Measure open circuit terminal voltage with multimeter (target: >= 12.6V).',
+    standardRemark: 'Terminal voltage 12.7V, terminals greased and secure',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'MAJOR',
+    toolRequired: 'Digital Multimeter',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-13',
+    stage: 'Wheels',
+    category: 'Underbody, Wheels & Tyres',
+    code: 'TYR-01',
+    title: 'Tyre Pressure Calibration (PSI)',
+    description: 'Measure and calibrate tyre pressure to manufacturer spec (33-36 PSI).',
+    standardRemark: 'All 4 tyres calibrated to 34 PSI (Cold)',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'MAJOR',
+    toolRequired: 'Digital Pressure Gauge',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-14',
+    stage: 'Wheels',
+    category: 'Underbody, Wheels & Tyres',
+    code: 'TYR-02',
+    title: 'Alloy Wheels & Sidewall Condition',
+    description: 'Inspect rims for kerb rash, rim dents, or tyre sidewall cuts/bulges.',
+    standardRemark: 'Diamond-cut alloys pristine, tyre sidewall intact',
+    mandatory: true,
+    photosRequired: 2,
+    videoRequired: false,
+    severity: 'CRITICAL',
+    toolRequired: 'Visual',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-15',
+    stage: 'Wheels',
+    category: 'Underbody, Wheels & Tyres',
+    code: 'TYR-03',
+    title: 'Wheel Lug Nuts Torque',
+    description: 'Check all 4 wheels lug nuts are torqued to specification (110 Nm).',
+    standardRemark: 'All 16/20 lug nuts verified at 110 Nm torque',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'CRITICAL',
+    toolRequired: 'Torque Wrench',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-16',
+    stage: 'Underbody',
+    category: 'Underbody, Wheels & Tyres',
+    code: 'UND-01',
+    title: 'Underbody Floor Pan & Exhaust Shield',
+    description: 'Inspect underbody floor pan on ramp for scrape marks or missing heat shields.',
+    standardRemark: 'Floor pan protective coating uniform, heat shield secure',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'MAJOR',
+    toolRequired: 'Ramp Inspection / Mirror',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-17',
+    stage: 'Interior',
+    category: 'Interior Cabin & Comfort',
+    code: 'INT-01',
+    title: 'Touchscreen Infotainment & Audio',
+    description: 'Verify touch response, Bluetooth, Apple CarPlay / Android Auto, and speakers.',
+    standardRemark: 'Display responsive, wireless smartphone projection tested OK',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'MAJOR',
+    toolRequired: 'Functional Check',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-18',
+    stage: 'Interior',
+    category: 'Interior Cabin & Comfort',
+    code: 'INT-02',
+    title: 'AC Cooling & Climate Control',
+    description: 'Run AC at lowest temperature (16°C) for 3 minutes; verify blower & vent cooling.',
+    standardRemark: 'Vent outlet temp 8.5°C within 3 mins, climate control OK',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'CRITICAL',
+    toolRequired: 'Digital Thermometer',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-19',
+    stage: 'Interior',
+    category: 'Interior Cabin & Comfort',
+    code: 'INT-03',
+    title: 'All Power Windows & Central Lock',
+    description: 'Test all 4 window switches for one-touch up/down and remote key lock.',
+    standardRemark: 'All 4 power windows roll smoothly, anti-pinch active',
+    mandatory: true,
+    photosRequired: 0,
+    videoRequired: false,
+    severity: 'MAJOR',
+    toolRequired: 'Operational',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-20',
+    stage: 'Interior',
+    category: 'Interior Cabin & Comfort',
+    code: 'INT-04',
+    title: 'Odometer Reading (KM)',
+    description: 'Record odometer reading from instrument cluster (target: < 50 km).',
+    standardRemark: 'Odometer verified under 30 km, factory transit acceptable',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'MAJOR',
+    toolRequired: 'Instrument Cluster',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-21',
+    stage: 'Interior',
+    category: 'Boot & Toolkit',
+    code: 'BOT-01',
+    title: 'Spare Wheel & Tool Kit Complete',
+    description: 'Check presence of spare tyre, jack, tommy bar, spanner, and tow hook.',
+    standardRemark: 'Spare tyre 100% inflated, jack and tool bag sealed in boot',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'CRITICAL',
+    toolRequired: 'Visual',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-22',
+    stage: 'Interior',
+    category: 'Boot & Toolkit',
+    code: 'BOT-02',
+    title: 'Emergency Warning Triangle & Medikit',
+    description: 'Verify reflective safety triangle and first aid kit in boot compartment.',
+    standardRemark: 'Reflective triangle in red box, medical kit sealed with valid date',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'MAJOR',
+    toolRequired: 'Visual',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-23',
+    stage: 'Road Test',
+    category: 'Brakes & Road Functionality',
+    code: 'BRK-01',
+    title: 'Foot Brake & EPB Auto-Hold',
+    description: 'Test brake firmness, ABS bite, and electronic parking brake auto-hold.',
+    standardRemark: 'Brake pedal firm with immediate bite, EPB holds firmly on incline',
+    mandatory: true,
+    photosRequired: 0,
+    videoRequired: false,
+    severity: 'CRITICAL',
+    toolRequired: 'Yard Drive Test',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-24',
+    stage: 'Road Test',
+    category: 'Brakes & Road Functionality',
+    code: 'BRK-02',
+    title: 'Steering Centering & Tracking',
+    description: 'Verify steering wheel is dead-center with zero pull during yard driving.',
+    standardRemark: 'Steering returns to dead-center smoothly, zero vehicle pull',
+    mandatory: true,
+    photosRequired: 0,
+    videoRequired: false,
+    severity: 'MAJOR',
+    toolRequired: 'Yard Drive Test',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-25',
+    stage: 'Road Test',
+    category: 'Vehicle Identity & Documentation',
+    code: 'DOC-01',
+    title: 'Chassis / VIN Plate Match',
+    description: 'Match physical VIN stamped on driver B-pillar / engine bay with invoice.',
+    standardRemark: 'All 17 alphanumeric digits match ERP invoice perfectly',
+    mandatory: true,
+    photosRequired: 2,
+    videoRequired: false,
+    severity: 'CRITICAL',
+    toolRequired: 'Visual & Optical Scan',
+    status: 'ACTIVE'
+  },
+  {
+    id: 'chk-26',
+    stage: 'Road Test',
+    category: 'Vehicle Identity & Documentation',
+    code: 'DOC-02',
+    title: '2 Smart Keys / Key Fobs Present',
+    description: 'Test lock, unlock, and boot release buttons on both physical key fobs.',
+    standardRemark: 'Both remote smart keys operational with fresh batteries',
+    mandatory: true,
+    photosRequired: 1,
+    videoRequired: false,
+    severity: 'CRITICAL',
+    toolRequired: 'Operational',
+    status: 'ACTIVE'
+  }
+];
+
+// Master catalogs: pre-seeded with official vehicle models
+export const SEED_MODELS: VehicleModelItem[] = [
+  {
+    id: 'm-1',
+    brand: 'Tata Motors',
+    model_name: 'Tata Safari',
+    body_type: 'SUV',
+    base_ex_showroom: 1619000,
+    fuel_types: ['Diesel'],
+    transmission: 'Manual / Automatic',
+    seating_capacity: '6 / 7 Seater',
+    variants: ['Smart', 'Pure', 'Adventure', 'Accomplished', 'Accomplished Plus 6S AT'],
+    colors: ['Oberon Black', 'Cosmic Gold', 'Stardust Ash', 'Supernova Copper'],
+    gst_rate: 28,
+    is_active: true
+  },
+  {
+    id: 'm-2',
+    brand: 'Tata Motors',
+    model_name: 'Tata Harrier',
+    body_type: 'SUV',
+    base_ex_showroom: 1549000,
+    fuel_types: ['Diesel'],
+    transmission: 'Manual / Automatic',
+    seating_capacity: '5 Seater',
+    variants: ['Smart', 'Pure', 'Adventure', 'Fearless', 'Fearless Plus Dark 6MT'],
+    colors: ['Oberon Black', 'Daytona Grey', 'Sunlit Yellow', 'Pebble Grey'],
+    gst_rate: 28,
+    is_active: true
+  },
+  {
+    id: 'm-3',
+    brand: 'Tata Motors',
+    model_name: 'Tata Curvv.ev',
+    body_type: 'Coupe SUV (EV)',
+    base_ex_showroom: 1749000,
+    fuel_types: ['EV'],
+    transmission: 'Automatic',
+    seating_capacity: '5 Seater',
+    variants: ['Creative 45', 'Accomplished 55', 'Accomplished Plus 55'],
+    colors: ['Empowered Oxide', 'Flame Red', 'Pristine White', 'Virtual Sunrise'],
+    gst_rate: 5,
+    is_active: true
+  },
+  {
+    id: 'm-4',
+    brand: 'Tata Motors',
+    model_name: 'Tata Nexon.ev',
+    body_type: 'Compact SUV (EV)',
+    base_ex_showroom: 1449000,
+    fuel_types: ['EV'],
+    transmission: 'Automatic',
+    seating_capacity: '5 Seater',
+    variants: ['Creative 45', 'Empowered Plus 45', 'Fearless 45'],
+    colors: ['Empowered Oxide', 'Intensi Teal', 'Pristine White'],
+    gst_rate: 5,
+    is_active: true
+  },
+  {
+    id: 'm-5',
+    brand: 'Tata Motors',
+    model_name: 'Tata Nexon',
+    body_type: 'Compact SUV',
+    base_ex_showroom: 799000,
+    fuel_types: ['Petrol', 'Diesel', 'CNG'],
+    transmission: 'Manual / AMT / DCA',
+    seating_capacity: '5 Seater',
+    variants: ['Smart', 'Pure', 'Creative', 'Fearless', 'Fearless Plus S DT'],
+    colors: ['Fearless Purple', 'Creative Ocean', 'Daytona Grey', 'Flame Red'],
+    gst_rate: 28,
+    is_active: true
+  },
+  {
+    id: 'm-6',
+    brand: 'Tata Motors',
+    model_name: 'Tata Punch',
+    body_type: 'Micro SUV',
+    base_ex_showroom: 612000,
+    fuel_types: ['Petrol', 'CNG', 'EV'],
+    transmission: 'Manual / AMT',
+    seating_capacity: '5 Seater',
+    variants: ['Pure', 'Adventure', 'Accomplished', 'Creative DT AMT'],
+    colors: ['Tornado Blue', 'Calypso Red', 'Tropical Mist', 'Daytona Grey'],
+    gst_rate: 28,
+    is_active: true
+  },
+  {
+    id: 'm-7',
+    brand: 'Tata Motors',
+    model_name: 'Tata Altroz',
+    body_type: 'Premium Hatchback',
+    base_ex_showroom: 664000,
+    fuel_types: ['Petrol', 'Diesel', 'CNG'],
+    transmission: 'Manual / DCA',
+    seating_capacity: '5 Seater',
+    variants: ['XE', 'XM', 'XT', 'XZ', 'Racer R3 Turbo'],
+    colors: ['Atomic Orange', 'Downtown Red', 'Avenue White', 'Harbour Blue'],
+    gst_rate: 28,
+    is_active: true
+  },
+  {
+    id: 'm-8',
+    brand: 'Hyundai',
+    model_name: 'Hyundai Creta',
+    body_type: 'Premium SUV',
+    base_ex_showroom: 1099000,
+    fuel_types: ['Petrol', 'Diesel', 'Turbo Petrol'],
+    transmission: 'Manual / IVT / DCT',
+    seating_capacity: '5 Seater',
+    variants: ['E', 'EX', 'S', 'SX', 'SX (O)', 'SX (O) Turbo DCT'],
+    colors: ['Ranger Khaki', 'Abyss Black', 'Atlas White', 'Titan Grey'],
+    gst_rate: 28,
+    is_active: true
+  },
+  {
+    id: 'm-9',
+    brand: 'Hyundai',
+    model_name: 'Hyundai Venue',
+    body_type: 'Compact SUV',
+    base_ex_showroom: 794000,
+    fuel_types: ['Petrol', 'Diesel', 'Turbo Petrol'],
+    transmission: 'Manual / DCT',
+    seating_capacity: '5 Seater',
+    variants: ['E', 'S', 'S+', 'SX', 'SX (O)'],
+    colors: ['Fiery Red', 'Typhoon Silver', 'Denim Blue', 'Phantom Black'],
+    gst_rate: 28,
+    is_active: true
+  },
+  {
+    id: 'm-10',
+    brand: 'Hyundai',
+    model_name: 'Hyundai Verna',
+    body_type: 'Premium Sedan',
+    base_ex_showroom: 1100000,
+    fuel_types: ['Petrol', 'Turbo Petrol'],
+    transmission: 'Manual / IVT / DCT',
+    seating_capacity: '5 Seater',
+    variants: ['EX', 'S', 'SX', 'SX (O) Turbo'],
+    colors: ['Starry Night', 'Titan Grey', 'Abyss Black', 'Atlas White'],
+    gst_rate: 28,
+    is_active: true
+  },
+  {
+    id: 'm-11',
+    brand: 'Hyundai',
+    model_name: 'Hyundai Exter',
+    body_type: 'Micro SUV',
+    base_ex_showroom: 612000,
+    fuel_types: ['Petrol', 'CNG'],
+    transmission: 'Manual / AMT',
+    seating_capacity: '5 Seater',
+    variants: ['EX', 'S', 'SX', 'SX (O) Connect'],
+    colors: ['Ranger Khaki', 'Cosmic Blue', 'Starry Night', 'Atlas White'],
+    gst_rate: 28,
+    is_active: true
+  },
+  {
+    id: 'm-12',
+    brand: 'Hyundai',
+    model_name: 'Hyundai Alcazar',
+    body_type: '7-Seater Premium SUV',
+    base_ex_showroom: 1677000,
+    fuel_types: ['Petrol', 'Diesel'],
+    transmission: 'Manual / Automatic',
+    seating_capacity: '6 / 7 Seater',
+    variants: ['Executive', 'Prestige', 'Platinum', 'Signature'],
+    colors: ['Robust Emerald Matte', 'Starry Night', 'Atlas White'],
+    gst_rate: 28,
+    is_active: true
+  },
+  {
+    id: 'm-13',
+    brand: 'Hyundai',
+    model_name: 'Hyundai Ioniq 5',
+    body_type: 'Electric Crossover (EV)',
+    base_ex_showroom: 4605000,
+    fuel_types: ['EV'],
+    transmission: 'Automatic',
+    seating_capacity: '5 Seater',
+    variants: ['Long Range RWD'],
+    colors: ['Gravity Gold Matte', 'Optic White', 'Midnight Black Pearl'],
+    gst_rate: 5,
+    is_active: true
+  }
+];
+
+// Master catalogs: pre-seeded with official financier tie-ups
+export const SEED_FINANCIERS: FinancierItem[] = [
+  {
+    id: 'f-1',
+    name: 'State Bank of India',
+    category: 'NATIONALISED_BANK',
+    code: 'SBI',
+    contactPerson: 'Vikram Rathore',
+    designation: 'AGM Auto Loans',
+    phone: '+91 98290 22332',
+    email: 'sbi.autoloans@sbi.co.in',
+    maxLtv: 90,
+    processingFee: 0.25,
+    activeStatus: 'ACTIVE'
+  },
+  {
+    id: 'f-2',
+    name: 'HDFC Bank Auto Loans',
+    category: 'PRIVATE_BANK',
+    code: 'HDFC',
+    contactPerson: 'Rajesh Sharma',
+    designation: 'Zonal Sales Head',
+    phone: '+91 98290 11221',
+    email: 'rajesh.sharma@hdfcbank.com',
+    maxLtv: 95,
+    processingFee: 0.50,
+    activeStatus: 'ACTIVE'
+  },
+  {
+    id: 'f-3',
+    name: 'ICICI Bank Car Loans',
+    category: 'PRIVATE_BANK',
+    code: 'ICICI',
+    contactPerson: 'Amit Joshi',
+    designation: 'Regional Manager',
+    phone: '+91 98290 33443',
+    email: 'amit.j@icicibank.com',
+    maxLtv: 95,
+    processingFee: 0.40,
+    activeStatus: 'ACTIVE'
+  },
+  {
+    id: 'f-4',
+    name: 'Tata Capital Financial Services',
+    category: 'OEM_CAPTIVE_NBFC',
+    code: 'TATA_CAP',
+    contactPerson: 'Kailash Meena',
+    designation: 'Chief Relationship Manager',
+    phone: '+91 98290 44554',
+    email: 'kailash.m@tatacapital.com',
+    maxLtv: 100,
+    processingFee: 0.00,
+    activeStatus: 'ACTIVE'
+  },
+  {
+    id: 'f-5',
+    name: 'Kotak Mahindra Prime',
+    category: 'PRIVATE_BANK',
+    code: 'KOTAK',
+    contactPerson: 'Suresh Patel',
+    designation: 'Area Manager',
+    phone: '+91 98290 55665',
+    email: 'suresh.p@kotak.com',
+    maxLtv: 90,
+    processingFee: 0.50,
+    activeStatus: 'ACTIVE'
+  },
+  {
+    id: 'f-6',
+    name: 'Axis Bank Auto Finance',
+    category: 'PRIVATE_BANK',
+    code: 'AXIS',
+    contactPerson: 'Dinesh Gehlot',
+    designation: 'Branch Relationship Lead',
+    phone: '+91 98290 66776',
+    email: 'dinesh.g@axisbank.com',
+    maxLtv: 90,
+    processingFee: 0.50,
+    activeStatus: 'ACTIVE'
+  },
+  {
+    id: 'f-7',
+    name: 'Bank of Baroda',
+    category: 'NATIONALISED_BANK',
+    code: 'BOB',
+    contactPerson: 'Manish Purohit',
+    designation: 'Chief Manager Retail',
+    phone: '+91 98290 77887',
+    email: 'manish.p@bankofbaroda.com',
+    maxLtv: 90,
+    processingFee: 0.30,
+    activeStatus: 'ACTIVE'
+  }
+];
+
+// Master catalogs: pre-seeded with official insurance tie-ups
+export const SEED_INSURANCE: InsuranceItem[] = [
+  {
+    id: 'ins-01',
+    name: 'Tata AIG General Insurance',
+    code: 'TATA_AIG',
+    claimsHead: 'Kavita Sen (Zonal Claims Lead)',
+    surveyorName: 'Mahendra Solanki',
+    surveyorContact: '+91 1800 266 7780',
+    cashlessTieUp: true,
+    discountPercentage: 65,
+    policyTypes: 'Zero Dep, Engine Protect, RTI, Key Replacement, Consumables Cover'
+  },
+  {
+    id: 'ins-02',
+    name: 'ICICI Lombard General Insurance',
+    code: 'ICICI_LOMB',
+    claimsHead: 'Manoj Sharma (Surveyor Head)',
+    surveyorName: 'Dinesh Purohit',
+    surveyorContact: '+91 1800 2666',
+    cashlessTieUp: true,
+    discountPercentage: 60,
+    policyTypes: 'Zero Dep, RTI, Tyre Protect, Loss of Personal Belongings'
+  },
+  {
+    id: 'ins-03',
+    name: 'Bajaj Allianz General Insurance',
+    code: 'BAJAJ_ALLZ',
+    claimsHead: 'Alok Gupta (Regional Claims Mgr)',
+    surveyorName: 'Kailash Gehlot',
+    surveyorContact: '+91 1800 209 5858',
+    cashlessTieUp: true,
+    discountPercentage: 62,
+    policyTypes: 'Zero Dep, Engine Protect, Tyre Protect, 24x7 Roadside Assistance'
+  },
+  {
+    id: 'ins-04',
+    name: 'HDFC ERGO General Insurance',
+    code: 'HDFC_ERGO',
+    claimsHead: 'Sneha Patel (Claims Desk)',
+    surveyorName: 'Sandeep Rathore',
+    surveyorContact: '+91 1800 266 6444',
+    cashlessTieUp: true,
+    discountPercentage: 58,
+    policyTypes: 'Zero Dep, 24x7 Roadside Assistance, RTI, Emergency Hotel Stay'
+  },
+  {
+    id: 'ins-05',
+    name: 'New India Assurance Co. Ltd.',
+    code: 'NEW_INDIA',
+    claimsHead: 'R. K. Verma (Divisional Officer)',
+    surveyorName: 'P. C. Joshi',
+    surveyorContact: '+91 1800 345 0330',
+    cashlessTieUp: true,
+    discountPercentage: 50,
+    policyTypes: 'Standard 1+3 Year Comprehensive Package, Zero Depreciation'
+  }
+];
 
 // 3. Official Dealership Stock Inventory (Pre-loaded with 543 user vehicles)
 export const SEED_STOCK_VEHICLES: any[] = initialStockVehicles;
@@ -398,6 +1268,117 @@ export const clearChallansInventory = () => {
 };
 
 // ============================================================================
+// INTER-DEALER TRANSFERS (IDT) & YARD BAYS MANAGEMENT
+// ============================================================================
+export interface VehicleTransferItem {
+  id: string;
+  transfer_no: string;
+  vin: string;
+  model: string;
+  variant: string;
+  color: string;
+  from_stockyard_id: string;
+  from_stockyard_name: string;
+  to_stockyard_id: string;
+  to_stockyard_name: string;
+  from_bay: string;
+  to_bay?: string;
+  transfer_type: 'INTER_DEALER' | 'INTER_YARD' | 'YARD_TO_SHOWROOM';
+  reason: string;
+  transporter?: string;
+  driver_name?: string;
+  driver_phone?: string;
+  carrier_reg_no?: string;
+  status: 'PENDING_APPROVAL' | 'LEVEL_1_APPROVED' | 'LEVEL_2_APPROVED' | 'DISPATCHED_IN_TRANSIT' | 'RECEIVED_AT_DESTINATION' | 'REJECTED';
+  level_1_status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  level_1_approved_by?: string | null;
+  level_1_approved_at?: string | null;
+  level_2_status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  level_2_approved_by?: string | null;
+  level_2_approved_at?: string | null;
+  level_3_status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  level_3_approved_by?: string | null;
+  level_3_approved_at?: string | null;
+  gatepass_no?: string;
+  gatepass_issued_at?: string | null;
+  dispatched_at?: string | null;
+  received_at?: string | null;
+  created_by?: string;
+  created_at: string;
+}
+
+export interface YardBayItem {
+  id: string;
+  stockyard_id: string;
+  stockyard_name: string;
+  bay_code: string;
+  zone: string;
+  status: 'VACANT' | 'OCCUPIED' | 'MAINTENANCE';
+  current_vin?: string | null;
+}
+
+export const getVehicleTransfers = (): VehicleTransferItem[] => {
+  try {
+    const saved = localStorage.getItem('dhoot_vehicle_transfers');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return [];
+};
+
+export const saveVehicleTransfers = (transfers: VehicleTransferItem[]) => {
+  localStorage.setItem('dhoot_vehicle_transfers', JSON.stringify(transfers));
+  window.dispatchEvent(new Event('transfers-updated'));
+};
+
+export const getYardBays = (): YardBayItem[] => {
+  try {
+    const saved = localStorage.getItem('dhoot_yard_bays');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return [];
+};
+
+export const saveYardBays = (bays: YardBayItem[]) => {
+  localStorage.setItem('dhoot_yard_bays', JSON.stringify(bays));
+  window.dispatchEvent(new Event('bays-updated'));
+};
+
+export const shiftVehicleBay = async (vin: string, oldBay: string, newBay: string, yardName: string) => {
+  const allVehicles = getAllVehicles();
+  const vIdx = allVehicles.findIndex(v => v.vin === vin);
+  if (vIdx >= 0) {
+    allVehicles[vIdx] = {
+      ...allVehicles[vIdx],
+      yard_bay: newBay,
+      location: yardName
+    };
+    saveStockInventory(allVehicles);
+  }
+
+  const allBays = getYardBays();
+  const updatedBays = allBays.map(b => {
+    if (b.bay_code === oldBay && b.stockyard_name === yardName) {
+      return { ...b, status: 'VACANT' as const, current_vin: null };
+    }
+    if (b.bay_code === newBay && b.stockyard_name === yardName) {
+      return { ...b, status: 'OCCUPIED' as const, current_vin: vin };
+    }
+    return b;
+  });
+  saveYardBays(updatedBays);
+
+  try {
+    await supabase.from('vehicles').update({ yard_bay: newBay, location: yardName }).eq('vin', vin);
+  } catch (e) {}
+};
+
+// ============================================================================
 // BIDIRECTIONAL REALTIME CLOUD SYNCHRONIZATION (SUPABASE + WORKER API)
 // ============================================================================
 export const syncWithSupabase = async () => {
@@ -459,6 +1440,21 @@ export const syncWithSupabase = async () => {
       if (dbBranches && Array.isArray(dbBranches) && dbBranches.length > 0) {
         localStorage.setItem('autoprime_branches', JSON.stringify(dbBranches));
         window.dispatchEvent(new Event('branches-updated'));
+      }
+    } catch (e) {}
+
+    // 5. Fetch Vehicle Transfers & Yard Bays
+    try {
+      const { data: dbTransfers } = await supabase.from('vehicle_transfers').select('*');
+      if (dbTransfers && Array.isArray(dbTransfers) && dbTransfers.length > 0) {
+        saveVehicleTransfers(dbTransfers);
+      }
+    } catch (e) {}
+
+    try {
+      const { data: dbBays } = await supabase.from('yard_bays').select('*');
+      if (dbBays && Array.isArray(dbBays) && dbBays.length > 0) {
+        saveYardBays(dbBays);
       }
     } catch (e) {}
 
@@ -605,12 +1601,10 @@ export const getAllUsers = (): EnterpriseUser[] => {
     const saved = localStorage.getItem('dhoot_users_inventory');
     if (saved) {
       const parsed: EnterpriseUser[] = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        // Merge SEED_USERS with custom users so seeded users are never lost
-        const userMap = new Map<string, EnterpriseUser>();
-        SEED_USERS.forEach(u => userMap.set((u.user_code || u.employee_id).toUpperCase(), u));
-        parsed.forEach(u => userMap.set((u.user_code || u.employee_id).toUpperCase(), u));
-        return Array.from(userMap.values());
+      if (Array.isArray(parsed)) {
+        if (parsed.length > 0) {
+          return parsed;
+        }
       }
     }
   } catch (e) {

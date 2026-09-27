@@ -68,6 +68,17 @@ export const PdiSessionPage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [filterMode, setFilterMode] = useState<'ALL' | 'PENDING' | 'FAILED'>('ALL');
+  const [vehicle, setVehicle] = useState<any>(null);
+
+  useEffect(() => {
+    if (id) {
+      import('../data/seedData').then(({ getAllVehicles }) => {
+        const list = getAllVehicles();
+        const v = list.find((item: any) => item.vin === id || item.id === id);
+        if (v) setVehicle(v);
+      });
+    }
+  }, [id]);
 
   // Camera & Video Capture Modal State
   const [mediaModal, setMediaModal] = useState<{
@@ -527,14 +538,14 @@ export const PdiSessionPage: React.FC = () => {
 
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge tone="accent">Tata PDI Sheet</Badge>
-                <span className="text-xs font-mono text-ink-3 font-medium">VIN: MAT612345S9988776</span>
+                <Badge tone="accent">{vehicle?.brand === 'HYUNDAI' ? 'Hyundai' : 'Tata'} PDI Sheet</Badge>
+                <span className="text-xs font-mono text-ink-3 font-medium">VIN: {vehicle?.vin || id}</span>
               </div>
               <h1 className="text-base sm:text-lg font-semibold tracking-[-0.011em] text-ink">
-                Tata Safari Accomplished Plus 6S (Dark Edition)
+                {vehicle ? vehicle.model : 'Vehicle PDI'}
               </h1>
               <p className="text-xs text-ink-3">
-                Stockyard: Pune Yard (Bay 4) • Inspector: Vikram Malhotra (DG002)
+                Stockyard: {vehicle?.location || 'Staging'} • Inspector: {vehicle?.inspector_name || 'QA Inspector'}
               </p>
             </div>
           </div>
@@ -550,7 +561,24 @@ export const PdiSessionPage: React.FC = () => {
             </div>
 
             <button
-              onClick={() => setIsSubmitted(true)}
+              onClick={async () => {
+                if (id) {
+                  try {
+                    const targetVin = vehicle?.vin || id;
+                    const { saveStockInventory, getAllVehicles } = await import('../data/seedData');
+                    const list = getAllVehicles();
+                    const updated = list.map((v: any) => (v.vin === targetVin || v.id === id || v.vin === id) ? { ...v, status: 'QA_PENDING', vehicle_status: 'QA_PENDING' } : v);
+                    saveStockInventory(updated);
+
+                    const { supabase } = await import('../lib/supabase');
+                    await supabase.from('vehicles').update({ status: 'QA_PENDING', vehicle_status: 'QA_PENDING' }).or(`vin.eq.${targetVin},id.eq.${id}`);
+                    window.dispatchEvent(new Event('stock-updated'));
+                  } catch (e) {
+                    console.error('Failed to submit', e);
+                  }
+                }
+                setIsSubmitted(true);
+              }}
               className="h-8 px-3.5 bg-accent hover:bg-accent-600 text-white text-xs font-semibold rounded shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-white/90" />
@@ -877,7 +905,24 @@ export const PdiSessionPage: React.FC = () => {
             </button>
           ) : (
             <button
-              onClick={() => setIsSubmitted(true)}
+              onClick={async () => {
+                if (id) {
+                  try {
+                    const targetVin = vehicle?.vin || id;
+                    const { saveStockInventory, getAllVehicles } = await import('../data/seedData');
+                    const list = getAllVehicles();
+                    const updated = list.map((v: any) => (v.vin === targetVin || v.id === id || v.vin === id) ? { ...v, status: 'QA_PENDING', vehicle_status: 'QA_PENDING' } : v);
+                    saveStockInventory(updated);
+
+                    const { supabase } = await import('../lib/supabase');
+                    await supabase.from('vehicles').update({ status: 'QA_PENDING', vehicle_status: 'QA_PENDING' }).or(`vin.eq.${targetVin},id.eq.${id}`);
+                    window.dispatchEvent(new Event('stock-updated'));
+                  } catch (e) {
+                    console.error('Failed to submit', e);
+                  }
+                }
+                setIsSubmitted(true);
+              }}
               className="h-8 px-4 rounded bg-ok hover:bg-ok/90 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
             >
               Complete & Submit for QA
@@ -976,3 +1021,4 @@ export const PdiSessionPage: React.FC = () => {
     </div>
   );
 };
+

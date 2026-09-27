@@ -307,8 +307,7 @@ const INITIAL_VEHICLES = [
     fuel_type: 'EV',
     location: 'Chakan Inward Logistics Yard',
     yard_bay: 'Bay C-4',
-    status: 'PDI_APPROVED',
-    certificate_no: 'CERT-TATA-88773',
+    status: 'QA_PENDING',
     odometer_reading: 22,
     battery_voltage: 12.8,
     inspector_name: 'Vikram Malhotra',
@@ -325,8 +324,7 @@ const INITIAL_VEHICLES = [
     fuel_type: 'Petrol',
     location: 'Pune Central Stockyard',
     yard_bay: 'Bay A-3',
-    status: 'DELIVERY_READY',
-    certificate_no: 'CERT-TATA-88774',
+    status: 'QA_PENDING',
     odometer_reading: 15,
     battery_voltage: 12.6,
     inspector_name: 'Vikram Malhotra',
@@ -421,6 +419,82 @@ const INITIAL_BOOKINGS = [
   }
 ];
 
+// Initial Vehicle Transfers (IDT & Movements)
+const INITIAL_TRANSFERS = [
+  {
+    id: 'idt-001',
+    transfer_no: 'IDT-2026-001',
+    vin: 'MAT612345S9988772',
+    model: 'Tata Harrier',
+    variant: 'Fearless Plus Dark',
+    color: 'Oberon Black',
+    from_stockyard_id: '44444444-4444-4444-4444-444444444441',
+    from_stockyard_name: 'Pune Central Stockyard',
+    to_stockyard_id: '44444444-4444-4444-4444-444444444444',
+    to_stockyard_name: 'Jodhpur (Basni)',
+    from_bay: 'Bay A-2',
+    to_bay: '',
+    transfer_type: 'INTER_DEALER',
+    reason: 'Customer Urgent Booking Allocation at Jodhpur Branch',
+    transporter: 'Rajputana Logistics',
+    driver_name: 'Mukesh Sharma',
+    driver_phone: '9829012345',
+    carrier_reg_no: 'RJ-19-GA-4501',
+    status: 'PENDING_APPROVAL',
+    level_1_status: 'PENDING',
+    level_1_approved_by: null,
+    level_1_approved_at: null,
+    level_2_status: 'PENDING',
+    level_2_approved_by: null,
+    level_2_approved_at: null,
+    level_3_status: 'PENDING',
+    level_3_approved_by: null,
+    level_3_approved_at: null,
+    gatepass_no: '',
+    gatepass_issued_at: null,
+    dispatched_at: null,
+    received_at: null,
+    created_by: 'Suresh Patil (Yard Supervisor)',
+    created_at: new Date(Date.now() - 3600000 * 4).toISOString()
+  },
+  {
+    id: 'idt-002',
+    transfer_no: 'IDT-2026-002',
+    vin: 'MAT612345S9988771',
+    model: 'Tata Safari',
+    variant: 'Accomplished Plus 6S (Dark Edition)',
+    color: 'Oberon Black',
+    from_stockyard_id: '44444444-4444-4444-4444-444444444442',
+    from_stockyard_name: 'Chakan Inward Logistics Yard',
+    to_stockyard_id: '44444444-4444-4444-4444-444444444441',
+    to_stockyard_name: 'Pune Central Stockyard',
+    from_bay: 'Bay C-1',
+    to_bay: 'Bay A-1',
+    transfer_type: 'INTER_YARD',
+    reason: 'Stock consolidation from Factory Inward Yard to Central Yard',
+    transporter: 'FastTrack Fleet Services',
+    driver_name: 'Ramesh Pawar',
+    driver_phone: '9822119988',
+    carrier_reg_no: 'MH-12-PQ-8899',
+    status: 'DISPATCHED_IN_TRANSIT',
+    level_1_status: 'APPROVED',
+    level_1_approved_by: 'Amit Shinde (Yard Supervisor)',
+    level_1_approved_at: new Date(Date.now() - 3600000 * 12).toISOString(),
+    level_2_status: 'APPROVED',
+    level_2_approved_by: 'Rajesh Dhoot (Branch Manager)',
+    level_2_approved_at: new Date(Date.now() - 3600000 * 10).toISOString(),
+    level_3_status: 'APPROVED',
+    level_3_approved_by: 'System Administrator (GM)',
+    level_3_approved_at: new Date(Date.now() - 3600000 * 8).toISOString(),
+    gatepass_no: 'GP-2026-0881',
+    gatepass_issued_at: new Date(Date.now() - 3600000 * 8).toISOString(),
+    dispatched_at: new Date(Date.now() - 3600000 * 6).toISOString(),
+    received_at: null,
+    created_by: 'Amit Shinde (Yard Supervisor)',
+    created_at: new Date(Date.now() - 3600000 * 14).toISOString()
+  }
+];
+
 // Load or initialize Database in Memory
 let db = {};
 
@@ -436,7 +510,7 @@ function initDb() {
     }
   }
 
-  // Ensure all 18 tables exist
+  // Ensure all 20 tables exist
   const defaultTables = {
     users: INITIAL_USERS,
     stockyards: INITIAL_STOCKYARDS,
@@ -455,7 +529,9 @@ function initDb() {
     pdi_sessions: [],
     checklist_items: [],
     checklist_categories: [],
-    yard_inward_entries: []
+    yard_inward_entries: [],
+    vehicle_transfers: INITIAL_TRANSFERS,
+    yard_bays: []
   };
 
   let modified = false;
@@ -510,21 +586,23 @@ const getPermissionsForRole = (role) => {
         'users:read', 'users:write', 'masters:write', 'brand:all',
         'bookings:read', 'bookings:write', 'stock:read', 'stock:write',
         'pdi:read', 'pdi:write', 'pdi:inspect', 'qa:approve', 'repairs:manage',
-        'invoicing:read', 'invoicing:write', 'certificates:issue'
+        'invoicing:read', 'invoicing:write', 'certificates:issue',
+        'transfers:read', 'transfers:write', 'transfers:approve', 'bays:manage'
       ];
     case 'PDI_ENGINEER':
-      return ['stock:read', 'pdi:read', 'pdi:write', 'pdi:inspect', 'findings:write', 'media:upload'];
+      return ['stock:read', 'pdi:read', 'pdi:write', 'pdi:inspect', 'findings:write', 'media:upload', 'bays:read'];
     case 'QA_MANAGER':
-      return ['stock:read', 'pdi:read', 'qa:read', 'qa:approve', 'certificates:issue', 'findings:read'];
+      return ['stock:read', 'pdi:read', 'qa:read', 'qa:approve', 'certificates:issue', 'findings:read', 'transfers:read', 'bays:read'];
     case 'WORKSHOP_MANAGER':
-      return ['repairs:read', 'repairs:write', 'parts:manage', 'technicians:assign', 'stock:read'];
+      return ['repairs:read', 'repairs:write', 'parts:manage', 'technicians:assign', 'stock:read', 'bays:read'];
     case 'YARD_SUPERVISOR':
-      return ['stock:read', 'stock:write', 'yard:inward', 'yard:assign', 'pdi:read'];
+      return ['stock:read', 'stock:write', 'yard:inward', 'yard:assign', 'pdi:read', 'transfers:read', 'transfers:write', 'bays:read', 'bays:manage'];
     case 'SALES_CONSULTANT':
+      return ['bookings:read', 'bookings:write', 'stock:read', 'invoicing:read', 'pdi:read', 'transfers:read', 'transfers:write', 'bays:read'];
     case 'BRANCH_MANAGER':
-      return ['bookings:read', 'bookings:write', 'stock:read', 'invoicing:read', 'invoicing:write', 'pdi:read', 'reports:read'];
+      return ['bookings:read', 'bookings:write', 'stock:read', 'invoicing:read', 'invoicing:write', 'pdi:read', 'reports:read', 'transfers:read', 'transfers:write', 'transfers:approve', 'bays:read', 'bays:manage'];
     default:
-      return ['stock:read', 'pdi:read'];
+      return ['stock:read', 'pdi:read', 'bays:read'];
   }
 };
 

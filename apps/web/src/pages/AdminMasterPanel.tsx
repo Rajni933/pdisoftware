@@ -21,6 +21,7 @@ import {
   fetchMasterInsurance, saveMasterInsurance, deleteMasterInsurance,
   YardItem, BranchItem, PdiRuleItem, FinancierItem, InsuranceItem, VehicleModelItem
 } from '../services/dataService';
+import { getAllUsers } from '../data/seedData';
 import { DatabaseConfigModal } from '../components/common/DatabaseConfigModal';
 
 export { type PdiRuleItem, type FinancierItem, type InsuranceItem };
@@ -40,12 +41,13 @@ export const AdminMasterPanel: React.FC = () => {
   const [vehicleModels, setVehicleModels] = useState<VehicleModelItem[]>([]);
   const [financiers, setFinanciers] = useState<FinancierItem[]>([]);
   const [insuranceProviders, setInsuranceProviders] = useState<InsuranceItem[]>([]);
+  const [userCount, setUserCount] = useState<number>(() => getAllUsers().length);
 
   // Load all master catalogues from live PostgreSQL database
   const loadAllMasters = async () => {
     setLoading(true);
     try {
-      const [y, b, r, m, f, i] = await Promise.all([
+      const results = await Promise.allSettled([
         fetchStockyards(),
         fetchBranches(),
         fetchCheckpoints(),
@@ -53,12 +55,15 @@ export const AdminMasterPanel: React.FC = () => {
         fetchMasterFinanciers(),
         fetchMasterInsurance()
       ]);
-      setYards(y);
-      setBranches(b);
-      setPdiRules(r);
-      setVehicleModels(m);
-      setFinanciers(f);
-      setInsuranceProviders(i);
+      if (results[0].status === 'fulfilled') setYards(results[0].value);
+      if (results[1].status === 'fulfilled') setBranches(results[1].value);
+      if (results[2].status === 'fulfilled') setPdiRules(results[2].value);
+      if (results[3].status === 'fulfilled') setVehicleModels(results[3].value);
+      if (results[4].status === 'fulfilled') setFinanciers(results[4].value);
+      if (results[5].status === 'fulfilled') setInsuranceProviders(results[5].value);
+      setUserCount(getAllUsers().length);
+    } catch (err) {
+      console.warn('Error loading masters:', err);
     } finally {
       setLoading(false);
     }
@@ -71,12 +76,17 @@ export const AdminMasterPanel: React.FC = () => {
       loadAllMasters();
     };
 
+    const handleUsersUpdate = () => {
+      setUserCount(getAllUsers().length);
+    };
+
     window.addEventListener('stockyards-updated', handleUpdate);
     window.addEventListener('branches-updated', handleUpdate);
     window.addEventListener('pdi-rules-updated', handleUpdate);
     window.addEventListener('models-updated', handleUpdate);
     window.addEventListener('financiers-updated', handleUpdate);
     window.addEventListener('insurance-updated', handleUpdate);
+    window.addEventListener('users-updated', handleUsersUpdate);
     window.addEventListener('database-config-changed', handleUpdate);
 
     return () => {
@@ -86,6 +96,7 @@ export const AdminMasterPanel: React.FC = () => {
       window.removeEventListener('models-updated', handleUpdate);
       window.removeEventListener('financiers-updated', handleUpdate);
       window.removeEventListener('insurance-updated', handleUpdate);
+      window.removeEventListener('users-updated', handleUsersUpdate);
       window.removeEventListener('database-config-changed', handleUpdate);
     };
   }, []);
@@ -1548,6 +1559,7 @@ export const AdminMasterPanel: React.FC = () => {
           </div>
         </div>
       )}
+
 
       {activeTab === 'MODELS' && (
         <div className="space-y-4">

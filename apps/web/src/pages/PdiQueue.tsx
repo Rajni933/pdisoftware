@@ -2,7 +2,7 @@ import { formatDate } from '../utils/dateUtils';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Search, Plus, ChevronRight, FileSpreadsheet
+  Search, Plus, ChevronRight, Download
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../utils/apiConfig';
@@ -95,6 +95,46 @@ export const PdiQueuePage: React.FC = () => {
   const inProgressCount = pdiSessions.filter(s => s.status === 'PDI_IN_PROGRESS').length;
   const pendingCount = pdiSessions.filter(s => s.status !== 'PDI_IN_PROGRESS').length;
 
+  const handleExportPdiCSV = () => {
+    if (pdiSessions.length === 0) return;
+    const headers = [
+      'VIN / Chassis',
+      'Brand',
+      'Model',
+      'Variant',
+      'Color',
+      'Stockyard Location',
+      'Assigned Inspector',
+      'Status',
+      'Inspection Progress',
+      'Passed Points',
+      'Total Checkpoints'
+    ];
+
+    const rows = pdiSessions.map(s => [
+      `"${s.vin || ''}"`,
+      `"${s.brand || ''}"`,
+      `"${s.model || ''}"`,
+      `"${s.variant || ''}"`,
+      `"${s.color || ''}"`,
+      `"${s.yardLocation || 'Central Stockyard'}"`,
+      `"${s.inspector || ''}"`,
+      `"${s.status || ''}"`,
+      `"${s.progress || 0}%"`,
+      `"${s.passed || 0}"`,
+      `"${s.total || 64}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `PDI_Inspection_Queue_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto select-none">
       
@@ -112,11 +152,11 @@ export const PdiQueuePage: React.FC = () => {
               <span>Receive New Car</span>
             </Link>
             <button
-              onClick={() => alert('Exporting PDI Inspection Queue to Excel CSV...')}
+              onClick={handleExportPdiCSV}
               className="h-8 px-3 rounded bg-surface border border-line hover:border-line-strong text-xs font-medium text-ink transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-ok" />
-              <span>Export Excel</span>
+              <Download className="w-3.5 h-3.5 text-ok" />
+              <span>Export CSV</span>
             </button>
           </div>
         }
@@ -126,7 +166,7 @@ export const PdiQueuePage: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Stat label="Total In Queue" value={pdiSessions.length} note="Awaiting Certification" />
         <Stat label="In Inspection" value={inProgressCount} note="Engineers Active" tone="accent" />
-        <Stat label="Pending Start" value={pendingCount} note="Bay Staged" tone="warn" />
+        <Stat label="Pending Start" value={pendingCount} note="Yard Staged" tone="warn" />
         <Stat label="Defects Flagged" value={0} note="Zero Critical Blockers" tone="ok" />
       </div>
 
@@ -173,7 +213,7 @@ export const PdiQueuePage: React.FC = () => {
                 <th className="py-2.5 px-3">Model & Variant</th>
                 <th className="py-2.5 px-3">Colour</th>
                 <th className="py-2.5 px-3">Assigned Inspector</th>
-                <th className="py-2.5 px-3">Staging Bay</th>
+                <th className="py-2.5 px-3">Stockyard Location</th>
                 <th className="py-2.5 px-3">Status</th>
                 <th className="py-2.5 px-3 w-36">Checklist Progress</th>
                 <th className="py-2.5 px-3">Duration</th>

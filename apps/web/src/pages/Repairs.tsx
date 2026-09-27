@@ -1,65 +1,113 @@
-import { formatDate } from '../utils/dateUtils';
 import React, { useState, useEffect } from 'react';
 import { 
-  Check, Search, FileSpreadsheet, CheckCircle2
+  Check, Search, Download, CheckCircle2, Wrench, X, AlertTriangle, FileSpreadsheet
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getApiUrl } from '../utils/apiConfig';
+import { fetchRepairs, updateRepairStatus } from '../services/dataService';
 import { Panel, Stat, Badge, Empty, PageHeader } from '../components/ui/primitives';
 
-const SEED_REPAIRS: any[] = [];
-
 export const RepairsPage: React.FC = () => {
-  const { currentBrand } = useAuth();
+  const { currentBrand, user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'OPEN' | 'IN_PROGRESS' | 'COMPLETED'>('ALL');
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Rectification Modal State
+  const [activeTicket, setActiveTicket] = useState<any | null>(null);
+  const [actionNotes, setActionNotes] = useState('');
+  const [partsUsed, setPartsUsed] = useState('');
+  const [techName, setTechName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
-    fetchRepairs();
+    loadRepairs();
   }, [currentBrand?.code]);
 
-  const getFilteredRepairs = (data: any[]) => {
-    if (currentBrand.code === 'DHOOT-TATA') return data.filter((r: any) => r.brand === 'TATA' || (r.model && r.model.includes('Tata')));
-    if (currentBrand.code === 'DHOOT-HYUNDAI') return data.filter((r: any) => r.brand === 'HYUNDAI' || (r.model && r.model.includes('Hyundai')));
-    return data;
-  };
-
-  const fetchRepairs = async () => {
+  const loadRepairs = async () => {
     setLoading(true);
     try {
-      const res = await fetch(getApiUrl('/api/v1/repairs'));
-      if (res.ok) {
-        const json = await res.json();
-        const rows = json.data || [];
-        if (rows.length > 0) {
-          setTickets(getFilteredRepairs(rows));
-          setLoading(false);
-          return;
-        }
-      }
-      setTickets(getFilteredRepairs(SEED_REPAIRS));
+      const data = await fetchRepairs(currentBrand?.code);
+      setTickets(data);
     } catch (e) {
-      setTickets(getFilteredRepairs(SEED_REPAIRS));
+      console.error("Repairs fetch err", e);
     } finally {
       setLoading(false);
     }
   };
 
-  const markComplete = async (id: string) => {
+  const handleOpenRectifyModal = (ticket: any) => {
+    setActiveTicket(ticket);
+    setActionNotes(ticket.actionTaken || '');
+    setPartsUsed(ticket.partsUsed || '');
+    setTechName(ticket.assignedTo || user?.userName || 'Senior Workshop Technician');
+  };
+
+  const handleConfirmRectify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeTicket) return;
+    setIsSubmitting(true);
     try {
-      await fetch(getApiUrl(`/api/v1/repairs/${id}`), {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'COMPLETED' })
-      });
-      fetchRepairs();
-    } catch (e) {
-      setTickets((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, status: 'COMPLETED' } : t))
+      await updateRepairStatus(
+        activeTicket.id,
+        activeTicket.vin,
+        'COMPLETED',
+        actionNotes.trim() || 'Defect rectified per OEM standard procedure. Vehicle cleared for QA re-inspection.',
+        partsUsed.trim() || 'None / Consumables Only',
+        techName.trim()
       );
+      setActiveTicket(null);
+      await loadRepairs();
+    } catch (err) {
+      console.error('Failed to update repair status:', err);
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  // Real CSV Export
+  const handleExportRepairsCSV = () => {
+    if (tickets.length === 0) return;
+    const headers = [
+      'Ticket ID',
+      'VIN / Chassis',
+      'Brand',
+      'Model',
+      'Defect Area',
+      'Severity',
+      'Description',
+      'Assigned Technician',
+      'Stockyard Location',
+      'Status',
+      'Action Taken / Rectification',
+      'Parts Used',
+      'Created Date'
+    ];
+
+    const rows = tickets.map(t => [
+      `"${t.id || ''}"`,
+      `"${t.vin || ''}"`,
+      `"${t.brand || ''}"`,
+      `"${t.model || ''}"`,
+      `"${t.defectArea || t.area || ''}"`,
+      `"${t.severity || ''}"`,
+      `"${(t.description || '').replace(/"/g, '""')}"`,
+      `"${t.assignedTo || ''}"`,
+      `"${t.location || 'Stockyard Workshop'}"`,
+      `"${t.status || ''}"`,
+      `"${(t.actionTaken || '').replace(/"/g, '""')}"`,
+      `"${(t.partsUsed || '').replace(/"/g, '""')}"`,
+      `"${t.createdAt || ''}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `Workshop_Repairs_Ledger_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const filteredTickets = tickets.filter(t => {
@@ -86,14 +134,14 @@ export const RepairsPage: React.FC = () => {
       {/* Header Banner */}
       <PageHeader
         title="Defect Repairs & Workshop"
-        subtitle="Manage job cards, track technician repairs for inspection defects, and clear vehicles for QA approval"
+        subtitle="Manage job cards, log technician rectifications for inspection defects, and clear vehicles for QA re-inspection"
         action={
           <button
-            onClick={() => alert('Exporting workshop repair ledger to CSV...')}
+            onClick={handleExportRepairsCSV}
             className="h-8 px-3 rounded bg-surface border border-line hover:border-line-strong text-xs font-medium text-ink transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-ok" />
-            <span>Export Excel</span>
+            <Download className="w-3.5 h-3.5 text-ok" />
+            <span>Export CSV</span>
           </button>
         }
       />
@@ -101,7 +149,7 @@ export const RepairsPage: React.FC = () => {
       {/* KPI Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Stat label="Total Job Cards" value={tickets.length} note="Logged from Inspections" />
-        <Stat label="Active in Bay" value={openCount} note="Under Rectification" tone={openCount > 0 ? 'warn' : 'default'} />
+        <Stat label="In Workshop" value={openCount} note="Under Rectification" tone={openCount > 0 ? 'warn' : 'default'} />
         <Stat label="Completed" value={completedCount} note="QA Clearance Ready" tone="ok" />
         <Stat label="Avg Turnaround" value="1.4h" note="Within Service SLA" />
       </div>
@@ -152,13 +200,19 @@ export const RepairsPage: React.FC = () => {
                 <th className="py-2.5 px-3">Severity</th>
                 <th className="py-2.5 px-3">Issue Description</th>
                 <th className="py-2.5 px-3">Assigned Tech</th>
-                <th className="py-2.5 px-3">Bay</th>
+                <th className="py-2.5 px-3">Stockyard Location</th>
                 <th className="py-2.5 px-3">Status</th>
                 <th className="py-2.5 px-3 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line text-ink-2 text-xs">
-              {filteredTickets.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={11} className="py-10 text-center text-ink-3">
+                    Loading repair job cards from database...
+                  </td>
+                </tr>
+              ) : filteredTickets.length === 0 ? (
                 <tr>
                   <td colSpan={11}>
                     <Empty title="0 Active Repair Tickets Found" hint="All vehicle inspections have passed without defects requiring workshop repair." />
@@ -166,7 +220,7 @@ export const RepairsPage: React.FC = () => {
                 </tr>
               ) : (
                 filteredTickets.map((t, idx) => {
-                  const isHyundai = t.model.toLowerCase().includes('hyundai') || t.vin.startsWith('MAL');
+                  const isHyundai = (t.brand || '').toLowerCase().includes('hyundai') || (t.model || '').toLowerCase().includes('hyundai') || (t.vin || '').startsWith('MAL');
                   return (
                     <tr key={t.id} className="hover:bg-canvas transition-colors">
                       <td className="py-2.5 px-3 text-center text-ink-3 font-mono tnum">
@@ -185,7 +239,7 @@ export const RepairsPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="py-2.5 px-3 text-ink-2">
-                        {t.area || t.finding_area || 'General'}
+                        {t.defectArea || t.area || 'General'}
                       </td>
                       <td className="py-2.5 px-3">
                         <Badge tone={t.severity === 'CRITICAL' ? 'danger' : t.severity === 'MAJOR' ? 'warn' : 'neutral'}>
@@ -196,10 +250,10 @@ export const RepairsPage: React.FC = () => {
                         {t.description}
                       </td>
                       <td className="py-2.5 px-3 text-ink">
-                        {t.assignedTo || t.assigned_to || 'Technician'}
+                        {t.assignedTo || 'Senior Bodyshop Tech'}
                       </td>
                       <td className="py-2.5 px-3 text-ink">
-                        {t.bay || 'Bay 1'}
+                        {t.location || 'Central Stockyard Workshop'}
                       </td>
                       <td className="py-2.5 px-3">
                         <Badge tone={t.status === 'COMPLETED' ? 'ok' : 'warn'}>
@@ -209,16 +263,17 @@ export const RepairsPage: React.FC = () => {
                       <td className="py-2.5 px-3 text-center whitespace-nowrap">
                         {t.status !== 'COMPLETED' ? (
                           <button
-                            onClick={() => markComplete(t.id)}
-                            className="h-7 px-2.5 rounded bg-ok text-white text-xs font-semibold transition-colors inline-flex items-center gap-1 whitespace-nowrap shadow-xs cursor-pointer"
+                            type="button"
+                            onClick={() => handleOpenRectifyModal(t)}
+                            className="h-7 px-2.5 rounded bg-ok text-white text-xs font-semibold transition-colors inline-flex items-center gap-1 whitespace-nowrap shadow-xs cursor-pointer hover:bg-ok-hover"
                           >
                             <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                            <span>Repaired</span>
+                            <span>Mark Repaired</span>
                           </button>
                         ) : (
                           <span className="text-xs text-ok font-semibold inline-flex items-center gap-1 whitespace-nowrap">
-                            <Check className="w-3.5 h-3.5" />
-                            Done
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Cleared
                           </span>
                         )}
                       </td>
@@ -230,6 +285,96 @@ export const RepairsPage: React.FC = () => {
           </table>
         </div>
       </Panel>
+
+      {/* Rectification Modal */}
+      {activeTicket && (
+        <div className="fixed inset-0 z-modal bg-ink/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="relative max-w-lg w-full bg-surface border border-line rounded-panel p-6 shadow-modal select-none">
+            <div className="flex items-center justify-between pb-3 border-b border-line">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded bg-warn/10 text-warn flex items-center justify-center border border-warn/20">
+                  <Wrench className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-ink">Defect Rectification Sign-Off</h3>
+                  <p className="text-xs text-ink-3">Job Card #{activeTicket.id} • {activeTicket.vin}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTicket(null)}
+                className="p-1 rounded text-ink-3 hover:text-ink hover:bg-canvas"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmRectify} className="mt-4 space-y-4">
+              <div className="p-3 bg-canvas border border-line rounded text-xs space-y-1">
+                <span className="text-ink-3 block font-semibold uppercase">Flagged Defect</span>
+                <p className="text-ink font-medium">{activeTicket.defectArea}: {activeTicket.description}</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-ink mb-1">
+                  Action Taken / Rectification Details <span className="text-danger">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={actionNotes}
+                  onChange={(e) => setActionNotes(e.target.value)}
+                  placeholder="e.g., Scratch rubbed down with 2000 grit, OEM touchup paint applied, clear coated, infrared baked and buffed to 100% gloss."
+                  className="w-full text-xs p-2.5 bg-canvas border border-line rounded text-ink placeholder:text-ink-3 focus:outline-none focus:border-line-strong"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-ink mb-1">
+                  Parts / Consumables Used
+                </label>
+                <input
+                  type="text"
+                  value={partsUsed}
+                  onChange={(e) => setPartsUsed(e.target.value)}
+                  placeholder="e.g., 50ml Touchup paint (Oberon Black), Polish compound"
+                  className="w-full h-8 px-2.5 text-xs bg-canvas border border-line rounded text-ink placeholder:text-ink-3 focus:outline-none focus:border-line-strong"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-ink mb-1">
+                  Technician In-Charge
+                </label>
+                <input
+                  type="text"
+                  value={techName}
+                  onChange={(e) => setTechName(e.target.value)}
+                  className="w-full h-8 px-2.5 text-xs bg-canvas border border-line rounded text-ink focus:outline-none focus:border-line-strong"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-line">
+                <button
+                  type="button"
+                  onClick={() => setActiveTicket(null)}
+                  className="h-8 px-3 rounded bg-canvas border border-line text-xs font-semibold text-ink hover:bg-surface transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="h-8 px-4 rounded bg-ok hover:bg-ok-hover text-xs font-semibold text-white transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>{isSubmitting ? 'Recording...' : 'Confirm Rectification & Route to QA'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

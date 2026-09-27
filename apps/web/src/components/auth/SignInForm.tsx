@@ -59,7 +59,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({
   const [maskedPhone, setMaskedPhone] = useState('••••••4821');
 
   // Device check state
-  const [deviceName, setDeviceName] = useState('Samsung Galaxy S23 (Yard Bay 4)');
+  const [deviceName, setDeviceName] = useState('Samsung Galaxy S23 (Central Stockyard)');
 
   // Returning biometric device state
   const [hasReturningDevice, setHasReturningDevice] = useState(false);

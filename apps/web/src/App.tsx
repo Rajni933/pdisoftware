@@ -11,10 +11,12 @@ import { PdiQueuePage } from './pages/PdiQueue';
 import { PdiSessionPage } from './pages/PdiSession';
 import { RepairsPage } from './pages/Repairs';
 import { QaQueuePage } from './pages/QaQueue';
+import { QaReviewPage } from './pages/QaReview';
 import { ChallanInvoicingPage } from './pages/ChallanInvoicing';
 import { CertificateViewPage } from './pages/CertificateView';
 import { AdminMasterPanelPage } from './pages/AdminMasterPanel';
 import { ReportsPage } from './pages/Reports';
+import { YardMovementsPage } from './pages/YardMovements';
 import { AppShell } from './components/layout/AppShell';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -44,6 +46,30 @@ export const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <YardReceivingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/movements"
+            element={
+              <ProtectedRoute>
+                <YardMovementsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/transfers"
+            element={
+              <ProtectedRoute>
+                <YardMovementsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/yard-movements"
+            element={
+              <ProtectedRoute>
+                <YardMovementsPage />
               </ProtectedRoute>
             }
           />
@@ -95,14 +121,8 @@ export const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/qa"
-            element={
-              <ProtectedRoute>
-                <QaQueuePage />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/qa" element={<ProtectedRoute><QaQueuePage /></ProtectedRoute>} />
+            <Route path="/qa/review/:id" element={<ProtectedRoute><QaReviewPage /></ProtectedRoute>} />
           <Route
             path="/invoicing"
             element={
@@ -173,3 +193,6 @@ export const App: React.FC = () => {
     </AuthProvider>
   );
 };
+
+
+
