@@ -1095,6 +1095,25 @@ export const isTataItem = (item: any): boolean => {
 // ============================================================================
 // STOCK INVENTORY METHODS
 // ============================================================================
+
+export const getDeletedVins = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem('dhoot_deleted_vins');
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        return new Set(arr.map(v => String(v).toUpperCase().trim()));
+      }
+    }
+  } catch (e) {}
+  return new Set();
+};
+
+export const saveDeletedVins = (vins: Set<string> | string[]) => {
+  const arr = Array.from(vins).map(v => String(v).toUpperCase().trim());
+  localStorage.setItem('dhoot_deleted_vins', JSON.stringify(arr));
+};
+
 export const getAllVehicles = (): any[] => {
   const map = new Map<string, any>();
 
@@ -1138,7 +1157,16 @@ export const getAllVehicles = (): any[] => {
     console.warn('Error reading stock from storage:', e);
   }
 
-  return Array.from(map.values());
+  // 3. Filter out explicitly deleted VINs
+  const deletedSet = getDeletedVins();
+  const activeVehicles: any[] = [];
+  map.forEach((veh, vinKey) => {
+    if (!deletedSet.has(vinKey)) {
+      activeVehicles.push(veh);
+    }
+  });
+
+  return activeVehicles;
 };
 
 export const getVehiclesForBrand = (brandCode?: string) => {
@@ -1156,7 +1184,10 @@ export const getVehiclesForBrand = (brandCode?: string) => {
 };
 
 export const saveStockInventory = (vehicles: any[]) => {
-  // Always merge with existing stock so uploading one brand never deletes the other
+  // If previously deleted vehicles are re-imported/saved, remove them from deletedSet
+  const deletedSet = getDeletedVins();
+  let modifiedDeleted = false;
+
   const allCurrent = getAllVehicles();
   const map = new Map<string, any>();
   allCurrent.forEach(v => {
@@ -1167,6 +1198,10 @@ export const saveStockInventory = (vehicles: any[]) => {
     vehicles.forEach(v => {
       if (v && v.vin) {
         const key = v.vin.toUpperCase().trim();
+        if (deletedSet.has(key)) {
+          deletedSet.delete(key);
+          modifiedDeleted = true;
+        }
         const existing = map.get(key) || {};
         const isHyn = isHyundaiItem(v) || isHyundaiItem(existing);
         map.set(key, {
@@ -1179,10 +1214,94 @@ export const saveStockInventory = (vehicles: any[]) => {
     });
   }
 
+  if (modifiedDeleted) {
+    saveDeletedVins(deletedSet);
+  }
+
   const merged = Array.from(map.values());
   localStorage.setItem('dhoot_stock_inventory', JSON.stringify(merged));
   window.dispatchEvent(new Event('stock-updated'));
   return merged;
+};
+
+export const deleteVehicleFromStorage = (vin: string): boolean => {
+  if (!vin) return false;
+  const cleanVin = vin.toUpperCase().trim();
+
+  // 1. Mark in tombstone set so it never resurfaces from seed stock
+  const deletedSet = getDeletedVins();
+  deletedSet.add(cleanVin);
+  saveDeletedVins(deletedSet);
+
+  // 2. Remove from localStorage inventory
+  try {
+    const saved = localStorage.getItem('dhoot_stock_inventory');
+    if (saved) {
+      const parsed: any[] = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        const filtered = parsed.filter(v => (v.vin || '').toUpperCase().trim() !== cleanVin);
+        localStorage.setItem('dhoot_stock_inventory', JSON.stringify(filtered));
+      }
+    }
+  } catch (e) {}
+
+  window.dispatchEvent(new Event('stock-updated'));
+  return true;
+};
+
+export const deleteMultipleVehiclesFromStorage = (vins: string[]): number => {
+  if (!vins || vins.length === 0) return 0;
+  const cleanVins = vins.map(v => v.toUpperCase().trim()).filter(Boolean);
+  const cleanSet = new Set(cleanVins);
+
+  const deletedSet = getDeletedVins();
+  cleanVins.forEach(v => deletedSet.add(v));
+  saveDeletedVins(deletedSet);
+
+  try {
+    const saved = localStorage.getItem('dhoot_stock_inventory');
+    if (saved) {
+      const parsed: any[] = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        const filtered = parsed.filter(v => !cleanSet.has((v.vin || '').toUpperCase().trim()));
+        localStorage.setItem('dhoot_stock_inventory', JSON.stringify(filtered));
+      }
+    }
+  } catch (e) {}
+
+  window.dispatchEvent(new Event('stock-updated'));
+  return cleanVins.length;
+};
+
+export const clearCustomUploadedStockFromStorage = (): number => {
+  const seedVins = new Set(
+    Array.isArray(SEED_STOCK_VEHICLES)
+      ? SEED_STOCK_VEHICLES.map(v => (v.vin || '').toUpperCase().trim())
+      : []
+  );
+
+  let uploadedCount = 0;
+  try {
+    const saved = localStorage.getItem('dhoot_stock_inventory');
+    if (saved) {
+      const parsed: any[] = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        const customItems = parsed.filter(v => (v.vin && !seedVins.has(v.vin.toUpperCase().trim())));
+        uploadedCount = customItems.length;
+      }
+    }
+  } catch (e) {}
+
+  localStorage.removeItem('dhoot_stock_inventory');
+  window.dispatchEvent(new Event('stock-updated'));
+  return uploadedCount;
+};
+
+export const resetAllStockToDefaultInStorage = (): boolean => {
+  localStorage.removeItem('dhoot_stock_inventory');
+  localStorage.removeItem('dhoot_deleted_vins');
+  window.dispatchEvent(new Event('stock-updated'));
+  return true;
 };
 
 export const clearStockInventory = () => {

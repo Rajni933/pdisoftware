@@ -16,9 +16,14 @@ import {
   SEED_CHECKPOINTS,
   SEED_MODELS,
   SEED_FINANCIERS,
-  SEED_INSURANCE
+  SEED_INSURANCE,
+  deleteVehicleFromStorage,
+  deleteMultipleVehiclesFromStorage,
+  clearCustomUploadedStockFromStorage,
+  resetAllStockToDefaultInStorage
 } from '../data/seedData';
 export { getAllUsers, saveUsersInventory, saveSingleUser, deleteUserFromInventory, findUserForAuth, SEED_USERS };
+export { deleteVehicleFromStorage, deleteMultipleVehiclesFromStorage, clearCustomUploadedStockFromStorage, resetAllStockToDefaultInStorage };
 export type { EnterpriseUser } from '../data/seedData';
 import initialStockVehicles from '../data/initialVehicles.json';
 
@@ -1275,6 +1280,64 @@ export const bulkImportVehicles = async (vehicles: Partial<StockVehicle>[]): Pro
   saveStockInventory(sanitized);
 
   return { count: sanitized.length };
+};
+
+export const deleteVehicleRecord = async (vin: string): Promise<boolean> => {
+  if (!vin) return false;
+  const cleanVin = vin.toUpperCase().trim();
+
+  deleteVehicleFromStorage(cleanVin);
+
+  try {
+    await fetch(`${getLocalDbEndpoint('vehicles')}?vin=eq.${encodeURIComponent(cleanVin)}`, {
+      method: 'DELETE',
+      signal: AbortSignal.timeout(3000)
+    });
+  } catch (e) {
+    console.warn('Local DB vehicle delete note:', e);
+  }
+
+  try {
+    await supabase.from('vehicles').delete().eq('vin', cleanVin);
+  } catch (e) {
+    console.warn('Supabase vehicle delete note:', e);
+  }
+
+  return true;
+};
+
+export const deleteMultipleVehicleRecords = async (vins: string[]): Promise<number> => {
+  if (!vins || vins.length === 0) return 0;
+  const cleanVins = vins.map(v => v.toUpperCase().trim()).filter(Boolean);
+
+  deleteMultipleVehiclesFromStorage(cleanVins);
+
+  try {
+    const vinParam = `in.(${cleanVins.join(',')})`;
+    await fetch(`${getLocalDbEndpoint('vehicles')}?vin=${encodeURIComponent(vinParam)}`, {
+      method: 'DELETE',
+      signal: AbortSignal.timeout(4000)
+    });
+  } catch (e) {
+    console.warn('Local DB bulk delete note:', e);
+  }
+
+  try {
+    await supabase.from('vehicles').delete().in('vin', cleanVins);
+  } catch (e) {
+    console.warn('Supabase bulk delete note:', e);
+  }
+
+  return cleanVins.length;
+};
+
+export const clearCustomUploadedVehicles = async (): Promise<number> => {
+  const count = clearCustomUploadedStockFromStorage();
+  return count;
+};
+
+export const resetStockToFactoryDefaults = async (): Promise<boolean> => {
+  return resetAllStockToDefaultInStorage();
 };
 
 export const updateVehicleLocation = async (vin: string, newLocation: string): Promise<boolean> => {

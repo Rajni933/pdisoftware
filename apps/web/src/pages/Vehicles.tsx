@@ -3,7 +3,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Search, Filter, FileSpreadsheet, X, Loader2, ChevronRight,
-  Download, Upload, Trash2, Plus, RefreshCw, Car, CheckCircle2, AlertTriangle
+  Download, Upload, Trash2, Plus, RefreshCw, Car, CheckCircle2, AlertTriangle,
+  CheckSquare, Square, AlertOctagon, RotateCcw, AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { NewVehicleModal } from '../components/vehicles/NewVehicleModal';
@@ -19,6 +20,12 @@ import {
   isTataItem, 
   isHyundaiItem 
 } from '../data/seedData';
+import { 
+  deleteVehicleRecord, 
+  deleteMultipleVehicleRecords, 
+  clearCustomUploadedVehicles, 
+  resetStockToFactoryDefaults 
+} from '../services/dataService';
 import { supabase } from '../lib/supabase';
 import { Panel, Stat, Badge, Empty, PageHeader } from '../components/ui/primitives';
 
@@ -257,6 +264,119 @@ export const VehiclesPage: React.FC = () => {
     return matchesSearch && matchesStatus && matchesModel && matchesLocation;
   });
 
+  // Multi-selection state
+  const [selectedVins, setSelectedVins] = useState<Set<string>>(new Set());
+
+  // Delete modal targets & state
+  const [singleDeleteTarget, setSingleDeleteTarget] = useState<StockVehicle | null>(null);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isManageStockModalOpen, setIsManageStockModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+
+  const handleToggleSelectVin = (vin: string) => {
+    setSelectedVins(prev => {
+      const next = new Set(prev);
+      if (next.has(vin)) {
+        next.delete(vin);
+      } else {
+        next.add(vin);
+      }
+      return next;
+    });
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedVins.size === filtered.length && filtered.length > 0) {
+      setSelectedVins(new Set());
+    } else {
+      setSelectedVins(new Set(filtered.map(v => v.vin)));
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedVins(new Set());
+  };
+
+  const handleConfirmSingleDelete = async () => {
+    if (!singleDeleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await deleteVehicleRecord(singleDeleteTarget.vin);
+      setSelectedVins(prev => {
+        const next = new Set(prev);
+        next.delete(singleDeleteTarget.vin);
+        return next;
+      });
+      setVehicles(getAllVehicles() as StockVehicle[]);
+      setActionFeedback(`Vehicle ${singleDeleteTarget.vin} successfully removed from inventory.`);
+      setTimeout(() => setActionFeedback(null), 4000);
+      setSingleDeleteTarget(null);
+    } catch (err: any) {
+      console.error('Delete error:', err);
+      setActionFeedback('Failed to delete vehicle record.');
+      setTimeout(() => setActionFeedback(null), 4000);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleConfirmBulkDelete = async () => {
+    if (selectedVins.size === 0) return;
+    setIsDeleting(true);
+    try {
+      const vinsList = Array.from(selectedVins);
+      const count = await deleteMultipleVehicleRecords(vinsList);
+      setSelectedVins(new Set());
+      setVehicles(getAllVehicles() as StockVehicle[]);
+      setActionFeedback(`Successfully deleted ${count} vehicles from stock inventory.`);
+      setTimeout(() => setActionFeedback(null), 4000);
+      setIsBulkDeleteModalOpen(false);
+    } catch (err: any) {
+      console.error('Bulk delete error:', err);
+      setActionFeedback('Failed to execute bulk vehicle deletion.');
+      setTimeout(() => setActionFeedback(null), 4000);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleConfirmClearCustomUploaded = async () => {
+    setIsDeleting(true);
+    try {
+      const count = await clearCustomUploadedVehicles();
+      setSelectedVins(new Set());
+      setVehicles(getAllVehicles() as StockVehicle[]);
+      setActionFeedback(`Cleared ${count} custom uploaded vehicles. Factory default inventory active.`);
+      setTimeout(() => setActionFeedback(null), 4000);
+      setIsManageStockModalOpen(false);
+    } catch (err: any) {
+      console.error('Clear uploaded error:', err);
+      setActionFeedback('Failed to clear uploaded stock.');
+      setTimeout(() => setActionFeedback(null), 4000);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleConfirmResetAll = async () => {
+    setIsDeleting(true);
+    try {
+      await resetStockToFactoryDefaults();
+      setSelectedVins(new Set());
+      setVehicles(getAllVehicles() as StockVehicle[]);
+      setActionFeedback('Reset all stock inventory to original factory master state.');
+      setTimeout(() => setActionFeedback(null), 4000);
+      setIsManageStockModalOpen(false);
+    } catch (err: any) {
+      console.error('Reset stock error:', err);
+      setActionFeedback('Failed to reset inventory.');
+      setTimeout(() => setActionFeedback(null), 4000);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const totalStockCount = brandScopedVehicles.length;
   const unallocatedStockCount = brandScopedVehicles.filter(v => !v.customer_name && v.status !== 'ALLOCATED' && v.status !== 'DELIVERED').length;
   const allocatedStockCount = brandScopedVehicles.filter(v => !!v.customer_name || v.status === 'ALLOCATED').length;
@@ -283,7 +403,15 @@ export const VehiclesPage: React.FC = () => {
                   <span>Export CSV</span>
                 </button>
 
-                
+                <button
+                  type="button"
+                  onClick={() => setIsManageStockModalOpen(true)}
+                  className="h-8 px-3 rounded bg-surface border border-line hover:border-danger/40 hover:text-danger text-xs font-semibold text-ink transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  title="Manage & Clear Stock"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-ink-3" />
+                  <span>Manage Stock</span>
+                </button>
               </>
             )}
 
@@ -390,10 +518,56 @@ export const VehiclesPage: React.FC = () => {
           </div>
         }
       >
+        {/* Bulk Action Bar */}
+        {selectedVins.size > 0 && (
+          <div className="p-2.5 mb-3 bg-canvas border border-line rounded flex items-center justify-between gap-3 text-xs flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+              <span className="font-semibold text-ink">
+                <span className="font-mono tnum text-accent">{selectedVins.size}</span> vehicle{selectedVins.size > 1 ? 's' : ''} selected
+              </span>
+              <span className="text-ink-3 text-[11px]">(out of {filtered.length} matching)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsBulkDeleteModalOpen(true)}
+                className="h-7 px-3 rounded bg-danger/10 border border-danger/30 hover:bg-danger hover:text-white text-danger text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Selected ({selectedVins.size})</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleClearSelection}
+                className="h-7 px-2.5 rounded bg-surface border border-line hover:border-line-strong text-ink-3 hover:text-ink text-xs transition-colors cursor-pointer"
+              >
+                Clear Selection
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead className="bg-canvas border-b border-line text-ink font-semibold uppercase tracking-[0.06em] text-xs">
               <tr>
+                <th className="py-2.5 px-3 w-8 text-center">
+                  <button
+                    type="button"
+                    onClick={handleToggleSelectAll}
+                    className="p-1 rounded text-ink-3 hover:text-ink transition-colors cursor-pointer inline-flex items-center justify-center"
+                    title={selectedVins.size === filtered.length && filtered.length > 0 ? "Deselect All" : "Select All"}
+                  >
+                    {selectedVins.size === filtered.length && filtered.length > 0 ? (
+                      <CheckSquare className="w-4 h-4 text-accent" />
+                    ) : selectedVins.size > 0 ? (
+                      <div className="w-3.5 h-3.5 rounded-xs border-2 border-accent bg-accent/20" />
+                    ) : (
+                      <Square className="w-4 h-4 text-line-strong hover:text-ink" />
+                    )}
+                  </button>
+                </th>
                 <th className="py-2.5 px-3 w-10 text-center whitespace-nowrap">#</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Purchase / Billing Date</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Model</th>
@@ -417,14 +591,14 @@ export const VehiclesPage: React.FC = () => {
             <tbody className="divide-y divide-line text-ink-2 text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan={18} className="py-12 text-center text-ink-3">
+                  <td colSpan={19} className="py-12 text-center text-ink-3">
                     <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-accent" />
                     Loading inventory...
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={18}>
+                  <td colSpan={19}>
                     <div className="py-12 text-center space-y-3">
                       <div className="w-12 h-12 rounded-full bg-accent-soft text-accent flex items-center justify-center mx-auto">
                         <Car className="w-6 h-6" />
@@ -452,9 +626,25 @@ export const VehiclesPage: React.FC = () => {
                   return (
                     <tr 
                       key={v.id || idx} 
-                      className="hover:bg-canvas transition-colors cursor-pointer"
+                      className={`hover:bg-canvas transition-colors cursor-pointer ${
+                        selectedVins.has(v.vin) ? 'bg-accent-soft/30' : ''
+                      }`}
                       onClick={() => setSelectedStock(v)}
                     >
+                      <td className="py-2.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleSelectVin(v.vin)}
+                          className="p-1 rounded text-ink-3 hover:text-ink transition-colors cursor-pointer inline-flex items-center justify-center"
+                          aria-label={`Select vehicle ${v.vin}`}
+                        >
+                          {selectedVins.has(v.vin) ? (
+                            <CheckSquare className="w-4 h-4 text-accent" />
+                          ) : (
+                            <Square className="w-4 h-4 text-line-strong hover:text-ink" />
+                          )}
+                        </button>
+                      </td>
                       <td className="py-2.5 px-3 text-center text-ink-3 tnum whitespace-nowrap">
                         {idx + 1}
                       </td>
@@ -551,29 +741,41 @@ export const VehiclesPage: React.FC = () => {
                         })()}
                       </td>
                       <td className="py-2.5 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        {v.status === 'YARD_RECEIVING_PENDING' || v.status === 'GATE_INWARD_PENDING' ? (
-                          <Link
-                            to="/receiving"
-                            className="h-7 px-2.5 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink transition-colors inline-flex items-center gap-1.5 whitespace-nowrap shadow-xs"
+                        <div className="inline-flex items-center gap-1.5 justify-center">
+                          {v.status === 'YARD_RECEIVING_PENDING' || v.status === 'GATE_INWARD_PENDING' ? (
+                            <Link
+                              to="/receiving"
+                              className="h-7 px-2.5 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink transition-colors inline-flex items-center gap-1.5 whitespace-nowrap shadow-xs"
+                            >
+                              Receive
+                            </Link>
+                          ) : v.status === 'PDI_APPROVED' ? (
+                            <Link
+                              to={`/certificate/${v.id}`}
+                              className="h-7 px-2.5 rounded bg-ok/10 text-ok border border-ok/20 hover:bg-ok hover:text-white text-xs font-semibold transition-colors inline-flex items-center gap-1 whitespace-nowrap"
+                            >
+                              Certified
+                            </Link>
+                          ) : (
+                            <Link
+                              to="/pdi"
+                              className="h-7 px-2.5 rounded bg-accent text-white hover:bg-accent-600 text-xs font-semibold transition-colors inline-flex items-center gap-1.5 whitespace-nowrap shadow-xs"
+                            >
+                              <span>Inspect</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </Link>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => setSingleDeleteTarget(v)}
+                            className="h-7 w-7 rounded bg-surface border border-line hover:border-danger/40 hover:bg-danger/10 text-ink-3 hover:text-danger transition-colors inline-flex items-center justify-center cursor-pointer shadow-xs"
+                            title="Delete vehicle from inventory"
+                            aria-label={`Delete vehicle ${v.vin}`}
                           >
-                            Receive
-                          </Link>
-                        ) : v.status === 'PDI_APPROVED' ? (
-                          <Link
-                            to={`/certificate/${v.id}`}
-                            className="h-7 px-2.5 rounded bg-ok/10 text-ok border border-ok/20 hover:bg-ok hover:text-white text-xs font-semibold transition-colors inline-flex items-center gap-1 whitespace-nowrap"
-                          >
-                            Certified
-                          </Link>
-                        ) : (
-                          <Link
-                            to="/pdi"
-                            className="h-7 px-3 rounded bg-accent text-white hover:bg-accent-600 text-xs font-semibold transition-colors inline-flex items-center gap-1.5 whitespace-nowrap shadow-xs"
-                          >
-                            <span>Inspect</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </Link>
-                        )}
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -675,7 +877,18 @@ export const VehiclesPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-3 border-t border-line bg-canvas flex items-center justify-end">
+            <div className="p-3 border-t border-line bg-canvas flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  setSingleDeleteTarget(selectedStock);
+                  setSelectedStock(null);
+                }}
+                className="h-8 px-3 rounded bg-danger/10 border border-danger/30 hover:bg-danger hover:text-white text-xs font-semibold text-danger transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Record</span>
+              </button>
               <button
                 onClick={() => setSelectedStock(null)}
                 className="h-8 px-4 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink cursor-pointer"
@@ -684,6 +897,259 @@ export const VehiclesPage: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 1. Single Vehicle Delete Confirmation Modal */}
+      {singleDeleteTarget && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 select-none">
+          <div className="bg-surface w-full max-w-md rounded-panel shadow-pop border border-line overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-line flex items-center justify-between bg-canvas">
+              <div className="flex items-center gap-2 text-danger">
+                <AlertOctagon className="w-5 h-5 shrink-0" />
+                <h3 className="font-semibold text-ink text-sm">Delete Vehicle Record</h3>
+              </div>
+              <button 
+                onClick={() => setSingleDeleteTarget(null)}
+                className="w-8 h-8 rounded text-ink-3 hover:text-ink hover:bg-surface flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3.5 text-xs">
+              <p className="text-ink">
+                Are you sure you want to permanently remove this vehicle from the dealership inventory ledger?
+              </p>
+
+              <div className="p-3 bg-canvas border border-line rounded space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-ink-3">VIN:</span>
+                  <span className="font-mono font-bold text-ink">{singleDeleteTarget.vin}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-ink-3">Model & Variant:</span>
+                  <span className="font-semibold text-ink">{singleDeleteTarget.model} {singleDeleteTarget.variant || ''}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-ink-3">Stock Location:</span>
+                  <span className="text-ink">{singleDeleteTarget.location || 'Central Stockyard'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-ink-3">Status:</span>
+                  <Badge tone={getStatusBadgeTone(singleDeleteTarget.status) as any}>
+                    {singleDeleteTarget.status}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-danger/10 border border-danger/20 rounded flex items-start gap-2 text-danger text-[11px] leading-relaxed">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  This will synchronize deletion with the local PostgREST database (<span className="font-mono">localhost:54321</span>) and cloud backup. This action is irreversible.
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3 border-t border-line bg-canvas flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setSingleDeleteTarget(null)}
+                disabled={isDeleting}
+                className="h-8 px-3 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSingleDelete}
+                disabled={isDeleting}
+                className="h-8 px-4 rounded bg-danger hover:bg-danger/90 text-xs font-semibold text-white transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Vehicle</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Bulk Delete Selected Vehicles Modal */}
+      {isBulkDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 select-none">
+          <div className="bg-surface w-full max-w-lg rounded-panel shadow-pop border border-line overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-line flex items-center justify-between bg-canvas">
+              <div className="flex items-center gap-2 text-danger">
+                <AlertOctagon className="w-5 h-5 shrink-0" />
+                <h3 className="font-semibold text-ink text-sm">Delete {selectedVins.size} Selected Vehicles</h3>
+              </div>
+              <button 
+                onClick={() => setIsBulkDeleteModalOpen(false)}
+                className="w-8 h-8 rounded text-ink-3 hover:text-ink hover:bg-surface flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3.5 text-xs">
+              <p className="text-ink">
+                You are about to permanently delete <strong className="text-danger font-mono tnum">{selectedVins.size}</strong> vehicles from the dealership inventory ledger.
+              </p>
+
+              <div className="p-3 bg-canvas border border-line rounded space-y-2 max-h-36 overflow-y-auto">
+                <span className="eyebrow block text-ink-3">Selected VIN Numbers:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {Array.from(selectedVins).slice(0, 10).map(vin => (
+                    <span key={vin} className="px-2 py-0.5 rounded bg-surface border border-line font-mono text-[11px] text-ink font-semibold">
+                      {vin}
+                    </span>
+                  ))}
+                  {selectedVins.size > 10 && (
+                    <span className="px-2 py-0.5 rounded bg-surface text-[11px] text-ink-3">
+                      +{selectedVins.size - 10} more
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-danger/10 border border-danger/20 rounded flex items-start gap-2 text-danger text-[11px] leading-relaxed">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  Permanent dual-ledger commit: All selected vehicles will be expunged from local storage, local PostgREST DB (<span className="font-mono">localhost:54321</span>), and cloud sync.
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3 border-t border-line bg-canvas flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsBulkDeleteModalOpen(false)}
+                disabled={isDeleting}
+                className="h-8 px-3 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmBulkDelete}
+                disabled={isDeleting}
+                className="h-8 px-4 rounded bg-danger hover:bg-danger/90 text-xs font-semibold text-white transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting {selectedVins.size} Units...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete {selectedVins.size} Vehicles</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Manage & Clear Uploaded Stock Modal */}
+      {isManageStockModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 select-none">
+          <div className="bg-surface w-full max-w-lg rounded-panel shadow-pop border border-line overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-line flex items-center justify-between bg-canvas">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded bg-accent text-white flex items-center justify-center shadow-xs">
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-ink text-sm">Stock Ledger Operations</h3>
+                  <p className="text-[11px] text-ink-3">Clear uploaded batches or reset stock inventory</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsManageStockModalOpen(false)}
+                className="w-8 h-8 rounded text-ink-3 hover:text-ink hover:bg-surface flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4 text-xs">
+              {/* Option 1: Clear Custom Uploaded Stock */}
+              <div className="p-3.5 bg-canvas border border-line rounded-lg space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="font-semibold text-ink text-xs">Clear Custom Uploaded Stock</h4>
+                    <p className="text-ink-3 text-[11px] mt-0.5 leading-relaxed">
+                      Removes all vehicles imported via Excel/CSV spreadsheets. Verified factory baseline stock remains active.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleConfirmClearCustomUploaded}
+                    disabled={isDeleting}
+                    className="h-7 px-3 rounded bg-surface border border-line hover:border-danger/40 hover:text-danger text-xs font-semibold text-ink transition-colors cursor-pointer shrink-0 shadow-xs"
+                  >
+                    Clear Uploaded
+                  </button>
+                </div>
+              </div>
+
+              {/* Option 2: Restore Factory Master */}
+              <div className="p-3.5 bg-canvas border border-line rounded-lg space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="font-semibold text-ink text-xs">Restore Factory Master Stock</h4>
+                    <p className="text-ink-3 text-[11px] mt-0.5 leading-relaxed">
+                      Clears all custom additions, deletions, and overrides, restoring the default verified master stock (540+ vehicles).
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleConfirmResetAll}
+                    disabled={isDeleting}
+                    className="h-7 px-3 rounded bg-accent-soft border border-accent-line text-accent hover:bg-accent hover:text-white text-xs font-semibold transition-colors cursor-pointer shrink-0 shadow-xs"
+                  >
+                    Restore Master
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 border-t border-line bg-canvas flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setIsManageStockModalOpen(false)}
+                className="h-8 px-4 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Feedback Notification */}
+      {actionFeedback && (
+        <div className="fixed bottom-5 left-5 z-50 bg-surface border border-line shadow-pop px-3.5 py-2.5 rounded-lg flex items-center gap-2.5 text-xs font-semibold text-ink border-l-4 border-l-accent">
+          <CheckCircle2 className="w-4 h-4 text-ok shrink-0" />
+          <span>{actionFeedback}</span>
+          <button 
+            onClick={() => setActionFeedback(null)} 
+            className="ml-2 text-ink-3 hover:text-ink cursor-pointer"
+            aria-label="Dismiss message"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 
