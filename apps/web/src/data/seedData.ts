@@ -1846,6 +1846,7 @@ export interface EnterpriseUser {
   nature: string;
   status: 'ACTIVE' | 'INACTIVE' | string;
   role: string;
+  can_delete?: boolean;
   created_at?: string;
 }
 
@@ -1866,6 +1867,7 @@ export const SEED_USERS: EnterpriseUser[] = [
     nature: 'Head Office',
     status: 'ACTIVE',
     role: 'SUPER_ADMIN',
+    can_delete: true,
     created_at: '2026-01-01T00:00:00.000Z'
   },
   {
@@ -1884,6 +1886,7 @@ export const SEED_USERS: EnterpriseUser[] = [
     nature: 'Head Office',
     status: 'ACTIVE',
     role: 'SUPER_ADMIN',
+    can_delete: true,
     created_at: '2026-01-01T00:00:00.000Z'
   },
   {
@@ -2119,6 +2122,8 @@ export const findUserForAuth = (identifier: string, passwordAttempt: string): { 
     organizationId: brandScope.toLowerCase().includes('hyundai') ? HYUNDAI_ORG_ID : TATA_ORG_ID,
     brand: brandScope,
     hasDualBrandAccess: hasDual,
+    can_delete: matched.can_delete ?? (matched.role === 'SUPER_ADMIN' || matched.role === 'SYSTEM_ADMIN' || false),
+    canDelete: matched.can_delete ?? (matched.role === 'SUPER_ADMIN' || matched.role === 'SYSTEM_ADMIN' || false),
     permissions: ['view', 'create', 'edit', 'approve', 'export'],
     allowedMenus: ['dashboard', 'vehicles', 'yard', 'pdi', 'repairs', 'qa', 'challans', 'reports', 'users', 'roles']
   };

@@ -70,7 +70,7 @@ export interface ChallanRecord {
 }
 
 export const ChallanInvoicingPage: React.FC = () => {
-  const { currentBrand } = useAuth();
+  const { currentBrand, canDelete } = useAuth();
 
   const [records, setRecords] = useState<ChallanRecord[]>(() => getChallansForBrand(currentBrand?.code || 'DHOOT-ALL'));
   const [loading, setLoading] = useState(false);
@@ -681,7 +681,7 @@ export const ChallanInvoicingPage: React.FC = () => {
   };
 
   const handleConfirmSingleDelete = async () => {
-    if (!singleDeleteTarget) return;
+    if (!canDelete || !singleDeleteTarget) return;
     setIsDeleting(true);
     const targetKey = (singleDeleteTarget.challan_no || singleDeleteTarget.invoice_no || singleDeleteTarget.id || '').trim();
     try {
@@ -706,7 +706,7 @@ export const ChallanInvoicingPage: React.FC = () => {
   };
 
   const handleConfirmBulkDelete = async () => {
-    if (selectedChallanNos.size === 0) return;
+    if (!canDelete || selectedChallanNos.size === 0) return;
     setIsDeleting(true);
     const keys = Array.from(selectedChallanNos);
     try {
@@ -725,6 +725,7 @@ export const ChallanInvoicingPage: React.FC = () => {
   };
 
   const handleConfirmClearAll = async () => {
+    if (!canDelete) return;
     setIsDeleting(true);
     try {
       const success = await clearAllChallanRecords();
@@ -744,6 +745,7 @@ export const ChallanInvoicingPage: React.FC = () => {
   };
 
   const handleConfirmResetAll = async () => {
+    if (!canDelete) return;
     setIsDeleting(true);
     try {
       const success = await resetChallanRecordsToDefault();
@@ -807,15 +809,17 @@ export const ChallanInvoicingPage: React.FC = () => {
               <span>Bulk Import Challans</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setIsManageChallansModalOpen(true)}
-              className="h-8 px-3.5 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
-              title="Manage and clear challans register"
-            >
-              <Trash2 className="w-3.5 h-3.5 text-danger" />
-              <span>Manage Challans</span>
-            </button>
+            {canDelete && (
+              <button
+                type="button"
+                onClick={() => setIsManageChallansModalOpen(true)}
+                className="h-8 px-3.5 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                title="Manage and clear challans register"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-danger" />
+                <span>Manage Challans</span>
+              </button>
+            )}
           </div>
         }
       />
@@ -866,7 +870,7 @@ export const ChallanInvoicingPage: React.FC = () => {
           </div>
         }
       >
-        {selectedChallanNos.size > 0 && (
+        {canDelete && selectedChallanNos.size > 0 && (
           <div className="mb-3 p-3 bg-canvas border border-line rounded flex items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-ink">
@@ -897,15 +901,17 @@ export const ChallanInvoicingPage: React.FC = () => {
           <table className="w-full text-left border-collapse text-xs">
             <thead className="bg-canvas border-b border-line text-ink font-semibold uppercase tracking-[0.06em] text-xs">
               <tr>
-                <th className="py-2.5 px-3 w-8 text-center whitespace-nowrap">
-                  <input
-                    type="checkbox"
-                    checked={filteredRecords.length > 0 && selectedChallanNos.size === filteredRecords.length}
-                    onChange={handleToggleSelectAll}
-                    className="rounded border-line text-accent focus:ring-accent cursor-pointer"
-                    title="Select All Challans"
-                  />
-                </th>
+                {canDelete && (
+                  <th className="py-2.5 px-3 w-8 text-center whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={filteredRecords.length > 0 && selectedChallanNos.size === filteredRecords.length}
+                      onChange={handleToggleSelectAll}
+                      className="rounded border-line text-accent focus:ring-accent cursor-pointer"
+                      title="Select All Challans"
+                    />
+                  </th>
+                )}
                 <th className="py-2.5 px-3 w-10 text-center whitespace-nowrap">#</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Invoice No.</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Invoice Date</th>
@@ -935,14 +941,14 @@ export const ChallanInvoicingPage: React.FC = () => {
             <tbody className="divide-y divide-line text-ink-2 text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan={25} className="py-12 text-center text-ink-3">
+                  <td colSpan={canDelete ? 25 : 24} className="py-12 text-center text-ink-3">
                     <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-accent" />
                     Loading challan & invoice ledger...
                   </td>
                 </tr>
               ) : filteredRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={25}>
+                  <td colSpan={canDelete ? 25 : 24}>
                     <div className="py-12 text-center space-y-3">
                       <div className="w-12 h-12 rounded-full bg-accent-soft text-accent flex items-center justify-center mx-auto">
                         <Receipt className="w-6 h-6" />
@@ -965,14 +971,16 @@ export const ChallanInvoicingPage: React.FC = () => {
                       className="hover:bg-canvas transition-colors cursor-pointer"
                       onClick={() => setSelectedRecord(r)}
                     >
-                      <td className="py-2.5 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={selectedChallanNos.has(itemKey)}
-                          onChange={() => handleToggleSelectChallan(itemKey)}
-                          className="rounded border-line text-accent focus:ring-accent cursor-pointer"
-                        />
-                      </td>
+                      {canDelete && (
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedChallanNos.has(itemKey)}
+                            onChange={() => handleToggleSelectChallan(itemKey)}
+                            className="rounded border-line text-accent focus:ring-accent cursor-pointer"
+                          />
+                        </td>
+                      )}
                       <td className="py-2.5 px-3 text-center text-ink-3 tnum whitespace-nowrap">
                         {idx + 1}
                       </td>
@@ -1052,14 +1060,16 @@ export const ChallanInvoicingPage: React.FC = () => {
                             <Printer className="w-3 h-3 text-ink-3" />
                             <span>Invoice</span>
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => setSingleDeleteTarget(r)}
-                            className="h-7 w-7 rounded bg-surface border border-line hover:border-danger/40 hover:bg-danger/10 hover:text-danger text-ink-3 transition-colors flex items-center justify-center shadow-xs cursor-pointer"
-                            title="Delete challan record"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {canDelete && (
+                            <button
+                              type="button"
+                              onClick={() => setSingleDeleteTarget(r)}
+                              className="h-7 w-7 rounded bg-surface border border-line hover:border-danger/40 hover:bg-danger/10 hover:text-danger text-ink-3 transition-colors flex items-center justify-center shadow-xs cursor-pointer"
+                              title="Delete challan record"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

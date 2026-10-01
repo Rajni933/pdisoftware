@@ -30,7 +30,7 @@ import { isSmartPbnaMatch } from '../utils/matchingUtils';
 export type { BookingRecord };
 
 export const BookingsPage: React.FC = () => {
-  const { currentBrand } = useAuth();
+  const { currentBrand, canDelete } = useAuth();
 
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -518,6 +518,10 @@ export const BookingsPage: React.FC = () => {
 
   const handleConfirmSingleDelete = async () => {
     if (!singleDeleteTarget) return;
+    if (!canDelete) {
+      setActionFeedback('Access Denied: You do not have permission to delete bookings.');
+      return;
+    }
     setIsDeleting(true);
     const key = (singleDeleteTarget.receipt_no || singleDeleteTarget.id || '').trim();
     const receiptNo = singleDeleteTarget.receipt_no || key;
@@ -542,6 +546,10 @@ export const BookingsPage: React.FC = () => {
 
   const handleConfirmBulkDelete = async () => {
     if (selectedBookingReceipts.size === 0) return;
+    if (!canDelete) {
+      setActionFeedback('Access Denied: You do not have permission to delete bookings.');
+      return;
+    }
     setIsDeleting(true);
     const keys = Array.from(selectedBookingReceipts);
 
@@ -561,6 +569,10 @@ export const BookingsPage: React.FC = () => {
   };
 
   const handleConfirmClearAll = async () => {
+    if (!canDelete) {
+      setActionFeedback('Access Denied: You do not have permission to clear bookings.');
+      return;
+    }
     setIsDeleting(true);
     try {
       await clearAllBookingsRecords();
@@ -577,6 +589,10 @@ export const BookingsPage: React.FC = () => {
   };
 
   const handleConfirmResetAll = async () => {
+    if (!canDelete) {
+      setActionFeedback('Access Denied: You do not have permission to reset bookings.');
+      return;
+    }
     setIsDeleting(true);
     try {
       await resetBookingsToDefaultRecords();
@@ -630,15 +646,17 @@ export const BookingsPage: React.FC = () => {
               <span>PBNA / VNA Report</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setIsManageBookingsModalOpen(true)}
-              className="h-8 px-3.5 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
-              title="Manage and clear bookings ledger"
-            >
-              <Trash2 className="w-3.5 h-3.5 text-danger" />
-              <span>Manage Bookings</span>
-            </button>
+            {canDelete && (
+              <button
+                type="button"
+                onClick={() => setIsManageBookingsModalOpen(true)}
+                className="h-8 px-3.5 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                title="Manage and clear bookings ledger"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-danger" />
+                <span>Manage Bookings</span>
+              </button>
+            )}
 
             <button
               type="button"
@@ -714,7 +732,7 @@ export const BookingsPage: React.FC = () => {
           </div>
         }
       >
-        {selectedBookingReceipts.size > 0 && (
+        {canDelete && selectedBookingReceipts.size > 0 && (
           <div className="mb-3 p-3 bg-canvas border border-line rounded flex items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-ink">
@@ -745,15 +763,17 @@ export const BookingsPage: React.FC = () => {
           <table className="w-full text-left border-collapse text-xs">
             <thead className="bg-accent-soft border-b border-accent-line text-accent font-semibold uppercase tracking-[0.06em] text-label">
               <tr>
-                <th className="py-2.5 px-3 w-8 text-center whitespace-nowrap">
-                  <input
-                    type="checkbox"
-                    checked={filteredBookings.length > 0 && selectedBookingReceipts.size === filteredBookings.length}
-                    onChange={handleToggleSelectAll}
-                    className="rounded border-line text-accent focus:ring-accent cursor-pointer"
-                    title="Select All Bookings"
-                  />
-                </th>
+                {canDelete && (
+                  <th className="py-2.5 px-3 w-8 text-center whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={filteredBookings.length > 0 && selectedBookingReceipts.size === filteredBookings.length}
+                      onChange={handleToggleSelectAll}
+                      className="rounded border-line text-accent focus:ring-accent cursor-pointer"
+                      title="Select All Bookings"
+                    />
+                  </th>
+                )}
                 <th className="py-2.5 px-3 w-10 text-center whitespace-nowrap">#</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Receipt Date</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Receipt No</th>
@@ -826,14 +846,16 @@ export const BookingsPage: React.FC = () => {
                   const isSelected = selectedBookingReceipts.has(bKey);
                   return (
                     <tr key={b.id || idx} className={`hover:bg-canvas transition-colors ${isSelected ? 'bg-accent/5' : ''}`}>
-                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => handleToggleSelectReceipt(bKey)}
-                          className="rounded border-line text-accent focus:ring-accent cursor-pointer"
-                        />
-                      </td>
+                      {canDelete && (
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectReceipt(bKey)}
+                            className="rounded border-line text-accent focus:ring-accent cursor-pointer"
+                          />
+                        </td>
+                      )}
                       <td className="py-2.5 px-3 text-center text-ink-3 tnum whitespace-nowrap">
                         {idx + 1}
                       </td>
@@ -915,14 +937,16 @@ export const BookingsPage: React.FC = () => {
                               <span>Voucher</span>
                             </button>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => setSingleDeleteTarget(b)}
-                            className="h-7 w-7 rounded bg-surface border border-line hover:border-danger hover:text-danger text-ink-3 transition-colors flex items-center justify-center shadow-xs cursor-pointer"
-                            title={`Delete Booking #${b.receipt_no}`}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {canDelete && (
+                            <button
+                              type="button"
+                              onClick={() => setSingleDeleteTarget(b)}
+                              className="h-7 w-7 rounded bg-surface border border-line hover:border-danger hover:text-danger text-ink-3 transition-colors flex items-center justify-center shadow-xs cursor-pointer"
+                              title={`Delete Booking #${b.receipt_no}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

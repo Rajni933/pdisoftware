@@ -206,7 +206,8 @@ export const AdminUsersPage: React.FC = () => {
     brand: 'Dhoot Group',
     nature: 'Stockyard',
     role: 'PDI_ENGINEER',
-    status: 'ACTIVE'
+    status: 'ACTIVE',
+    can_delete: false
   });
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [actionNotice, setActionNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -267,6 +268,7 @@ export const AdminUsersPage: React.FC = () => {
                 nature: u.nature || existing.nature || 'Stockyard',
                 status: u.is_active === false ? 'INACTIVE' : (u.status || 'ACTIVE'),
                 role: u.role || existing.role || 'PDI_ENGINEER',
+                can_delete: u.can_delete ?? existing.can_delete ?? (u.role === 'SUPER_ADMIN' || u.role === 'SYSTEM_ADMIN' || false),
                 created_at: u.created_at || existing.created_at || new Date().toISOString()
               });
             }
@@ -326,12 +328,14 @@ export const AdminUsersPage: React.FC = () => {
         nature: newUser.nature,
         role: newUser.role,
         status: newUser.status,
+        can_delete: Boolean((newUser as any).can_delete),
         created_at: new Date().toISOString()
       };
 
       const result = await saveSingleUser(payload);
       if (result.success) {
         setUsersList(prev => [payload, ...prev.filter(u => (u.user_code || u.employee_id).toUpperCase() !== code)]);
+        window.dispatchEvent(new Event('users-updated'));
         setActionNotice({
           type: 'success',
           message: `Staff Account "${code}" created successfully! Login Credentials: User ID "${code}" | Password "${chosenPassword}". Account is active and ready for login.`
@@ -349,7 +353,8 @@ export const AdminUsersPage: React.FC = () => {
           brand: 'Dhoot Group',
           nature: 'Stockyard',
           role: 'PDI_ENGINEER',
-          status: 'ACTIVE'
+          status: 'ACTIVE',
+          can_delete: false
         });
       } else {
         setActionNotice({ type: 'error', message: result.message });
@@ -368,6 +373,7 @@ export const AdminUsersPage: React.FC = () => {
     try {
       await saveSingleUser(selectedUser);
       setUsersList(prev => prev.map(u => u.id === selectedUser.id ? selectedUser : u));
+      window.dispatchEvent(new Event('users-updated'));
       setActionNotice({
         type: 'success',
         message: `Staff Account "${selectedUser.user_code || selectedUser.employee_id}" updated successfully.`
@@ -460,6 +466,7 @@ export const AdminUsersPage: React.FC = () => {
     }
     setRoleConfigs(updated);
     localStorage.setItem('dhoot_role_permissions', JSON.stringify(updated));
+    window.dispatchEvent(new Event('roles-updated'));
     setShowRoleModal(false);
     setEditingRole(null);
   };
@@ -653,9 +660,20 @@ export const AdminUsersPage: React.FC = () => {
                         <div className="text-[10px] text-slate-400 font-mono">{u.mail_id}</div>
                       </td>
                       <td className="py-2.5 px-3">
-                        <span className="px-2 py-0.5 rounded-md bg-accent text-white text-[10px] font-semibold">
-                          {u.role?.replace('_', ' ') || 'PDI ENGINEER'}
-                        </span>
+                        <div className="flex flex-col gap-1 items-start">
+                          <span className="px-2 py-0.5 rounded-md bg-accent text-white text-[10px] font-semibold">
+                            {u.role?.replace('_', ' ') || 'PDI ENGINEER'}
+                          </span>
+                          {(u.can_delete || u.role === 'SUPER_ADMIN' || u.role === 'SYSTEM_ADMIN' || (u.user_code || '').toUpperCase() === 'ADMIN' || (u.user_code || '').toUpperCase() === 'DG001') ? (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
+                              <Trash2 className="w-2.5 h-2.5" /> Can Delete Data
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-slate-100 text-slate-500">
+                              View/Edit Only
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-2.5 px-3">
                         <div className="font-bold text-slate-800">{u.designation}</div>
@@ -749,6 +767,7 @@ export const AdminUsersPage: React.FC = () => {
                   <th className="py-2.5 px-2 text-center">Bookings</th>
                   <th className="py-2.5 px-2 text-center">Invoicing</th>
                   <th className="py-2.5 px-2 text-center">Admin HQ</th>
+                  <th className="py-2.5 px-2 text-center">Delete Rights</th>
                   <th className="py-2.5 px-3 text-center">Actions</th>
                 </tr>
               </thead>
@@ -786,13 +805,24 @@ export const AdminUsersPage: React.FC = () => {
                     <td className="py-3 px-2 text-center">
                       {r.windows.adminPanel ? <Check className="w-4 h-4 text-emerald-600 mx-auto" /> : <X className="w-3.5 h-3.5 text-slate-300 mx-auto" />}
                     </td>
+                    <td className="py-3 px-2 text-center">
+                      {r.actions?.delete ? (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                          ALLOWED
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                          RESTRICTED
+                        </span>
+                      )}
+                    </td>
                     <td className="py-3 px-3 text-center">
                       <button
                         onClick={() => { setEditingRole(r); setShowRoleModal(true); }}
                         className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition-all cursor-pointer inline-flex items-center gap-1"
                       >
                         <Edit3 className="w-3 h-3" />
-                        <span>Edit Windows</span>
+                        <span>Edit Role & Actions</span>
                       </button>
                     </td>
                   </tr>
@@ -963,6 +993,58 @@ export const AdminUsersPage: React.FC = () => {
                       <span className="font-bold text-slate-800 text-[11px]">{label}</span>
                     </label>
                   ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1.5">Action & Operations Rights</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-canvas p-3 rounded border border-line">
+                  {[
+                    { key: 'view', label: 'View Records & Inspect Audits', desc: 'Read access across authorized windows' },
+                    { key: 'create', label: 'Create Entries & Inward', desc: 'Register bookings, inward cars, log challans' },
+                    { key: 'edit', label: 'Edit & Update Information', desc: 'Modify pricing, customer info, remarks' },
+                    { key: 'approve', label: 'Authorize & Certify', desc: 'QA digital sign-off, gatepass approvals' }
+                  ].map(({ key, label, desc }) => (
+                    <label key={key} className="flex items-start gap-2 p-2 bg-white rounded border border-line cursor-pointer hover:border-slate-400">
+                      <input
+                        type="checkbox"
+                        checked={Boolean((editingRole.actions as any)?.[key])}
+                        onChange={(e) => setEditingRole({
+                          ...editingRole,
+                          actions: { ...editingRole.actions, [key]: e.target.checked }
+                        })}
+                        className="rounded text-slate-900 focus:ring-0 mt-0.5"
+                      />
+                      <div>
+                        <div className="font-bold text-slate-800 text-[11px]">{label}</div>
+                        <div className="text-[10px] text-slate-400">{desc}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+
+                {/* Highly Visible Supervisory Delete Access Toggle */}
+                <div className="mt-2.5 p-3 rounded border border-rose-200 bg-rose-50/60">
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(editingRole.actions?.delete)}
+                      onChange={(e) => setEditingRole({
+                        ...editingRole,
+                        actions: { ...editingRole.actions, delete: e.target.checked }
+                      })}
+                      className="rounded text-rose-600 focus:ring-0 mt-0.5 w-4 h-4"
+                    />
+                    <div>
+                      <div className="font-bold text-rose-900 text-xs flex items-center gap-1.5">
+                        <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Data Deletion & Ledger Purge Rights (Supervisory)</span>
+                      </div>
+                      <p className="text-[11px] text-rose-700 mt-0.5">
+                        Enables members of this role to delete vehicles from stock, purge customer bookings, remove tax challans, discard workshop tickets, and delete queue inspection records. Leave unchecked for normal staff.
+                      </p>
+                    </div>
+                  </label>
                 </div>
               </div>
 
@@ -1186,6 +1268,27 @@ export const AdminUsersPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Row 7: Supervisory Data Deletion Permission Toggle */}
+              <div className="p-3 rounded border border-rose-200 bg-rose-50/60">
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean((newUser as any).can_delete)}
+                    onChange={(e) => setNewUser({ ...newUser, can_delete: e.target.checked } as any)}
+                    className="rounded text-rose-600 focus:ring-0 mt-0.5 w-4 h-4"
+                  />
+                  <div>
+                    <div className="font-bold text-rose-900 text-xs flex items-center gap-1.5">
+                      <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                      <span>Grant Data Deletion & Record Purge Access</span>
+                    </div>
+                    <p className="text-[11px] text-rose-700 mt-0.5">
+                      Authorize this staff member to delete vehicles from stock, bookings, challan invoices, repair tickets, and inspection records.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
               {/* Footer */}
               <div className="pt-4 border-t border-line flex items-center justify-between">
                 <span className="text-[11px] text-slate-500 font-mono">
@@ -1367,6 +1470,26 @@ export const AdminUsersPage: React.FC = () => {
                     onChange={(e) => setSelectedUser({ ...selectedUser, password: e.target.value })}
                     className="w-full p-2.5 bg-canvas border border-line rounded font-mono"
                   />
+                </div>
+
+                <div className="sm:col-span-2 p-3 rounded border border-rose-200 bg-rose-50/60">
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(selectedUser.can_delete)}
+                      onChange={(e) => setSelectedUser({ ...selectedUser, can_delete: e.target.checked })}
+                      className="rounded text-rose-600 focus:ring-0 mt-0.5 w-4 h-4"
+                    />
+                    <div>
+                      <div className="font-bold text-rose-900 text-xs flex items-center gap-1.5">
+                        <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Data Deletion & Record Purge Access</span>
+                      </div>
+                      <p className="text-[11px] text-rose-700 mt-0.5">
+                        Authorize this individual staff account to delete vehicles, customer bookings, tax invoices, workshop repairs, and inspection queue entries.
+                      </p>
+                    </div>
+                  </label>
                 </div>
               </div>
 

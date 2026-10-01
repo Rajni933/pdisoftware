@@ -75,7 +75,53 @@ export interface AuthUser {
   organizationId: string;
   brand: string;
   hasDualBrandAccess?: boolean;
+  can_delete?: boolean;
+  canDelete?: boolean;
 }
+
+export const checkUserCanDelete = (user: AuthUser | null): boolean => {
+  if (!user) return false;
+  // 1. Super Administrator & Master Admin Accounts
+  const empId = (user.employeeId || '').toUpperCase().trim();
+  const uCode = (user.userCode || '').toUpperCase().trim();
+  const role = (user.role || '').toUpperCase().trim();
+  if (
+    role === 'SUPER_ADMIN' ||
+    role === 'SYSTEM_ADMIN' ||
+    empId === 'ADMIN' ||
+    empId === 'ADMIN01' ||
+    empId === 'DG001' ||
+    uCode === 'ADMIN' ||
+    uCode === 'ADMIN01' ||
+    uCode === 'DG001'
+  ) {
+    return true;
+  }
+
+  // 2. Individual user account explicit override
+  if ((user as any).can_delete === true || (user as any).canDelete === true) {
+    return true;
+  }
+  if ((user as any).can_delete === false || (user as any).canDelete === false) {
+    return false;
+  }
+
+  // 3. Role-Based Permissions matrix (from localStorage)
+  try {
+    const savedRoles = localStorage.getItem('dhoot_role_permissions');
+    if (savedRoles) {
+      const parsedRoles = JSON.parse(savedRoles);
+      if (Array.isArray(parsedRoles)) {
+        const matchingRole = parsedRoles.find((r: any) => r.role === user.role);
+        if (matchingRole?.actions?.delete === true) {
+          return true;
+        }
+      }
+    }
+  } catch (e) {}
+
+  return false;
+};
 
 const DEFAULT_ADMIN: AuthUser = {
   id: '00000000-0000-0000-0000-000000000001',
@@ -88,6 +134,8 @@ const DEFAULT_ADMIN: AuthUser = {
   organizationId: 'ALL',
   brand: 'ALL',
   hasDualBrandAccess: true,
+  can_delete: true,
+  canDelete: true,
 };
 
 interface AuthContextType {
@@ -98,12 +146,14 @@ interface AuthContextType {
   login: (token: string, user: AuthUser) => void;
   logout: () => void;
   isSuperAdmin: boolean;
+  canDelete: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [selectedBrandCode, setSelectedBrandCode] = useState<BrandCode>('DHOOT-ALL');
+  const [permissionVersion, setPermissionVersion] = useState(0);
   
   // Real secure session state — strictly null until user logs in
   const [token, setToken] = useState<string | null>(() => {
@@ -135,6 +185,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
+  // Reactive listener for permission changes
+  useEffect(() => {
+    const handlePermissionsUpdated = () => {
+      setPermissionVersion(v => v + 1);
+      // Also reload user from storage if updated
+      const saved = localStorage.getItem('dhoot_pdi_user') || localStorage.getItem('autoprime_user');
+      if (saved) {
+        try {
+          setUser(JSON.parse(saved));
+        } catch (e) {}
+      }
+    };
+    window.addEventListener('roles-updated', handlePermissionsUpdated);
+    window.addEventListener('users-updated', handlePermissionsUpdated);
+    window.addEventListener('storage', handlePermissionsUpdated);
+    return () => {
+      window.removeEventListener('roles-updated', handlePermissionsUpdated);
+      window.removeEventListener('users-updated', handlePermissionsUpdated);
+      window.removeEventListener('storage', handlePermissionsUpdated);
+    };
+  }, []);
+
   const setBrand = (brand: BrandCode) => {
     setSelectedBrandCode(brand);
   };
@@ -164,10 +236,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const currentBrand = BRAND_CONFIGS[selectedBrandCode] || BRAND_CONFIGS['DHOOT-ALL'];
-  const isSuperAdmin = !!user && (user?.role === 'SUPER_ADMIN' || user?.role === 'SYSTEM_ADMIN' || user?.employeeId?.toUpperCase() === 'ADMIN' || user?.userCode === 'DG001');
+  const isSuperAdmin = !!user && (
+    user?.role === 'SUPER_ADMIN' ||
+    user?.role === 'SYSTEM_ADMIN' ||
+    user?.employeeId?.toUpperCase() === 'ADMIN' ||
+    user?.employeeId?.toUpperCase() === 'ADMIN01' ||
+    user?.userCode?.toUpperCase() === 'ADMIN' ||
+    user?.userCode?.toUpperCase() === 'ADMIN01' ||
+    user?.userCode?.toUpperCase() === 'DG001'
+  );
+
+  const canDelete = isSuperAdmin || checkUserCanDelete(user);
 
   return (
-    <AuthContext.Provider value={{ user, token, currentBrand, setBrand, login, logout, isSuperAdmin }}>
+    <AuthContext.Provider value={{ user, token, currentBrand, setBrand, login, logout, isSuperAdmin, canDelete }}>
       {children}
     </AuthContext.Provider>
   );

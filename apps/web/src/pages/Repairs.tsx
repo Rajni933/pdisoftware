@@ -11,7 +11,7 @@ import {
 import { Panel, Stat, Badge, Empty, PageHeader } from '../components/ui/primitives';
 
 export const RepairsPage: React.FC = () => {
-  const { currentBrand, user } = useAuth();
+  const { currentBrand, user, canDelete } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'OPEN' | 'IN_PROGRESS' | 'COMPLETED'>('ALL');
   const [tickets, setTickets] = useState<any[]>([]);
@@ -165,7 +165,7 @@ export const RepairsPage: React.FC = () => {
   };
 
   const handleConfirmSingleDelete = async () => {
-    if (!singleDeleteTarget) return;
+    if (!canDelete || !singleDeleteTarget) return;
     setIsDeleting(true);
     const targetId = singleDeleteTarget.id;
     try {
@@ -190,7 +190,7 @@ export const RepairsPage: React.FC = () => {
   };
 
   const handleConfirmBulkDelete = async () => {
-    if (selectedTicketIds.size === 0) return;
+    if (!canDelete || selectedTicketIds.size === 0) return;
     setIsDeleting(true);
     const ids = Array.from(selectedTicketIds);
     try {
@@ -209,6 +209,7 @@ export const RepairsPage: React.FC = () => {
   };
 
   const handleConfirmClearAll = async () => {
+    if (!canDelete) return;
     setIsDeleting(true);
     try {
       const success = await clearAllRepairRecords();
@@ -244,15 +245,17 @@ export const RepairsPage: React.FC = () => {
               <span>Export CSV</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setIsManageRepairsModalOpen(true)}
-              className="h-8 px-3.5 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
-              title="Manage and clear workshop tickets"
-            >
-              <Trash2 className="w-3.5 h-3.5 text-danger" />
-              <span>Manage Repairs</span>
-            </button>
+            {canDelete && (
+              <button
+                type="button"
+                onClick={() => setIsManageRepairsModalOpen(true)}
+                className="h-8 px-3.5 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                title="Manage and clear workshop tickets"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-danger" />
+                <span>Manage Repairs</span>
+              </button>
+            )}
           </div>
         }
       />
@@ -299,7 +302,7 @@ export const RepairsPage: React.FC = () => {
           </div>
         }
       >
-        {selectedTicketIds.size > 0 && (
+        {canDelete && selectedTicketIds.size > 0 && (
           <div className="mb-3 p-3 bg-canvas border border-line rounded flex items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-ink">
@@ -330,15 +333,17 @@ export const RepairsPage: React.FC = () => {
           <table className="w-full text-left border-collapse text-xs">
             <thead className="bg-canvas border-b border-line text-ink font-semibold uppercase tracking-[0.06em] text-xs">
               <tr>
-                <th className="py-2.5 px-3 w-8 text-center whitespace-nowrap">
-                  <input
-                    type="checkbox"
-                    checked={filteredTickets.length > 0 && selectedTicketIds.size === filteredTickets.length}
-                    onChange={handleToggleSelectAll}
-                    className="rounded border-line text-accent focus:ring-accent cursor-pointer"
-                    title="Select All Tickets"
-                  />
-                </th>
+                {canDelete && (
+                  <th className="py-2.5 px-3 w-8 text-center whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={filteredTickets.length > 0 && selectedTicketIds.size === filteredTickets.length}
+                      onChange={handleToggleSelectAll}
+                      className="rounded border-line text-accent focus:ring-accent cursor-pointer"
+                      title="Select All Tickets"
+                    />
+                  </th>
+                )}
                 <th className="py-2.5 px-3 w-10 text-center">#</th>
                 <th className="py-2.5 px-3">Ticket ID</th>
                 <th className="py-2.5 px-3">VIN / Chassis</th>
@@ -355,13 +360,13 @@ export const RepairsPage: React.FC = () => {
             <tbody className="divide-y divide-line text-ink-2 text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan={12} className="py-10 text-center text-ink-3">
+                  <td colSpan={canDelete ? 12 : 11} className="py-10 text-center text-ink-3">
                     Loading repair job cards from database...
                   </td>
                 </tr>
               ) : filteredTickets.length === 0 ? (
                 <tr>
-                  <td colSpan={12}>
+                  <td colSpan={canDelete ? 12 : 11}>
                     <Empty title="0 Active Repair Tickets Found" hint="All vehicle inspections have passed without defects requiring workshop repair." />
                   </td>
                 </tr>
@@ -370,14 +375,16 @@ export const RepairsPage: React.FC = () => {
                   const isHyundai = (t.brand || '').toLowerCase().includes('hyundai') || (t.model || '').toLowerCase().includes('hyundai') || (t.vin || '').startsWith('MAL');
                   return (
                     <tr key={t.id} className="hover:bg-canvas transition-colors">
-                      <td className="py-2.5 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={selectedTicketIds.has(t.id)}
-                          onChange={() => handleToggleSelectTicket(t.id)}
-                          className="rounded border-line text-accent focus:ring-accent cursor-pointer"
-                        />
-                      </td>
+                      {canDelete && (
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedTicketIds.has(t.id)}
+                            onChange={() => handleToggleSelectTicket(t.id)}
+                            className="rounded border-line text-accent focus:ring-accent cursor-pointer"
+                          />
+                        </td>
+                      )}
                       <td className="py-2.5 px-3 text-center text-ink-3 font-mono tnum">
                         {idx + 1}
                       </td>
@@ -432,14 +439,16 @@ export const RepairsPage: React.FC = () => {
                               Cleared
                             </span>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => setSingleDeleteTarget(t)}
-                            className="h-7 w-7 rounded bg-surface border border-line hover:border-danger/40 hover:bg-danger/10 hover:text-danger text-ink-3 transition-colors flex items-center justify-center shadow-xs cursor-pointer"
-                            title="Delete repair job card"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {canDelete && (
+                            <button
+                              type="button"
+                              onClick={() => setSingleDeleteTarget(t)}
+                              className="h-7 w-7 rounded bg-surface border border-line hover:border-danger/40 hover:bg-danger/10 hover:text-danger text-ink-3 transition-colors flex items-center justify-center shadow-xs cursor-pointer"
+                              title="Delete repair job card"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

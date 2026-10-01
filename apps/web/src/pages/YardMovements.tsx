@@ -25,7 +25,7 @@ import { formatDate } from '../utils/dateUtils';
 import { Panel, Stat, Badge, Empty, PageHeader } from '../components/ui/primitives';
 
 export const YardMovementsPage: React.FC = () => {
-  const { user, isSuperAdmin, currentBrand } = useAuth();
+  const { user, isSuperAdmin, currentBrand, canDelete } = useAuth();
 
   // Active view: 'STOCK' (Stockyard Inventory), 'TRANSFERS' (IDT & Movements), 'APPROVALS' (Multi-Level Approvals Hub)
   const [activeTab, setActiveTab] = useState<'STOCK' | 'TRANSFERS' | 'APPROVALS'>('STOCK');
@@ -333,7 +333,7 @@ export const YardMovementsPage: React.FC = () => {
   };
 
   const handleConfirmSingleDeleteTransfer = async () => {
-    if (!singleDeleteTransferTarget) return;
+    if (!canDelete || !singleDeleteTransferTarget) return;
     setIsDeleting(true);
     const targetKey = singleDeleteTransferTarget.transfer_no || singleDeleteTransferTarget.id;
     try {
@@ -358,7 +358,7 @@ export const YardMovementsPage: React.FC = () => {
   };
 
   const handleConfirmBulkDeleteTransfers = async () => {
-    if (selectedTransferIds.size === 0) return;
+    if (!canDelete || selectedTransferIds.size === 0) return;
     setIsDeleting(true);
     const keys = Array.from(selectedTransferIds);
     try {
@@ -377,6 +377,7 @@ export const YardMovementsPage: React.FC = () => {
   };
 
   const handleConfirmClearAllTransfers = async () => {
+    if (!canDelete) return;
     setIsDeleting(true);
     try {
       const success = await clearAllTransferRecords();
@@ -675,19 +676,21 @@ export const YardMovementsPage: React.FC = () => {
                 <option value="RECEIVED_AT_DESTINATION">Completed / Received</option>
               </select>
 
-              <button
-                type="button"
-                onClick={() => setIsManageTransfersModalOpen(true)}
-                className="h-7 px-2.5 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
-                title="Manage and clear transfers register"
-              >
-                <Trash2 className="w-3.5 h-3.5 text-danger" />
-                <span>Manage Transfers</span>
-              </button>
+              {canDelete && (
+                <button
+                  type="button"
+                  onClick={() => setIsManageTransfersModalOpen(true)}
+                  className="h-7 px-2.5 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                  title="Manage and clear transfers register"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-danger" />
+                  <span>Manage Transfers</span>
+                </button>
+              )}
             </div>
           }
         >
-          {selectedTransferIds.size > 0 && (
+          {canDelete && selectedTransferIds.size > 0 && (
             <div className="mb-3 p-3 bg-canvas border border-line rounded flex items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-ink">
@@ -718,15 +721,17 @@ export const YardMovementsPage: React.FC = () => {
             <table className="w-full text-left border-collapse text-xs">
               <thead className="bg-canvas border-b border-line text-ink font-semibold uppercase tracking-[0.06em] text-xs">
                 <tr>
-                  <th className="py-2.5 px-3 w-8 text-center whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={transfers.filter(t => transferStatusFilter === 'ALL' || t.status === transferStatusFilter).length > 0 && selectedTransferIds.size === transfers.filter(t => transferStatusFilter === 'ALL' || t.status === transferStatusFilter).length}
-                      onChange={handleToggleSelectAllTransfers}
-                      className="rounded border-line text-accent focus:ring-accent cursor-pointer"
-                      title="Select All Transfers"
-                    />
-                  </th>
+                  {canDelete && (
+                    <th className="py-2.5 px-3 w-8 text-center whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={transfers.filter(t => transferStatusFilter === 'ALL' || t.status === transferStatusFilter).length > 0 && selectedTransferIds.size === transfers.filter(t => transferStatusFilter === 'ALL' || t.status === transferStatusFilter).length}
+                        onChange={handleToggleSelectAllTransfers}
+                        className="rounded border-line text-accent focus:ring-accent cursor-pointer"
+                        title="Select All Transfers"
+                      />
+                    </th>
+                  )}
                   <th className="py-2.5 px-3 whitespace-nowrap">Transfer No</th>
                   <th className="py-2.5 px-3 whitespace-nowrap">VIN / Model</th>
                   <th className="py-2.5 px-3 whitespace-nowrap">Origin Stockyard</th>
@@ -744,14 +749,16 @@ export const YardMovementsPage: React.FC = () => {
                     const itemKey = t.transfer_no || t.id;
                     return (
                       <tr key={t.id || idx} className="hover:bg-canvas transition-colors">
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="checkbox"
-                            checked={selectedTransferIds.has(itemKey)}
-                            onChange={() => handleToggleSelectTransfer(itemKey)}
-                            className="rounded border-line text-accent focus:ring-accent cursor-pointer"
-                          />
-                        </td>
+                        {canDelete && (
+                          <td className="py-2.5 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={selectedTransferIds.has(itemKey)}
+                              onChange={() => handleToggleSelectTransfer(itemKey)}
+                              className="rounded border-line text-accent focus:ring-accent cursor-pointer"
+                            />
+                          </td>
+                        )}
                         <td className="py-2.5 px-3 font-mono font-semibold text-ink tnum whitespace-nowrap">
                           {t.transfer_no}
                         </td>
@@ -811,14 +818,16 @@ export const YardMovementsPage: React.FC = () => {
                               </button>
                             )}
 
-                            <button
-                              type="button"
-                              onClick={() => setSingleDeleteTransferTarget(t)}
-                              className="h-6 w-6 rounded bg-surface border border-line hover:border-danger/40 hover:bg-danger/10 hover:text-danger text-ink-3 transition-colors flex items-center justify-center shadow-xs cursor-pointer"
-                              title="Delete transfer record"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
+                            {canDelete && (
+                              <button
+                                type="button"
+                                onClick={() => setSingleDeleteTransferTarget(t)}
+                                className="h-6 w-6 rounded bg-surface border border-line hover:border-danger/40 hover:bg-danger/10 hover:text-danger text-ink-3 transition-colors flex items-center justify-center shadow-xs cursor-pointer"
+                                title="Delete transfer record"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

@@ -101,7 +101,7 @@ const getYardsForVehicle = (v: StockVehicle): string[] => {
 };
 
 export const VehiclesPage: React.FC = () => {
-  const { currentBrand } = useAuth();
+  const { currentBrand, canDelete } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [brandFilter, setBrandFilter] = useState('ALL');
@@ -300,6 +300,10 @@ export const VehiclesPage: React.FC = () => {
 
   const handleConfirmSingleDelete = async () => {
     if (!singleDeleteTarget) return;
+    if (!canDelete) {
+      setActionFeedback('Access Denied: You do not have permission to delete vehicle records.');
+      return;
+    }
     setIsDeleting(true);
     try {
       await deleteVehicleRecord(singleDeleteTarget.vin);
@@ -323,6 +327,10 @@ export const VehiclesPage: React.FC = () => {
 
   const handleConfirmBulkDelete = async () => {
     if (selectedVins.size === 0) return;
+    if (!canDelete) {
+      setActionFeedback('Access Denied: You do not have permission to delete vehicle records.');
+      return;
+    }
     setIsDeleting(true);
     try {
       const vinsList = Array.from(selectedVins);
@@ -342,6 +350,10 @@ export const VehiclesPage: React.FC = () => {
   };
 
   const handleConfirmClearCustomUploaded = async () => {
+    if (!canDelete) {
+      setActionFeedback('Access Denied: You do not have permission to clear stock records.');
+      return;
+    }
     setIsDeleting(true);
     try {
       const count = await clearCustomUploadedVehicles();
@@ -360,6 +372,10 @@ export const VehiclesPage: React.FC = () => {
   };
 
   const handleConfirmResetAll = async () => {
+    if (!canDelete) {
+      setActionFeedback('Access Denied: You do not have permission to reset stock records.');
+      return;
+    }
     setIsDeleting(true);
     try {
       await resetStockToFactoryDefaults();
@@ -403,15 +419,17 @@ export const VehiclesPage: React.FC = () => {
                   <span>Export CSV</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => setIsManageStockModalOpen(true)}
-                  className="h-8 px-3 rounded bg-surface border border-line hover:border-danger/40 hover:text-danger text-xs font-semibold text-ink transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
-                  title="Manage & Clear Stock"
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-ink-3" />
-                  <span>Manage Stock</span>
-                </button>
+                {canDelete && (
+                  <button
+                    type="button"
+                    onClick={() => setIsManageStockModalOpen(true)}
+                    className="h-8 px-3 rounded bg-surface border border-line hover:border-danger/40 hover:text-danger text-xs font-semibold text-ink transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    title="Manage & Clear Stock"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-ink-3" />
+                    <span>Manage Stock</span>
+                  </button>
+                )}
               </>
             )}
 
@@ -519,7 +537,7 @@ export const VehiclesPage: React.FC = () => {
         }
       >
         {/* Bulk Action Bar */}
-        {selectedVins.size > 0 && (
+        {canDelete && selectedVins.size > 0 && (
           <div className="p-2.5 mb-3 bg-canvas border border-line rounded flex items-center justify-between gap-3 text-xs flex-wrap">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
@@ -552,22 +570,24 @@ export const VehiclesPage: React.FC = () => {
           <table className="w-full text-left border-collapse text-xs">
             <thead className="bg-canvas border-b border-line text-ink font-semibold uppercase tracking-[0.06em] text-xs">
               <tr>
-                <th className="py-2.5 px-3 w-8 text-center">
-                  <button
-                    type="button"
-                    onClick={handleToggleSelectAll}
-                    className="p-1 rounded text-ink-3 hover:text-ink transition-colors cursor-pointer inline-flex items-center justify-center"
-                    title={selectedVins.size === filtered.length && filtered.length > 0 ? "Deselect All" : "Select All"}
-                  >
-                    {selectedVins.size === filtered.length && filtered.length > 0 ? (
-                      <CheckSquare className="w-4 h-4 text-accent" />
-                    ) : selectedVins.size > 0 ? (
-                      <div className="w-3.5 h-3.5 rounded-xs border-2 border-accent bg-accent/20" />
-                    ) : (
-                      <Square className="w-4 h-4 text-line-strong hover:text-ink" />
-                    )}
-                  </button>
-                </th>
+                {canDelete && (
+                  <th className="py-2.5 px-3 w-8 text-center">
+                    <button
+                      type="button"
+                      onClick={handleToggleSelectAll}
+                      className="p-1 rounded text-ink-3 hover:text-ink transition-colors cursor-pointer inline-flex items-center justify-center"
+                      title={selectedVins.size === filtered.length && filtered.length > 0 ? "Deselect All" : "Select All"}
+                    >
+                      {selectedVins.size === filtered.length && filtered.length > 0 ? (
+                        <CheckSquare className="w-4 h-4 text-accent" />
+                      ) : selectedVins.size > 0 ? (
+                        <div className="w-3.5 h-3.5 rounded-xs border-2 border-accent bg-accent/20" />
+                      ) : (
+                        <Square className="w-4 h-4 text-line-strong hover:text-ink" />
+                      )}
+                    </button>
+                  </th>
+                )}
                 <th className="py-2.5 px-3 w-10 text-center whitespace-nowrap">#</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Purchase / Billing Date</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Model</th>
@@ -591,14 +611,14 @@ export const VehiclesPage: React.FC = () => {
             <tbody className="divide-y divide-line text-ink-2 text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan={19} className="py-12 text-center text-ink-3">
+                  <td colSpan={canDelete ? 19 : 18} className="py-12 text-center text-ink-3">
                     <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-accent" />
                     Loading inventory...
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={19}>
+                  <td colSpan={canDelete ? 19 : 18}>
                     <div className="py-12 text-center space-y-3">
                       <div className="w-12 h-12 rounded-full bg-accent-soft text-accent flex items-center justify-center mx-auto">
                         <Car className="w-6 h-6" />
@@ -631,20 +651,22 @@ export const VehiclesPage: React.FC = () => {
                       }`}
                       onClick={() => setSelectedStock(v)}
                     >
-                      <td className="py-2.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          type="button"
-                          onClick={() => handleToggleSelectVin(v.vin)}
-                          className="p-1 rounded text-ink-3 hover:text-ink transition-colors cursor-pointer inline-flex items-center justify-center"
-                          aria-label={`Select vehicle ${v.vin}`}
-                        >
-                          {selectedVins.has(v.vin) ? (
-                            <CheckSquare className="w-4 h-4 text-accent" />
-                          ) : (
-                            <Square className="w-4 h-4 text-line-strong hover:text-ink" />
-                          )}
-                        </button>
-                      </td>
+                      {canDelete && (
+                        <td className="py-2.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleSelectVin(v.vin)}
+                            className="p-1 rounded text-ink-3 hover:text-ink transition-colors cursor-pointer inline-flex items-center justify-center"
+                            aria-label={`Select vehicle ${v.vin}`}
+                          >
+                            {selectedVins.has(v.vin) ? (
+                              <CheckSquare className="w-4 h-4 text-accent" />
+                            ) : (
+                              <Square className="w-4 h-4 text-line-strong hover:text-ink" />
+                            )}
+                          </button>
+                        </td>
+                      )}
                       <td className="py-2.5 px-3 text-center text-ink-3 tnum whitespace-nowrap">
                         {idx + 1}
                       </td>
@@ -766,15 +788,17 @@ export const VehiclesPage: React.FC = () => {
                             </Link>
                           )}
 
-                          <button
-                            type="button"
-                            onClick={() => setSingleDeleteTarget(v)}
-                            className="h-7 w-7 rounded bg-surface border border-line hover:border-danger/40 hover:bg-danger/10 text-ink-3 hover:text-danger transition-colors inline-flex items-center justify-center cursor-pointer shadow-xs"
-                            title="Delete vehicle from inventory"
-                            aria-label={`Delete vehicle ${v.vin}`}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {canDelete && (
+                            <button
+                              type="button"
+                              onClick={() => setSingleDeleteTarget(v)}
+                              className="h-7 w-7 rounded bg-surface border border-line hover:border-danger/40 hover:bg-danger/10 text-ink-3 hover:text-danger transition-colors inline-flex items-center justify-center cursor-pointer shadow-xs"
+                              title="Delete vehicle from inventory"
+                              aria-label={`Delete vehicle ${v.vin}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
