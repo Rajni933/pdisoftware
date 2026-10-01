@@ -20,10 +20,27 @@ import {
   deleteVehicleFromStorage,
   deleteMultipleVehiclesFromStorage,
   clearCustomUploadedStockFromStorage,
-  resetAllStockToDefaultInStorage
+  resetAllStockToDefaultInStorage,
+  getDeletedBookingReceipts,
+  saveDeletedBookingReceipts,
+  deleteBookingFromStorage,
+  deleteMultipleBookingsFromStorage,
+  clearAllBookingsFromStorage,
+  resetBookingsToDefaultInStorage
 } from '../data/seedData';
 export { getAllUsers, saveUsersInventory, saveSingleUser, deleteUserFromInventory, findUserForAuth, SEED_USERS };
-export { deleteVehicleFromStorage, deleteMultipleVehiclesFromStorage, clearCustomUploadedStockFromStorage, resetAllStockToDefaultInStorage };
+export { 
+  deleteVehicleFromStorage, 
+  deleteMultipleVehiclesFromStorage, 
+  clearCustomUploadedStockFromStorage, 
+  resetAllStockToDefaultInStorage,
+  getDeletedBookingReceipts,
+  saveDeletedBookingReceipts,
+  deleteBookingFromStorage,
+  deleteMultipleBookingsFromStorage,
+  clearAllBookingsFromStorage,
+  resetBookingsToDefaultInStorage
+};
 export type { EnterpriseUser } from '../data/seedData';
 import initialStockVehicles from '../data/initialVehicles.json';
 
@@ -1390,14 +1407,20 @@ export const updateVehicleStatus = async (vin: string, newStatus: string): Promi
 // ============================================================================
 
 export const fetchBookings = async (brandCode?: string): Promise<BookingRecord[]> => {
+  const deletedSet = getDeletedBookingReceipts();
+
   // Tier 1: Local Dedicated DB Server
   try {
     const res = await fetch(getLocalDbEndpoint('bookings'), { signal: AbortSignal.timeout(1500) });
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
-        localStorage.setItem('dhoot_bookings_inventory', JSON.stringify(data));
-        return filterByBrand(data, brandCode);
+        const filtered = data.filter((b: any) => 
+          !deletedSet.has((b.receipt_no || '').toUpperCase().trim()) &&
+          !deletedSet.has((b.id || '').toUpperCase().trim())
+        );
+        localStorage.setItem('dhoot_bookings_inventory', JSON.stringify(filtered));
+        return filterByBrand(filtered, brandCode);
       }
     }
   } catch (e) {}
@@ -1406,8 +1429,12 @@ export const fetchBookings = async (brandCode?: string): Promise<BookingRecord[]
   try {
     const { data, error } = await supabase.from('bookings').select('*').order('created_at', { ascending: false });
     if (!error && Array.isArray(data)) {
-      localStorage.setItem('dhoot_bookings_inventory', JSON.stringify(data));
-      return filterByBrand(data, brandCode);
+      const filtered = data.filter((b: any) => 
+        !deletedSet.has((b.receipt_no || '').toUpperCase().trim()) &&
+        !deletedSet.has((b.id || '').toUpperCase().trim())
+      );
+      localStorage.setItem('dhoot_bookings_inventory', JSON.stringify(filtered));
+      return filterByBrand(filtered, brandCode);
     }
   } catch (e) {
     console.warn('DB bookings fetch notice:', e);
@@ -1417,7 +1444,13 @@ export const fetchBookings = async (brandCode?: string): Promise<BookingRecord[]
   if (cached) {
     try {
       const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed)) return filterByBrand(parsed, brandCode);
+      if (Array.isArray(parsed)) {
+        const filtered = parsed.filter((b: any) => 
+          !deletedSet.has((b.receipt_no || '').toUpperCase().trim()) &&
+          !deletedSet.has((b.id || '').toUpperCase().trim())
+        );
+        return filterByBrand(filtered, brandCode);
+      }
     } catch (e) {}
   }
   return [];
@@ -1574,6 +1607,215 @@ export const allocateBookingVin = async (bookingId: string, receiptNo: string, v
 
   window.dispatchEvent(new Event('bookings-updated'));
   window.dispatchEvent(new Event('stock-updated'));
+  return true;
+};
+
+export const deleteBookingRecord = async (receiptNoOrId: string): Promise<boolean> => {
+  if (!receiptNoOrId) return false;
+  const cleanKey = receiptNoOrId.toUpperCase().trim();
+
+  // 1. Identify if this booking had an allocated VIN so we can free the vehicle
+  let allocatedVin: string | undefined;
+  try {
+    const cached = localStorage.getItem('dhoot_bookings_inventory');
+    if (cached) {
+      const parsed: BookingRecord[] = JSON.parse(cached);
+      const target = parsed.find(b => 
+        (b.receipt_no || '').toUpperCase().trim() === cleanKey || 
+        (b.id || '').toUpperCase().trim() === cleanKey
+      );
+      if (target?.allocated_vin_no) {
+        allocatedVin = target.allocated_vin_no;
+      }
+    }
+  } catch (e) {}
+
+  // 2. Delete from local storage and record tombstone
+  deleteBookingFromStorage(cleanKey);
+
+  // 3. Sync deletion to Local DB Server
+  try {
+    await fetch(`${getLocalDbEndpoint('bookings')}?or=(receipt_no.eq.${encodeURIComponent(cleanKey)},id.eq.${encodeURIComponent(cleanKey)})`, {
+      method: 'DELETE',
+      signal: AbortSignal.timeout(3000)
+    });
+  } catch (e) {
+    console.warn('Local DB booking delete note:', e);
+  }
+
+  // 4. Sync deletion to Supabase
+  try {
+    await supabase.from('bookings').delete().or(`receipt_no.eq.${cleanKey},id.eq.${cleanKey}`);
+  } catch (e) {
+    console.warn('Supabase booking delete note:', e);
+  }
+
+  // 5. If booking had an allocated VIN, automatically release the vehicle back to Free Stock
+  if (allocatedVin) {
+    try {
+      const vehicles = getAllVehicles();
+      const vIdx = vehicles.findIndex(v => v.vin.toUpperCase().trim() === allocatedVin!.toUpperCase().trim());
+      if (vIdx >= 0) {
+        vehicles[vIdx] = {
+          ...vehicles[vIdx],
+          status: 'NEW CAR',
+          vehicle_status: 'Free Stock',
+          customer_name: '',
+          sales_consultant: '',
+          allocation_date: undefined
+        };
+        saveStockInventory(vehicles);
+      }
+
+      // Sync vehicle release to Local DB Server
+      await fetch(`${getLocalDbEndpoint('vehicles')}?vin=eq.${encodeURIComponent(allocatedVin)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'NEW CAR',
+          vehicle_status: 'Free Stock',
+          customer_name: null,
+          sales_consultant: null,
+          allocation_date: null
+        }),
+        signal: AbortSignal.timeout(2000)
+      });
+
+      // Sync vehicle release to Supabase
+      await supabase.from('vehicles').update({
+        status: 'NEW CAR',
+        vehicle_status: 'Free Stock',
+        customer_name: null,
+        sales_consultant: null,
+        allocation_date: null
+      }).eq('vin', allocatedVin);
+
+      window.dispatchEvent(new Event('stock-updated'));
+    } catch (e) {
+      console.warn('Vehicle release upon booking deletion note:', e);
+    }
+  }
+
+  window.dispatchEvent(new Event('bookings-updated'));
+  return true;
+};
+
+export const deleteMultipleBookingRecords = async (receiptNosOrIds: string[]): Promise<number> => {
+  if (!receiptNosOrIds || receiptNosOrIds.length === 0) return 0;
+  const cleanKeys = receiptNosOrIds.map(r => r.toUpperCase().trim()).filter(Boolean);
+
+  // 1. Identify any allocated VINs to release
+  const allocatedVins: string[] = [];
+  try {
+    const cached = localStorage.getItem('dhoot_bookings_inventory');
+    if (cached) {
+      const parsed: BookingRecord[] = JSON.parse(cached);
+      const cleanSet = new Set(cleanKeys);
+      parsed.forEach(b => {
+        const rNo = (b.receipt_no || '').toUpperCase().trim();
+        const bId = (b.id || '').toUpperCase().trim();
+        if ((cleanSet.has(rNo) || cleanSet.has(bId)) && b.allocated_vin_no) {
+          allocatedVins.push(b.allocated_vin_no);
+        }
+      });
+    }
+  } catch (e) {}
+
+  // 2. Delete from storage and update tombstones
+  deleteMultipleBookingsFromStorage(cleanKeys);
+
+  // 3. Sync to Local DB Server
+  try {
+    const receiptParam = `in.(${cleanKeys.join(',')})`;
+    await fetch(`${getLocalDbEndpoint('bookings')}?receipt_no=${encodeURIComponent(receiptParam)}`, {
+      method: 'DELETE',
+      signal: AbortSignal.timeout(4000)
+    });
+  } catch (e) {
+    console.warn('Local DB bulk booking delete note:', e);
+  }
+
+  // 4. Sync to Supabase
+  try {
+    await supabase.from('bookings').delete().in('receipt_no', cleanKeys);
+  } catch (e) {
+    console.warn('Supabase bulk booking delete note:', e);
+  }
+
+  // 5. Release any allocated VINs to free stock
+  if (allocatedVins.length > 0) {
+    try {
+      const vinSet = new Set(allocatedVins.map(v => v.toUpperCase().trim()));
+      const vehicles = getAllVehicles();
+      const updatedVehicles = vehicles.map(v => {
+        if (vinSet.has(v.vin.toUpperCase().trim())) {
+          return {
+            ...v,
+            status: 'NEW CAR',
+            vehicle_status: 'Free Stock',
+            customer_name: '',
+            sales_consultant: '',
+            allocation_date: undefined
+          };
+        }
+        return v;
+      });
+      saveStockInventory(updatedVehicles);
+
+      // Release in Local DB & Supabase
+      const vinParam = `in.(${Array.from(vinSet).join(',')})`;
+      await fetch(`${getLocalDbEndpoint('vehicles')}?vin=${encodeURIComponent(vinParam)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'NEW CAR',
+          vehicle_status: 'Free Stock',
+          customer_name: null,
+          sales_consultant: null,
+          allocation_date: null
+        }),
+        signal: AbortSignal.timeout(3000)
+      });
+
+      await supabase.from('vehicles').update({
+        status: 'NEW CAR',
+        vehicle_status: 'Free Stock',
+        customer_name: null,
+        sales_consultant: null,
+        allocation_date: null
+      }).in('vin', Array.from(vinSet));
+
+      window.dispatchEvent(new Event('stock-updated'));
+    } catch (e) {
+      console.warn('Vehicle batch release note:', e);
+    }
+  }
+
+  window.dispatchEvent(new Event('bookings-updated'));
+  return cleanKeys.length;
+};
+
+export const clearAllBookingsRecords = async (): Promise<boolean> => {
+  clearAllBookingsFromStorage();
+
+  try {
+    await fetch(getLocalDbEndpoint('bookings'), {
+      method: 'DELETE',
+      signal: AbortSignal.timeout(3000)
+    });
+  } catch (e) {}
+
+  try {
+    await supabase.from('bookings').delete().neq('receipt_no', '__PERM_NON_EXISTENT__');
+  } catch (e) {}
+
+  window.dispatchEvent(new Event('bookings-updated'));
+  return true;
+};
+
+export const resetBookingsToDefaultRecords = async (): Promise<boolean> => {
+  resetBookingsToDefaultInStorage();
+  window.dispatchEvent(new Event('bookings-updated'));
   return true;
 };
 

@@ -1312,6 +1312,25 @@ export const clearStockInventory = () => {
 // ============================================================================
 // CUSTOMER BOOKINGS METHODS
 // ============================================================================
+
+export const getDeletedBookingReceipts = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem('dhoot_deleted_booking_receipts');
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        return new Set(arr.map(r => String(r).toUpperCase().trim()));
+      }
+    }
+  } catch (e) {}
+  return new Set();
+};
+
+export const saveDeletedBookingReceipts = (receipts: Set<string> | string[]) => {
+  const arr = Array.from(receipts).map(r => String(r).toUpperCase().trim());
+  localStorage.setItem('dhoot_deleted_booking_receipts', JSON.stringify(arr));
+};
+
 export const getBookingsForBrand = (brandCode: string) => {
   let list: any[] = [];
   try {
@@ -1326,18 +1345,106 @@ export const getBookingsForBrand = (brandCode: string) => {
     console.warn('Error reading bookings from storage:', e);
   }
 
+  const deletedSet = getDeletedBookingReceipts();
+  const activeList = list.filter(b => 
+    !deletedSet.has((b.receipt_no || '').toUpperCase().trim()) &&
+    !deletedSet.has((b.id || '').toUpperCase().trim())
+  );
+
   if (brandCode === 'DHOOT-TATA' || brandCode.toLowerCase().includes('tata')) {
-    return list.filter(isTataItem);
+    return activeList.filter(isTataItem);
   }
   if (brandCode === 'DHOOT-HYUNDAI' || brandCode.toLowerCase().includes('hyundai')) {
-    return list.filter(isHyundaiItem);
+    return activeList.filter(isHyundaiItem);
   }
-  return list; // DHOOT-ALL
+  return activeList; // DHOOT-ALL
 };
 
 export const saveBookingsInventory = (bookings: any[]) => {
+  const deletedSet = getDeletedBookingReceipts();
+  let modifiedDeleted = false;
+  if (Array.isArray(bookings)) {
+    bookings.forEach(b => {
+      const rec = (b.receipt_no || '').toUpperCase().trim();
+      if (rec && deletedSet.has(rec)) {
+        deletedSet.delete(rec);
+        modifiedDeleted = true;
+      }
+    });
+  }
+  if (modifiedDeleted) {
+    saveDeletedBookingReceipts(deletedSet);
+  }
   localStorage.setItem('dhoot_bookings_inventory', JSON.stringify(bookings));
   window.dispatchEvent(new Event('bookings-updated'));
+};
+
+export const deleteBookingFromStorage = (receiptNoOrId: string): boolean => {
+  if (!receiptNoOrId) return false;
+  const cleanKey = receiptNoOrId.toUpperCase().trim();
+
+  // 1. Mark in tombstone set
+  const deletedSet = getDeletedBookingReceipts();
+  deletedSet.add(cleanKey);
+  saveDeletedBookingReceipts(deletedSet);
+
+  // 2. Remove from localStorage inventory
+  try {
+    const saved = localStorage.getItem('dhoot_bookings_inventory');
+    if (saved) {
+      const parsed: any[] = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        const filtered = parsed.filter(b => 
+          (b.receipt_no || '').toUpperCase().trim() !== cleanKey &&
+          (b.id || '').toUpperCase().trim() !== cleanKey
+        );
+        localStorage.setItem('dhoot_bookings_inventory', JSON.stringify(filtered));
+      }
+    }
+  } catch (e) {}
+
+  window.dispatchEvent(new Event('bookings-updated'));
+  return true;
+};
+
+export const deleteMultipleBookingsFromStorage = (receiptNosOrIds: string[]): number => {
+  if (!receiptNosOrIds || receiptNosOrIds.length === 0) return 0;
+  const cleanKeys = receiptNosOrIds.map(r => r.toUpperCase().trim()).filter(Boolean);
+  const cleanSet = new Set(cleanKeys);
+
+  const deletedSet = getDeletedBookingReceipts();
+  cleanKeys.forEach(k => deletedSet.add(k));
+  saveDeletedBookingReceipts(deletedSet);
+
+  try {
+    const saved = localStorage.getItem('dhoot_bookings_inventory');
+    if (saved) {
+      const parsed: any[] = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        const filtered = parsed.filter(b => 
+          !cleanSet.has((b.receipt_no || '').toUpperCase().trim()) &&
+          !cleanSet.has((b.id || '').toUpperCase().trim())
+        );
+        localStorage.setItem('dhoot_bookings_inventory', JSON.stringify(filtered));
+      }
+    }
+  } catch (e) {}
+
+  window.dispatchEvent(new Event('bookings-updated'));
+  return cleanKeys.length;
+};
+
+export const clearAllBookingsFromStorage = (): boolean => {
+  localStorage.removeItem('dhoot_bookings_inventory');
+  window.dispatchEvent(new Event('bookings-updated'));
+  return true;
+};
+
+export const resetBookingsToDefaultInStorage = (): boolean => {
+  localStorage.removeItem('dhoot_bookings_inventory');
+  localStorage.removeItem('dhoot_deleted_booking_receipts');
+  window.dispatchEvent(new Event('bookings-updated'));
+  return true;
 };
 
 export const clearBookingsInventory = () => {
