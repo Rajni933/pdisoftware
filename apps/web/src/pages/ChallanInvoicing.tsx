@@ -7,7 +7,8 @@ import {
   FileSpreadsheet, X, Loader2, DollarSign, CheckCircle2, 
   Receipt, Building, ShieldCheck, Printer, Calendar,
   Key, UserCheck, Truck, ArrowRight, FolderOpen, Clock,
-  AlertCircle, Check, MapPin, Phone, Hash
+  AlertCircle, Check, MapPin, Phone, Hash,
+  Trash2, AlertOctagon, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import * as XLSX from 'xlsx';
@@ -16,6 +17,10 @@ import {
   getChallansForBrand, saveChallansInventory,
   getVehiclesForBrand, syncWithSupabase
 } from '../data/seedData';
+import { 
+  deleteChallanRecord, deleteMultipleChallanRecords,
+  clearAllChallanRecords, resetChallanRecordsToDefault
+} from '../services/dataService';
 import { Panel, Stat, Badge, Empty, PageHeader } from '../components/ui/primitives';
 
 export interface ChallanRecord {
@@ -78,6 +83,14 @@ export const ChallanInvoicingPage: React.FC = () => {
   const [gatepassRecord, setGatepassRecord] = useState<ChallanRecord | null>(null);
   const [invoicePreviewRecord, setInvoicePreviewRecord] = useState<ChallanRecord | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+  // Deletion & Multi-selection State
+  const [selectedChallanNos, setSelectedChallanNos] = useState<Set<string>>(new Set());
+  const [singleDeleteTarget, setSingleDeleteTarget] = useState<ChallanRecord | null>(null);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isManageChallansModalOpen, setIsManageChallansModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
   // Bulk Excel Import State
   const [parsedRows, setParsedRows] = useState<ChallanRecord[]>([]);
@@ -639,6 +652,116 @@ export const ChallanInvoicingPage: React.FC = () => {
     document.body.removeChild(link);
   };
 
+  // -------------------------------------------------------------------------
+  // Multi-Selection & Deletion Handlers
+  // -------------------------------------------------------------------------
+  const handleToggleSelectChallan = (key: string) => {
+    setSelectedChallanNos(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedChallanNos.size === filteredRecords.length && filteredRecords.length > 0) {
+      setSelectedChallanNos(new Set());
+    } else {
+      const allKeys = filteredRecords.map(r => (r.challan_no || r.invoice_no || r.id || '').trim()).filter(Boolean);
+      setSelectedChallanNos(new Set(allKeys));
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedChallanNos(new Set());
+  };
+
+  const handleConfirmSingleDelete = async () => {
+    if (!singleDeleteTarget) return;
+    setIsDeleting(true);
+    const targetKey = (singleDeleteTarget.challan_no || singleDeleteTarget.invoice_no || singleDeleteTarget.id || '').trim();
+    try {
+      const success = await deleteChallanRecord(targetKey);
+      if (success) {
+        setRecords(getChallansForBrand(currentBrand?.code || 'DHOOT-ALL'));
+        setSelectedChallanNos(prev => {
+          const next = new Set(prev);
+          next.delete(targetKey);
+          return next;
+        });
+        setActionFeedback(`Challan record #${targetKey} successfully deleted.`);
+        setTimeout(() => setActionFeedback(null), 4000);
+      }
+    } catch (err: any) {
+      console.error('Error deleting challan:', err);
+      setActionFeedback(`Error deleting challan: ${err.message || 'Operation failed'}`);
+    } finally {
+      setIsDeleting(false);
+      setSingleDeleteTarget(null);
+    }
+  };
+
+  const handleConfirmBulkDelete = async () => {
+    if (selectedChallanNos.size === 0) return;
+    setIsDeleting(true);
+    const keys = Array.from(selectedChallanNos);
+    try {
+      const count = await deleteMultipleChallanRecords(keys);
+      setRecords(getChallansForBrand(currentBrand?.code || 'DHOOT-ALL'));
+      setSelectedChallanNos(new Set());
+      setActionFeedback(`${count} challan & invoice records permanently deleted from ledger.`);
+      setTimeout(() => setActionFeedback(null), 4000);
+    } catch (err: any) {
+      console.error('Error deleting multiple challans:', err);
+      setActionFeedback(`Error deleting selected challans: ${err.message || 'Operation failed'}`);
+    } finally {
+      setIsDeleting(false);
+      setIsBulkDeleteModalOpen(false);
+    }
+  };
+
+  const handleConfirmClearAll = async () => {
+    setIsDeleting(true);
+    try {
+      const success = await clearAllChallanRecords();
+      if (success) {
+        setRecords(getChallansForBrand(currentBrand?.code || 'DHOOT-ALL'));
+        setSelectedChallanNos(new Set());
+        setActionFeedback('All challans & invoices cleared from ledger.');
+        setTimeout(() => setActionFeedback(null), 4000);
+      }
+    } catch (err: any) {
+      console.error('Error clearing challans:', err);
+      setActionFeedback(`Error clearing ledger: ${err.message || 'Operation failed'}`);
+    } finally {
+      setIsDeleting(false);
+      setIsManageChallansModalOpen(false);
+    }
+  };
+
+  const handleConfirmResetAll = async () => {
+    setIsDeleting(true);
+    try {
+      const success = await resetChallanRecordsToDefault();
+      if (success) {
+        setRecords(getChallansForBrand(currentBrand?.code || 'DHOOT-ALL'));
+        setSelectedChallanNos(new Set());
+        setActionFeedback('Challan & invoice ledger reset to baseline demonstration data.');
+        setTimeout(() => setActionFeedback(null), 4000);
+      }
+    } catch (err: any) {
+      console.error('Error resetting challans:', err);
+      setActionFeedback(`Error resetting ledger: ${err.message || 'Operation failed'}`);
+    } finally {
+      setIsDeleting(false);
+      setIsManageChallansModalOpen(false);
+    }
+  };
+
   // Filter Challans
   const cleanSearch = search.trim().toLowerCase();
   const filteredRecords = records.filter(r => {
@@ -682,6 +805,16 @@ export const ChallanInvoicingPage: React.FC = () => {
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-accent" />
               <span>Bulk Import Challans</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsManageChallansModalOpen(true)}
+              className="h-8 px-3.5 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+              title="Manage and clear challans register"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-danger" />
+              <span>Manage Challans</span>
             </button>
           </div>
         }
@@ -733,10 +866,46 @@ export const ChallanInvoicingPage: React.FC = () => {
           </div>
         }
       >
+        {selectedChallanNos.size > 0 && (
+          <div className="mb-3 p-3 bg-canvas border border-line rounded flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-ink">
+                <span className="font-mono tnum text-accent">{selectedChallanNos.size}</span> challan(s) selected
+              </span>
+              <button
+                type="button"
+                onClick={handleClearSelection}
+                className="text-ink-3 hover:text-ink underline text-[11px] cursor-pointer"
+              >
+                Clear selection
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsBulkDeleteModalOpen(true)}
+                className="h-7 px-3 rounded bg-danger hover:bg-danger/90 text-white font-medium flex items-center gap-1.5 shadow-xs cursor-pointer text-xs"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Selected ({selectedChallanNos.size})</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead className="bg-canvas border-b border-line text-ink font-semibold uppercase tracking-[0.06em] text-xs">
               <tr>
+                <th className="py-2.5 px-3 w-8 text-center whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={filteredRecords.length > 0 && selectedChallanNos.size === filteredRecords.length}
+                    onChange={handleToggleSelectAll}
+                    className="rounded border-line text-accent focus:ring-accent cursor-pointer"
+                    title="Select All Challans"
+                  />
+                </th>
                 <th className="py-2.5 px-3 w-10 text-center whitespace-nowrap">#</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Invoice No.</th>
                 <th className="py-2.5 px-3 whitespace-nowrap">Invoice Date</th>
@@ -766,14 +935,14 @@ export const ChallanInvoicingPage: React.FC = () => {
             <tbody className="divide-y divide-line text-ink-2 text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan={24} className="py-12 text-center text-ink-3">
+                  <td colSpan={25} className="py-12 text-center text-ink-3">
                     <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-accent" />
                     Loading challan & invoice ledger...
                   </td>
                 </tr>
               ) : filteredRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={24}>
+                  <td colSpan={25}>
                     <div className="py-12 text-center space-y-3">
                       <div className="w-12 h-12 rounded-full bg-accent-soft text-accent flex items-center justify-center mx-auto">
                         <Receipt className="w-6 h-6" />
@@ -789,12 +958,21 @@ export const ChallanInvoicingPage: React.FC = () => {
                 </tr>
               ) : (
                 filteredRecords.map((r, idx) => {
+                  const itemKey = (r.challan_no || r.invoice_no || r.id || '').trim();
                   return (
                     <tr 
                       key={r.id || idx} 
                       className="hover:bg-canvas transition-colors cursor-pointer"
                       onClick={() => setSelectedRecord(r)}
                     >
+                      <td className="py-2.5 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedChallanNos.has(itemKey)}
+                          onChange={() => handleToggleSelectChallan(itemKey)}
+                          className="rounded border-line text-accent focus:ring-accent cursor-pointer"
+                        />
+                      </td>
                       <td className="py-2.5 px-3 text-center text-ink-3 tnum whitespace-nowrap">
                         {idx + 1}
                       </td>
@@ -873,6 +1051,14 @@ export const ChallanInvoicingPage: React.FC = () => {
                           >
                             <Printer className="w-3 h-3 text-ink-3" />
                             <span>Invoice</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSingleDeleteTarget(r)}
+                            className="h-7 w-7 rounded bg-surface border border-line hover:border-danger/40 hover:bg-danger/10 hover:text-danger text-ink-3 transition-colors flex items-center justify-center shadow-xs cursor-pointer"
+                            title="Delete challan record"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>
@@ -1140,6 +1326,261 @@ export const ChallanInvoicingPage: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 1. Single Delete Challan Modal */}
+      {singleDeleteTarget && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 select-none">
+          <div className="bg-surface w-full max-w-md rounded-panel shadow-pop border border-line overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-line flex items-center justify-between bg-canvas">
+              <div className="flex items-center gap-2 text-danger">
+                <AlertOctagon className="w-5 h-5 shrink-0" />
+                <h3 className="font-semibold text-ink text-sm">Delete Challan Record</h3>
+              </div>
+              <button 
+                onClick={() => setSingleDeleteTarget(null)}
+                className="w-8 h-8 rounded text-ink-3 hover:text-ink hover:bg-surface flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3.5 text-xs">
+              <p className="text-ink">
+                Are you sure you want to permanently delete challan record for customer <strong className="text-ink">{singleDeleteTarget.customer_name}</strong>?
+              </p>
+
+              <div className="p-3 bg-canvas border border-line rounded space-y-1.5 font-mono text-[11px]">
+                <div className="flex justify-between">
+                  <span className="text-ink-3">Challan No:</span>
+                  <span className="font-semibold text-ink">{singleDeleteTarget.challan_no || '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-ink-3">Invoice No:</span>
+                  <span className="font-semibold text-ink">{singleDeleteTarget.invoice_no || '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-ink-3">VIN:</span>
+                  <span className="text-ink">{singleDeleteTarget.vin_no}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-ink-3">Model / Variant:</span>
+                  <span className="text-ink">{singleDeleteTarget.model} {singleDeleteTarget.variant}</span>
+                </div>
+                <div className="flex justify-between pt-1 border-t border-line font-bold">
+                  <span className="text-ink-3">Net Amount:</span>
+                  <span className="text-ink">₹{(Number(singleDeleteTarget.net_amount) || 0).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-danger/10 border border-danger/20 rounded flex items-start gap-2 text-danger text-[11px] leading-relaxed">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  Permanent database removal: This challan & invoice record will be deleted from local cache, database, and backend registers.
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3 border-t border-line bg-canvas flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setSingleDeleteTarget(null)}
+                disabled={isDeleting}
+                className="h-8 px-3 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSingleDelete}
+                disabled={isDeleting}
+                className="h-8 px-4 rounded bg-danger hover:bg-danger/90 text-xs font-semibold text-white transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Challan</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Bulk Delete Selected Challans Modal */}
+      {isBulkDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 select-none">
+          <div className="bg-surface w-full max-w-lg rounded-panel shadow-pop border border-line overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-line flex items-center justify-between bg-canvas">
+              <div className="flex items-center gap-2 text-danger">
+                <AlertOctagon className="w-5 h-5 shrink-0" />
+                <h3 className="font-semibold text-ink text-sm">Delete {selectedChallanNos.size} Selected Records</h3>
+              </div>
+              <button 
+                onClick={() => setIsBulkDeleteModalOpen(false)}
+                className="w-8 h-8 rounded text-ink-3 hover:text-ink hover:bg-surface flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3.5 text-xs">
+              <p className="text-ink">
+                You are about to permanently delete <strong className="text-danger font-mono tnum">{selectedChallanNos.size}</strong> challan & invoice records from the ledger.
+              </p>
+
+              <div className="p-3 bg-canvas border border-line rounded space-y-2 max-h-36 overflow-y-auto">
+                <span className="eyebrow block text-ink-3">Selected Record Keys:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {Array.from(selectedChallanNos).slice(0, 10).map(key => (
+                    <span key={key} className="px-2 py-0.5 rounded bg-surface border border-line font-mono text-[11px] text-ink font-semibold">
+                      {key}
+                    </span>
+                  ))}
+                  {selectedChallanNos.size > 10 && (
+                    <span className="px-2 py-0.5 rounded bg-surface text-[11px] text-ink-3">
+                      +{selectedChallanNos.size - 10} more
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-danger/10 border border-danger/20 rounded flex items-start gap-2 text-danger text-[11px] leading-relaxed">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  Permanent database removal: All selected delivery challans and invoices will be purged from local storage, local PostgREST database (<span className="font-mono">localhost:54321</span>), and cloud sync.
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3 border-t border-line bg-canvas flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsBulkDeleteModalOpen(false)}
+                disabled={isDeleting}
+                className="h-8 px-3 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmBulkDelete}
+                disabled={isDeleting}
+                className="h-8 px-4 rounded bg-danger hover:bg-danger/90 text-xs font-semibold text-white transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting {selectedChallanNos.size} Records...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete {selectedChallanNos.size} Records</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Manage & Clear Challans Modal */}
+      {isManageChallansModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 select-none">
+          <div className="bg-surface w-full max-w-lg rounded-panel shadow-pop border border-line overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-line flex items-center justify-between bg-canvas">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded bg-accent text-white flex items-center justify-center shadow-xs">
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-ink text-sm">Challan Ledger Operations</h3>
+                  <p className="text-[11px] text-ink-3">Clear ledger records or reset to defaults</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsManageChallansModalOpen(false)}
+                className="w-8 h-8 rounded text-ink-3 hover:text-ink hover:bg-surface flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4 text-xs">
+              {/* Option 1: Clear All */}
+              <div className="p-3.5 bg-canvas border border-line rounded-lg space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="font-semibold text-ink text-xs">Clear All Challans & Invoices</h4>
+                    <p className="text-ink-3 text-[11px] mt-0.5 leading-relaxed">
+                      Removes all delivery challans and invoices currently recorded in the system.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleConfirmClearAll}
+                    disabled={isDeleting}
+                    className="h-7 px-3 rounded bg-surface border border-line hover:border-danger/40 hover:text-danger text-xs font-semibold text-ink transition-colors cursor-pointer shrink-0 shadow-xs"
+                  >
+                    Clear All
+                  </button>
+                </div>
+              </div>
+
+              {/* Option 2: Reset to Defaults */}
+              <div className="p-3.5 bg-canvas border border-line rounded-lg space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="font-semibold text-ink text-xs">Reset Challans Ledger</h4>
+                    <p className="text-ink-3 text-[11px] mt-0.5 leading-relaxed">
+                      Clears deleted record tombstones and reloads baseline sample delivery challans.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleConfirmResetAll}
+                    disabled={isDeleting}
+                    className="h-7 px-3 rounded bg-accent-soft border border-accent-line text-accent hover:bg-accent hover:text-white text-xs font-semibold transition-colors cursor-pointer shrink-0 shadow-xs"
+                  >
+                    Reset Ledger
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 border-t border-line bg-canvas flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setIsManageChallansModalOpen(false)}
+                className="h-8 px-4 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Feedback Notification */}
+      {actionFeedback && (
+        <div className="fixed bottom-5 left-5 z-50 bg-surface border border-line shadow-pop px-3.5 py-2.5 rounded-lg flex items-center gap-2.5 text-xs font-semibold text-ink border-l-4 border-l-accent">
+          <CheckCircle2 className="w-4 h-4 text-ok shrink-0" />
+          <span>{actionFeedback}</span>
+          <button 
+            onClick={() => setActionFeedback(null)} 
+            className="ml-2 text-ink-3 hover:text-ink cursor-pointer"
+            aria-label="Dismiss message"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 

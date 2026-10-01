@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Truck, MapPin, ArrowRightLeft, ShieldCheck, CheckCircle2, AlertCircle, 
   Clock, Plus, Search, Filter, RefreshCw, QrCode, FileText, Check, X,
-  Car, UserCheck, Calendar, ArrowUpRight, ArrowDownLeft, Building2, ChevronRight
+  Car, UserCheck, Calendar, ArrowUpRight, ArrowDownLeft, Building2, ChevronRight,
+  Trash2, AlertOctagon, Loader2, AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -17,6 +18,9 @@ import {
   isTataItem,
   isHyundaiItem
 } from '../data/seedData';
+import { 
+  deleteTransferRecord, deleteMultipleTransferRecords, clearAllTransferRecords 
+} from '../services/dataService';
 import { formatDate } from '../utils/dateUtils';
 import { Panel, Stat, Badge, Empty, PageHeader } from '../components/ui/primitives';
 
@@ -53,6 +57,14 @@ export const YardMovementsPage: React.FC = () => {
 
   const [gatepassModal, setGatepassModal] = useState<VehicleTransferItem | null>(null);
   const [receiveModal, setReceiveModal] = useState<VehicleTransferItem | null>(null);
+
+  // Deletion & Multi-selection State for Transfers
+  const [selectedTransferIds, setSelectedTransferIds] = useState<Set<string>>(new Set());
+  const [singleDeleteTransferTarget, setSingleDeleteTransferTarget] = useState<VehicleTransferItem | null>(null);
+  const [isBulkDeleteTransferModalOpen, setIsBulkDeleteTransferModalOpen] = useState(false);
+  const [isManageTransfersModalOpen, setIsManageTransfersModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
   // Search & Filter within Yard Stock
   const [stockSearchQuery, setStockSearchQuery] = useState('');
@@ -293,6 +305,94 @@ export const YardMovementsPage: React.FC = () => {
     } catch (err) {}
 
     setReceiveModal(null);
+  };
+
+  // -------------------------------------------------------------------------
+  // Transfer Deletion Handlers
+  // -------------------------------------------------------------------------
+  const handleToggleSelectTransfer = (key: string) => {
+    setSelectedTransferIds(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const handleToggleSelectAllTransfers = () => {
+    const visibleTransfers = transfers.filter(t => transferStatusFilter === 'ALL' || t.status === transferStatusFilter);
+    if (selectedTransferIds.size === visibleTransfers.length && visibleTransfers.length > 0) {
+      setSelectedTransferIds(new Set());
+    } else {
+      setSelectedTransferIds(new Set(visibleTransfers.map(t => (t.transfer_no || t.id)).filter(Boolean)));
+    }
+  };
+
+  const handleClearTransferSelection = () => {
+    setSelectedTransferIds(new Set());
+  };
+
+  const handleConfirmSingleDeleteTransfer = async () => {
+    if (!singleDeleteTransferTarget) return;
+    setIsDeleting(true);
+    const targetKey = singleDeleteTransferTarget.transfer_no || singleDeleteTransferTarget.id;
+    try {
+      const success = await deleteTransferRecord(targetKey);
+      if (success) {
+        setTransfers(getVehicleTransfers());
+        setSelectedTransferIds(prev => {
+          const next = new Set(prev);
+          next.delete(targetKey);
+          return next;
+        });
+        setActionFeedback(`Transfer record #${targetKey} successfully deleted.`);
+        setTimeout(() => setActionFeedback(null), 4000);
+      }
+    } catch (err: any) {
+      console.error('Error deleting transfer:', err);
+      setActionFeedback(`Error deleting transfer: ${err.message || 'Operation failed'}`);
+    } finally {
+      setIsDeleting(false);
+      setSingleDeleteTransferTarget(null);
+    }
+  };
+
+  const handleConfirmBulkDeleteTransfers = async () => {
+    if (selectedTransferIds.size === 0) return;
+    setIsDeleting(true);
+    const keys = Array.from(selectedTransferIds);
+    try {
+      const count = await deleteMultipleTransferRecords(keys);
+      setTransfers(getVehicleTransfers());
+      setSelectedTransferIds(new Set());
+      setActionFeedback(`${count} transfer records permanently deleted.`);
+      setTimeout(() => setActionFeedback(null), 4000);
+    } catch (err: any) {
+      console.error('Error deleting transfers:', err);
+      setActionFeedback(`Error deleting selected transfers: ${err.message || 'Operation failed'}`);
+    } finally {
+      setIsDeleting(false);
+      setIsBulkDeleteTransferModalOpen(false);
+    }
+  };
+
+  const handleConfirmClearAllTransfers = async () => {
+    setIsDeleting(true);
+    try {
+      const success = await clearAllTransferRecords();
+      if (success) {
+        setTransfers(getVehicleTransfers());
+        setSelectedTransferIds(new Set());
+        setActionFeedback('All transfer records cleared from database.');
+        setTimeout(() => setActionFeedback(null), 4000);
+      }
+    } catch (err: any) {
+      console.error('Error clearing transfers:', err);
+      setActionFeedback(`Error clearing transfers: ${err.message || 'Operation failed'}`);
+    } finally {
+      setIsDeleting(false);
+      setIsManageTransfersModalOpen(false);
+    }
   };
 
   // Status Family Tone according to 01-foundations.md
@@ -574,13 +674,59 @@ export const YardMovementsPage: React.FC = () => {
                 <option value="DISPATCHED_IN_TRANSIT">In-Transit</option>
                 <option value="RECEIVED_AT_DESTINATION">Completed / Received</option>
               </select>
+
+              <button
+                type="button"
+                onClick={() => setIsManageTransfersModalOpen(true)}
+                className="h-7 px-2.5 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                title="Manage and clear transfers register"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-danger" />
+                <span>Manage Transfers</span>
+              </button>
             </div>
           }
         >
+          {selectedTransferIds.size > 0 && (
+            <div className="mb-3 p-3 bg-canvas border border-line rounded flex items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-ink">
+                  <span className="font-mono tnum text-accent">{selectedTransferIds.size}</span> transfer(s) selected
+                </span>
+                <button
+                  type="button"
+                  onClick={handleClearTransferSelection}
+                  className="text-ink-3 hover:text-ink underline text-[11px] cursor-pointer"
+                >
+                  Clear selection
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsBulkDeleteTransferModalOpen(true)}
+                  className="h-7 px-3 rounded bg-danger hover:bg-danger/90 text-white font-medium flex items-center gap-1.5 shadow-xs cursor-pointer text-xs"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Selected ({selectedTransferIds.size})</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead className="bg-canvas border-b border-line text-ink font-semibold uppercase tracking-[0.06em] text-xs">
                 <tr>
+                  <th className="py-2.5 px-3 w-8 text-center whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={transfers.filter(t => transferStatusFilter === 'ALL' || t.status === transferStatusFilter).length > 0 && selectedTransferIds.size === transfers.filter(t => transferStatusFilter === 'ALL' || t.status === transferStatusFilter).length}
+                      onChange={handleToggleSelectAllTransfers}
+                      className="rounded border-line text-accent focus:ring-accent cursor-pointer"
+                      title="Select All Transfers"
+                    />
+                  </th>
                   <th className="py-2.5 px-3 whitespace-nowrap">Transfer No</th>
                   <th className="py-2.5 px-3 whitespace-nowrap">VIN / Model</th>
                   <th className="py-2.5 px-3 whitespace-nowrap">Origin Stockyard</th>
@@ -594,70 +740,90 @@ export const YardMovementsPage: React.FC = () => {
               <tbody className="divide-y divide-line text-ink-2 text-xs">
                 {transfers
                   .filter(t => transferStatusFilter === 'ALL' || t.status === transferStatusFilter)
-                  .map((t, idx) => (
-                    <tr key={t.id || idx} className="hover:bg-canvas transition-colors">
-                      <td className="py-2.5 px-3 font-mono font-semibold text-ink tnum whitespace-nowrap">
-                        {t.transfer_no}
-                      </td>
-                      <td className="py-2.5 px-3 whitespace-nowrap">
-                        <div className="font-semibold text-ink">{t.model}</div>
-                        <div className="font-mono text-ink-3 text-[11px] tnum">{t.vin}</div>
-                      </td>
-                      <td className="py-2.5 px-3 font-medium text-ink whitespace-nowrap">
-                        {t.from_stockyard_name}
-                      </td>
-                      <td className="py-2.5 px-3 font-medium text-ink whitespace-nowrap">
-                        {t.to_stockyard_name}
-                      </td>
-                      <td className="py-2.5 px-3 whitespace-nowrap">
-                        <div className="text-ink">{t.transporter || 'Direct Fleet'}</div>
-                        <div className="text-ink-3 text-[11px]">{t.driver_name} • {t.driver_phone}</div>
-                      </td>
-                      <td className="py-2.5 px-3 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`w-2 h-2 rounded-full ${t.level_1_status === 'APPROVED' ? 'bg-ok' : 'bg-warn'}`} title="Level 1: Yard Supervisor" />
-                          <span className={`w-2 h-2 rounded-full ${t.level_2_status === 'APPROVED' ? 'bg-ok' : 'bg-warn'}`} title="Level 2: Accounts / Stock Controller" />
-                          <span className={`w-2 h-2 rounded-full ${t.level_3_status === 'APPROVED' ? 'bg-ok' : 'bg-warn'}`} title="Level 3: Branch GM (Gatepass)" />
-                          <span className="text-[11px] text-ink-3 ml-1">
-                            {t.level_3_status === 'APPROVED' ? 'Gatepass Issued' : t.level_2_status === 'APPROVED' ? 'L2 Cleared' : t.level_1_status === 'APPROVED' ? 'L1 Verified' : 'Awaiting L1'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-3 whitespace-nowrap">
-                        <Badge tone={
-                          t.status === 'RECEIVED_AT_DESTINATION' ? 'ok' :
-                          t.status === 'DISPATCHED_IN_TRANSIT' ? 'accent' : 'warn'
-                        }>
-                          {t.status.replace(/_/g, ' ')}
-                        </Badge>
-                      </td>
-                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {t.gatepass_no ? (
-                            <button
-                              type="button"
-                              onClick={() => setGatepassModal(t)}
-                              className="h-6 px-2 rounded bg-surface border border-line hover:border-line-strong text-[11px] font-semibold text-accent flex items-center gap-1 cursor-pointer shadow-xs"
-                            >
-                              <QrCode className="w-3 h-3" />
-                              <span>Gatepass</span>
-                            </button>
-                          ) : null}
+                  .map((t, idx) => {
+                    const itemKey = t.transfer_no || t.id;
+                    return (
+                      <tr key={t.id || idx} className="hover:bg-canvas transition-colors">
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedTransferIds.has(itemKey)}
+                            onChange={() => handleToggleSelectTransfer(itemKey)}
+                            className="rounded border-line text-accent focus:ring-accent cursor-pointer"
+                          />
+                        </td>
+                        <td className="py-2.5 px-3 font-mono font-semibold text-ink tnum whitespace-nowrap">
+                          {t.transfer_no}
+                        </td>
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          <div className="font-semibold text-ink">{t.model}</div>
+                          <div className="font-mono text-ink-3 text-[11px] tnum">{t.vin}</div>
+                        </td>
+                        <td className="py-2.5 px-3 font-medium text-ink whitespace-nowrap">
+                          {t.from_stockyard_name}
+                        </td>
+                        <td className="py-2.5 px-3 font-medium text-ink whitespace-nowrap">
+                          {t.to_stockyard_name}
+                        </td>
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          <div className="text-ink">{t.transporter || 'Direct Fleet'}</div>
+                          <div className="text-ink-3 text-[11px]">{t.driver_name} • {t.driver_phone}</div>
+                        </td>
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`w-2 h-2 rounded-full ${t.level_1_status === 'APPROVED' ? 'bg-ok' : 'bg-warn'}`} title="Level 1: Yard Supervisor" />
+                            <span className={`w-2 h-2 rounded-full ${t.level_2_status === 'APPROVED' ? 'bg-ok' : 'bg-warn'}`} title="Level 2: Accounts / Stock Controller" />
+                            <span className={`w-2 h-2 rounded-full ${t.level_3_status === 'APPROVED' ? 'bg-ok' : 'bg-warn'}`} title="Level 3: Branch GM (Gatepass)" />
+                            <span className="text-[11px] text-ink-3 ml-1">
+                              {t.level_3_status === 'APPROVED' ? 'Gatepass Issued' : t.level_2_status === 'APPROVED' ? 'L2 Cleared' : t.level_1_status === 'APPROVED' ? 'L1 Verified' : 'Awaiting L1'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          <Badge tone={
+                            t.status === 'RECEIVED_AT_DESTINATION' ? 'ok' :
+                            t.status === 'DISPATCHED_IN_TRANSIT' ? 'accent' : 'warn'
+                          }>
+                            {t.status.replace(/_/g, ' ')}
+                          </Badge>
+                        </td>
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1.5">
+                            {t.gatepass_no ? (
+                              <button
+                                type="button"
+                                onClick={() => setGatepassModal(t)}
+                                className="h-6 px-2 rounded bg-surface border border-line hover:border-line-strong text-[11px] font-semibold text-accent flex items-center gap-1 cursor-pointer shadow-xs"
+                              >
+                                <QrCode className="w-3 h-3" />
+                                <span>Gatepass</span>
+                              </button>
+                            ) : null}
 
-                          {t.status === 'DISPATCHED_IN_TRANSIT' && (
+                            {t.status === 'DISPATCHED_IN_TRANSIT' && (
+                              <button
+                                type="button"
+                                onClick={() => setReceiveModal(t)}
+                                className="h-6 px-2 rounded bg-ok hover:bg-ok/90 text-[11px] font-semibold text-white flex items-center gap-1 cursor-pointer shadow-xs"
+                              >
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>Confirm Inward</span>
+                              </button>
+                            )}
+
                             <button
                               type="button"
-                              onClick={() => setReceiveModal(t)}
-                              className="h-6 px-2 rounded bg-ok hover:bg-ok/90 text-[11px] font-semibold text-white flex items-center gap-1 cursor-pointer shadow-xs"
+                              onClick={() => setSingleDeleteTransferTarget(t)}
+                              className="h-6 w-6 rounded bg-surface border border-line hover:border-danger/40 hover:bg-danger/10 hover:text-danger text-ink-3 transition-colors flex items-center justify-center shadow-xs cursor-pointer"
+                              title="Delete transfer record"
                             >
-                              <CheckCircle2 className="w-3 h-3" />
-                              <span>Confirm Inward</span>
+                              <Trash2 className="w-3 h-3" />
                             </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
           </div>
@@ -1152,6 +1318,246 @@ export const YardMovementsPage: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 5: SINGLE DELETE TRANSFER                                            */}
+      {/* ========================================================================= */}
+      {singleDeleteTransferTarget && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 select-none">
+          <div className="bg-surface w-full max-w-md rounded-panel shadow-pop border border-line overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-line flex items-center justify-between bg-canvas">
+              <div className="flex items-center gap-2 text-danger">
+                <AlertOctagon className="w-5 h-5 shrink-0" />
+                <h3 className="font-semibold text-ink text-sm">Delete Movement Record</h3>
+              </div>
+              <button 
+                onClick={() => setSingleDeleteTransferTarget(null)}
+                className="w-8 h-8 rounded text-ink-3 hover:text-ink hover:bg-surface flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3.5 text-xs">
+              <p className="text-ink">
+                Are you sure you want to permanently delete movement record <strong className="text-ink font-mono font-semibold">#{singleDeleteTransferTarget.transfer_no}</strong>?
+              </p>
+
+              <div className="p-3 bg-canvas border border-line rounded space-y-1.5 font-mono text-[11px]">
+                <div className="flex justify-between">
+                  <span className="text-ink-3">VIN:</span>
+                  <span className="font-semibold text-ink">{singleDeleteTransferTarget.vin}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-ink-3">Model:</span>
+                  <span className="text-ink">{singleDeleteTransferTarget.model}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-ink-3">Origin:</span>
+                  <span className="text-ink">{singleDeleteTransferTarget.from_stockyard_name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-ink-3">Destination:</span>
+                  <span className="text-ink">{singleDeleteTransferTarget.to_stockyard_name}</span>
+                </div>
+                <div className="flex justify-between pt-1 border-t border-line">
+                  <span className="text-ink-3">Status:</span>
+                  <span className="text-ink font-medium">{singleDeleteTransferTarget.status}</span>
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-danger/10 border border-danger/20 rounded flex items-start gap-2 text-danger text-[11px] leading-relaxed">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  Permanent database removal: This transfer movement record will be expunged from local storage, local PostgREST database (<span className="font-mono">localhost:54321</span>), and cloud sync.
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3 border-t border-line bg-canvas flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setSingleDeleteTransferTarget(null)}
+                disabled={isDeleting}
+                className="h-8 px-3 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSingleDeleteTransfer}
+                disabled={isDeleting}
+                className="h-8 px-4 rounded bg-danger hover:bg-danger/90 text-xs font-semibold text-white transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Transfer</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 6: BULK DELETE TRANSFERS                                             */}
+      {/* ========================================================================= */}
+      {isBulkDeleteTransferModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 select-none">
+          <div className="bg-surface w-full max-w-lg rounded-panel shadow-pop border border-line overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-line flex items-center justify-between bg-canvas">
+              <div className="flex items-center gap-2 text-danger">
+                <AlertOctagon className="w-5 h-5 shrink-0" />
+                <h3 className="font-semibold text-ink text-sm">Delete {selectedTransferIds.size} Selected Movements</h3>
+              </div>
+              <button 
+                onClick={() => setIsBulkDeleteTransferModalOpen(false)}
+                className="w-8 h-8 rounded text-ink-3 hover:text-ink hover:bg-surface flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3.5 text-xs">
+              <p className="text-ink">
+                You are about to permanently delete <strong className="text-danger font-mono tnum">{selectedTransferIds.size}</strong> movement / IDT records from the register.
+              </p>
+
+              <div className="p-3 bg-canvas border border-line rounded space-y-2 max-h-36 overflow-y-auto">
+                <span className="eyebrow block text-ink-3">Selected Transfer Keys:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {Array.from(selectedTransferIds).slice(0, 10).map(id => (
+                    <span key={id} className="px-2 py-0.5 rounded bg-surface border border-line font-mono text-[11px] text-ink font-semibold">
+                      {id}
+                    </span>
+                  ))}
+                  {selectedTransferIds.size > 10 && (
+                    <span className="px-2 py-0.5 rounded bg-surface text-[11px] text-ink-3">
+                      +{selectedTransferIds.size - 10} more
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-danger/10 border border-danger/20 rounded flex items-start gap-2 text-danger text-[11px] leading-relaxed">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  Permanent database removal: All selected movement records will be expunged from local storage, local PostgREST database (<span className="font-mono">localhost:54321</span>), and cloud sync.
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3 border-t border-line bg-canvas flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsBulkDeleteTransferModalOpen(false)}
+                disabled={isDeleting}
+                className="h-8 px-3 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmBulkDeleteTransfers}
+                disabled={isDeleting}
+                className="h-8 px-4 rounded bg-danger hover:bg-danger/90 text-xs font-semibold text-white transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting {selectedTransferIds.size} Transfers...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete {selectedTransferIds.size} Transfers</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 7: MANAGE & CLEAR TRANSFERS                                          */}
+      {/* ========================================================================= */}
+      {isManageTransfersModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 select-none">
+          <div className="bg-surface w-full max-w-lg rounded-panel shadow-pop border border-line overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-line flex items-center justify-between bg-canvas">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded bg-accent text-white flex items-center justify-center shadow-xs">
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-ink text-sm">Movement Ledger Operations</h3>
+                  <p className="text-[11px] text-ink-3">Clear movements or purge transfer records</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsManageTransfersModalOpen(false)}
+                className="w-8 h-8 rounded text-ink-3 hover:text-ink hover:bg-surface flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4 text-xs">
+              <div className="p-3.5 bg-canvas border border-line rounded-lg space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="font-semibold text-ink text-xs">Clear All Transfer Movements</h4>
+                    <p className="text-ink-3 text-[11px] mt-0.5 leading-relaxed">
+                      Removes all inter-dealer and inter-yard transfer records currently logged in the ledger.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleConfirmClearAllTransfers}
+                    disabled={isDeleting}
+                    className="h-7 px-3 rounded bg-surface border border-line hover:border-danger/40 hover:text-danger text-xs font-semibold text-ink transition-colors cursor-pointer shrink-0 shadow-xs"
+                  >
+                    Clear All
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 border-t border-line bg-canvas flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setIsManageTransfersModalOpen(false)}
+                className="h-8 px-4 rounded bg-surface border border-line hover:border-line-strong text-xs font-semibold text-ink cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Feedback Notification */}
+      {actionFeedback && (
+        <div className="fixed bottom-5 left-5 z-50 bg-surface border border-line shadow-pop px-3.5 py-2.5 rounded-lg flex items-center gap-2.5 text-xs font-semibold text-ink border-l-4 border-l-accent">
+          <CheckCircle2 className="w-4 h-4 text-ok shrink-0" />
+          <span>{actionFeedback}</span>
+          <button 
+            onClick={() => setActionFeedback(null)} 
+            className="ml-2 text-ink-3 hover:text-ink cursor-pointer"
+            aria-label="Dismiss message"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 

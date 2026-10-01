@@ -26,7 +26,16 @@ import {
   deleteBookingFromStorage,
   deleteMultipleBookingsFromStorage,
   clearAllBookingsFromStorage,
-  resetBookingsToDefaultInStorage
+  resetBookingsToDefaultInStorage,
+  getDeletedChallanNos,
+  saveDeletedChallanNos,
+  deleteChallanFromStorage,
+  deleteMultipleChallansFromStorage,
+  clearAllChallansFromStorage,
+  resetChallansToDefaultInStorage,
+  deleteTransferFromStorage,
+  deleteMultipleTransfersFromStorage,
+  clearAllTransfersFromStorage
 } from '../data/seedData';
 export { getAllUsers, saveUsersInventory, saveSingleUser, deleteUserFromInventory, findUserForAuth, SEED_USERS };
 export { 
@@ -39,7 +48,16 @@ export {
   deleteBookingFromStorage,
   deleteMultipleBookingsFromStorage,
   clearAllBookingsFromStorage,
-  resetBookingsToDefaultInStorage
+  resetBookingsToDefaultInStorage,
+  getDeletedChallanNos,
+  saveDeletedChallanNos,
+  deleteChallanFromStorage,
+  deleteMultipleChallansFromStorage,
+  clearAllChallansFromStorage,
+  resetChallansToDefaultInStorage,
+  deleteTransferFromStorage,
+  deleteMultipleTransfersFromStorage,
+  clearAllTransfersFromStorage
 };
 export type { EnterpriseUser } from '../data/seedData';
 import initialStockVehicles from '../data/initialVehicles.json';
@@ -1824,14 +1842,22 @@ export const resetBookingsToDefaultRecords = async (): Promise<boolean> => {
 // ============================================================================
 
 export const fetchChallans = async (brandCode?: string): Promise<ChallanRecord[]> => {
+  const deletedSet = getDeletedChallanNos();
+
   try {
     const { data, error } = await supabase.from('challan_invoices').select('*').order('created_at', { ascending: false });
     if (!error && Array.isArray(data)) {
-      const normalized = data.map((c: any) => ({
-        ...c,
-        mobile: c.mobile || c.mobile_no || '',
-        other: c.other || c.other_charges || 0
-      }));
+      const normalized = data
+        .filter((c: any) => 
+          !deletedSet.has((c.challan_no || '').toUpperCase().trim()) &&
+          !deletedSet.has((c.invoice_no || '').toUpperCase().trim()) &&
+          !deletedSet.has((c.id || '').toUpperCase().trim())
+        )
+        .map((c: any) => ({
+          ...c,
+          mobile: c.mobile || c.mobile_no || '',
+          other: c.other || c.other_charges || 0
+        }));
       localStorage.setItem('dhoot_challans_inventory', JSON.stringify(normalized));
       return filterByBrand(normalized, brandCode);
     }
@@ -1843,7 +1869,14 @@ export const fetchChallans = async (brandCode?: string): Promise<ChallanRecord[]
   if (cached) {
     try {
       const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed)) return filterByBrand(parsed, brandCode);
+      if (Array.isArray(parsed)) {
+        const filtered = parsed.filter((c: any) => 
+          !deletedSet.has((c.challan_no || '').toUpperCase().trim()) &&
+          !deletedSet.has((c.invoice_no || '').toUpperCase().trim()) &&
+          !deletedSet.has((c.id || '').toUpperCase().trim())
+        );
+        return filterByBrand(filtered, brandCode);
+      }
     } catch (e) {}
   }
   return [];
@@ -1899,6 +1932,69 @@ export const bulkImportChallans = async (challans: Partial<ChallanRecord>[]): Pr
   window.dispatchEvent(new Event('challans-updated'));
 
   return { count: sanitized.length };
+};
+
+export const deleteChallanRecord = async (challanNoOrId: string): Promise<boolean> => {
+  if (!challanNoOrId) return false;
+  const cleanKey = challanNoOrId.toUpperCase().trim();
+  deleteChallanFromStorage(cleanKey);
+
+  // Sync to Local DB Server
+  try {
+    await fetch(`${getLocalDbEndpoint('challan_invoices')}?or=(challan_no.eq.${encodeURIComponent(cleanKey)},invoice_no.eq.${encodeURIComponent(cleanKey)},id.eq.${encodeURIComponent(cleanKey)})`, {
+      method: 'DELETE',
+      signal: AbortSignal.timeout(3000)
+    });
+  } catch (e) {}
+
+  // Sync to Supabase
+  try {
+    await supabase.from('challan_invoices').delete().or(`challan_no.eq.${cleanKey},invoice_no.eq.${cleanKey},id.eq.${cleanKey}`);
+  } catch (e) {}
+
+  window.dispatchEvent(new Event('challans-updated'));
+  return true;
+};
+
+export const deleteMultipleChallanRecords = async (challanNosOrIds: string[]): Promise<number> => {
+  if (!challanNosOrIds || challanNosOrIds.length === 0) return 0;
+  const cleanKeys = challanNosOrIds.map(c => c.toUpperCase().trim()).filter(Boolean);
+  deleteMultipleChallansFromStorage(cleanKeys);
+
+  // Sync to Local DB Server
+  try {
+    const param = `in.(${cleanKeys.join(',')})`;
+    await fetch(`${getLocalDbEndpoint('challan_invoices')}?challan_no=${encodeURIComponent(param)}`, {
+      method: 'DELETE',
+      signal: AbortSignal.timeout(4000)
+    });
+  } catch (e) {}
+
+  // Sync to Supabase
+  try {
+    await supabase.from('challan_invoices').delete().in('challan_no', cleanKeys);
+  } catch (e) {}
+
+  window.dispatchEvent(new Event('challans-updated'));
+  return cleanKeys.length;
+};
+
+export const clearAllChallanRecords = async (): Promise<boolean> => {
+  clearAllChallansFromStorage();
+  try {
+    await fetch(getLocalDbEndpoint('challan_invoices'), { method: 'DELETE', signal: AbortSignal.timeout(3000) });
+  } catch (e) {}
+  try {
+    await supabase.from('challan_invoices').delete().neq('challan_no', '__PERM_NON_EXISTENT__');
+  } catch (e) {}
+  window.dispatchEvent(new Event('challans-updated'));
+  return true;
+};
+
+export const resetChallanRecordsToDefault = async (): Promise<boolean> => {
+  resetChallansToDefaultInStorage();
+  window.dispatchEvent(new Event('challans-updated'));
+  return true;
 };
 
 // ============================================================================
@@ -2044,6 +2140,127 @@ export const updateRepairStatus = async (
     saveStockInventory(updated);
   }
 
+  return true;
+};
+
+export const deleteRepairRecord = async (ticketId: string): Promise<boolean> => {
+  if (!ticketId) return false;
+  try {
+    await fetch(`${getLocalDbEndpoint('repair_tickets')}?id=eq.${ticketId}`, {
+      method: 'DELETE',
+      signal: AbortSignal.timeout(2000)
+    });
+  } catch (e) {}
+
+  try {
+    await supabase.from('repair_tickets').delete().eq('id', ticketId);
+  } catch (e) {}
+
+  try {
+    const cached = localStorage.getItem('dhoot_repairs_inventory');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed)) {
+        const updated = parsed.filter(t => t.id !== ticketId);
+        localStorage.setItem('dhoot_repairs_inventory', JSON.stringify(updated));
+      }
+    }
+  } catch (e) {}
+
+  window.dispatchEvent(new Event('repairs-updated'));
+  return true;
+};
+
+export const deleteMultipleRepairRecords = async (ticketIds: string[]): Promise<number> => {
+  if (!ticketIds || ticketIds.length === 0) return 0;
+  try {
+    const param = `in.(${ticketIds.join(',')})`;
+    await fetch(`${getLocalDbEndpoint('repair_tickets')}?id=${encodeURIComponent(param)}`, {
+      method: 'DELETE',
+      signal: AbortSignal.timeout(3000)
+    });
+  } catch (e) {}
+
+  try {
+    await supabase.from('repair_tickets').delete().in('id', ticketIds);
+  } catch (e) {}
+
+  try {
+    const cached = localStorage.getItem('dhoot_repairs_inventory');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed)) {
+        const idSet = new Set(ticketIds);
+        const updated = parsed.filter(t => !idSet.has(t.id));
+        localStorage.setItem('dhoot_repairs_inventory', JSON.stringify(updated));
+      }
+    }
+  } catch (e) {}
+
+  window.dispatchEvent(new Event('repairs-updated'));
+  return ticketIds.length;
+};
+
+export const clearAllRepairRecords = async (): Promise<boolean> => {
+  try {
+    await fetch(getLocalDbEndpoint('repair_tickets'), { method: 'DELETE', signal: AbortSignal.timeout(3000) });
+  } catch (e) {}
+
+  try {
+    await supabase.from('repair_tickets').delete().neq('id', '__PERM_NON_EXISTENT__');
+  } catch (e) {}
+
+  localStorage.removeItem('dhoot_repairs_inventory');
+  window.dispatchEvent(new Event('repairs-updated'));
+  return true;
+};
+
+export const deleteTransferRecord = async (transferNoOrId: string): Promise<boolean> => {
+  deleteTransferFromStorage(transferNoOrId);
+  try {
+    await fetch(`${getLocalDbEndpoint('vehicle_transfers')}?or=(transfer_no.eq.${encodeURIComponent(transferNoOrId)},id.eq.${encodeURIComponent(transferNoOrId)})`, {
+      method: 'DELETE',
+      signal: AbortSignal.timeout(2000)
+    });
+  } catch (e) {}
+
+  try {
+    await supabase.from('vehicle_transfers').delete().or(`transfer_no.eq.${transferNoOrId},id.eq.${transferNoOrId}`);
+  } catch (e) {}
+
+  window.dispatchEvent(new Event('transfers-updated'));
+  return true;
+};
+
+export const deleteMultipleTransferRecords = async (transferNosOrIds: string[]): Promise<number> => {
+  deleteMultipleTransfersFromStorage(transferNosOrIds);
+  try {
+    const param = `in.(${transferNosOrIds.join(',')})`;
+    await fetch(`${getLocalDbEndpoint('vehicle_transfers')}?transfer_no=${encodeURIComponent(param)}`, {
+      method: 'DELETE',
+      signal: AbortSignal.timeout(3000)
+    });
+  } catch (e) {}
+
+  try {
+    await supabase.from('vehicle_transfers').delete().in('transfer_no', transferNosOrIds);
+  } catch (e) {}
+
+  window.dispatchEvent(new Event('transfers-updated'));
+  return transferNosOrIds.length;
+};
+
+export const clearAllTransferRecords = async (): Promise<boolean> => {
+  clearAllTransfersFromStorage();
+  try {
+    await fetch(getLocalDbEndpoint('vehicle_transfers'), { method: 'DELETE', signal: AbortSignal.timeout(3000) });
+  } catch (e) {}
+
+  try {
+    await supabase.from('vehicle_transfers').delete().neq('transfer_no', '__PERM_NON_EXISTENT__');
+  } catch (e) {}
+
+  window.dispatchEvent(new Event('transfers-updated'));
   return true;
 };
 

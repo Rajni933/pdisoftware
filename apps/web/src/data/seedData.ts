@@ -1453,8 +1453,27 @@ export const clearBookingsInventory = () => {
 };
 
 // ============================================================================
-// CHALLANS METHODS
+// CHALLANS METHODS & TOMBSTONES
 // ============================================================================
+
+export const getDeletedChallanNos = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem('dhoot_deleted_challan_nos');
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        return new Set(arr.map(r => String(r).toUpperCase().trim()));
+      }
+    }
+  } catch (e) {}
+  return new Set();
+};
+
+export const saveDeletedChallanNos = (challans: Set<string> | string[]) => {
+  const arr = Array.from(challans).map(r => String(r).toUpperCase().trim());
+  localStorage.setItem('dhoot_deleted_challan_nos', JSON.stringify(arr));
+};
+
 export const getChallansForBrand = (brandCode?: string) => {
   let list: any[] = [];
   try {
@@ -1469,23 +1488,112 @@ export const getChallansForBrand = (brandCode?: string) => {
     console.warn('Error reading challans from storage:', e);
   }
 
+  const deletedSet = getDeletedChallanNos();
+  const activeList = list.filter(c => 
+    !deletedSet.has((c.challan_no || '').toUpperCase().trim()) &&
+    !deletedSet.has((c.invoice_no || '').toUpperCase().trim()) &&
+    !deletedSet.has((c.id || '').toUpperCase().trim())
+  );
+
   if (!brandCode || brandCode === 'DHOOT-ALL' || brandCode === 'ALL') {
-    return list;
+    return activeList;
   }
   if (brandCode === 'DHOOT-TATA' || brandCode.toLowerCase().includes('tata')) {
-    const tataList = list.filter(isTataItem);
-    return tataList.length > 0 ? tataList : list;
+    const tataList = activeList.filter(isTataItem);
+    return tataList.length > 0 ? tataList : activeList;
   }
   if (brandCode === 'DHOOT-HYUNDAI' || brandCode.toLowerCase().includes('hyundai')) {
-    const hyunList = list.filter(isHyundaiItem);
-    return hyunList.length > 0 ? hyunList : list;
+    const hyunList = activeList.filter(isHyundaiItem);
+    return hyunList.length > 0 ? hyunList : activeList;
   }
-  return list;
+  return activeList;
 };
 
 export const saveChallansInventory = (challans: any[]) => {
+  const deletedSet = getDeletedChallanNos();
+  let modifiedDeleted = false;
+  if (Array.isArray(challans)) {
+    challans.forEach(c => {
+      const cNo = (c.challan_no || '').toUpperCase().trim();
+      if (cNo && deletedSet.has(cNo)) {
+        deletedSet.delete(cNo);
+        modifiedDeleted = true;
+      }
+    });
+  }
+  if (modifiedDeleted) {
+    saveDeletedChallanNos(deletedSet);
+  }
   localStorage.setItem('dhoot_challans_inventory', JSON.stringify(challans));
   window.dispatchEvent(new Event('challans-updated'));
+};
+
+export const deleteChallanFromStorage = (challanNoOrId: string): boolean => {
+  if (!challanNoOrId) return false;
+  const cleanKey = challanNoOrId.toUpperCase().trim();
+
+  const deletedSet = getDeletedChallanNos();
+  deletedSet.add(cleanKey);
+  saveDeletedChallanNos(deletedSet);
+
+  try {
+    const saved = localStorage.getItem('dhoot_challans_inventory');
+    if (saved) {
+      const parsed: any[] = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        const filtered = parsed.filter(c => 
+          (c.challan_no || '').toUpperCase().trim() !== cleanKey &&
+          (c.invoice_no || '').toUpperCase().trim() !== cleanKey &&
+          (c.id || '').toUpperCase().trim() !== cleanKey
+        );
+        localStorage.setItem('dhoot_challans_inventory', JSON.stringify(filtered));
+      }
+    }
+  } catch (e) {}
+
+  window.dispatchEvent(new Event('challans-updated'));
+  return true;
+};
+
+export const deleteMultipleChallansFromStorage = (challanNosOrIds: string[]): number => {
+  if (!challanNosOrIds || challanNosOrIds.length === 0) return 0;
+  const cleanKeys = challanNosOrIds.map(c => c.toUpperCase().trim()).filter(Boolean);
+  const cleanSet = new Set(cleanKeys);
+
+  const deletedSet = getDeletedChallanNos();
+  cleanKeys.forEach(k => deletedSet.add(k));
+  saveDeletedChallanNos(deletedSet);
+
+  try {
+    const saved = localStorage.getItem('dhoot_challans_inventory');
+    if (saved) {
+      const parsed: any[] = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        const filtered = parsed.filter(c => 
+          !cleanSet.has((c.challan_no || '').toUpperCase().trim()) &&
+          !cleanSet.has((c.invoice_no || '').toUpperCase().trim()) &&
+          !cleanSet.has((c.id || '').toUpperCase().trim())
+        );
+        localStorage.setItem('dhoot_challans_inventory', JSON.stringify(filtered));
+      }
+    }
+  } catch (e) {}
+
+  window.dispatchEvent(new Event('challans-updated'));
+  return cleanKeys.length;
+};
+
+export const clearAllChallansFromStorage = (): boolean => {
+  localStorage.removeItem('dhoot_challans_inventory');
+  window.dispatchEvent(new Event('challans-updated'));
+  return true;
+};
+
+export const resetChallansToDefaultInStorage = (): boolean => {
+  localStorage.removeItem('dhoot_challans_inventory');
+  localStorage.removeItem('dhoot_deleted_challan_nos');
+  window.dispatchEvent(new Event('challans-updated'));
+  return true;
 };
 
 export const clearChallansInventory = () => {
@@ -1557,6 +1665,36 @@ export const getVehicleTransfers = (): VehicleTransferItem[] => {
 export const saveVehicleTransfers = (transfers: VehicleTransferItem[]) => {
   localStorage.setItem('dhoot_vehicle_transfers', JSON.stringify(transfers));
   window.dispatchEvent(new Event('transfers-updated'));
+};
+
+export const deleteTransferFromStorage = (transferNoOrId: string): boolean => {
+  if (!transferNoOrId) return false;
+  const cleanKey = transferNoOrId.toUpperCase().trim();
+  const transfers = getVehicleTransfers();
+  const updated = transfers.filter(t => 
+    (t.transfer_no || '').toUpperCase().trim() !== cleanKey &&
+    (t.id || '').toUpperCase().trim() !== cleanKey
+  );
+  saveVehicleTransfers(updated);
+  return true;
+};
+
+export const deleteMultipleTransfersFromStorage = (transferNosOrIds: string[]): number => {
+  if (!transferNosOrIds || transferNosOrIds.length === 0) return 0;
+  const cleanSet = new Set(transferNosOrIds.map(t => t.toUpperCase().trim()));
+  const transfers = getVehicleTransfers();
+  const updated = transfers.filter(t => 
+    !cleanSet.has((t.transfer_no || '').toUpperCase().trim()) &&
+    !cleanSet.has((t.id || '').toUpperCase().trim())
+  );
+  saveVehicleTransfers(updated);
+  return transferNosOrIds.length;
+};
+
+export const clearAllTransfersFromStorage = (): boolean => {
+  localStorage.removeItem('dhoot_vehicle_transfers');
+  window.dispatchEvent(new Event('transfers-updated'));
+  return true;
 };
 
 export const getYardBays = (): YardBayItem[] => {
