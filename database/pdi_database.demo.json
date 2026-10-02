@@ -1190,14 +1190,213 @@
     }
   ],
   "vehicles": [],
-  "bookings": [],
-  "challan_invoices": [],
+  "bookings": [
+    {
+      "id": "bkg-001",
+      "receipt_no": "BK-TATA-801",
+      "order_no": "ORD-2026-001",
+      "customer_name": "Sanjay Deshmukh",
+      "mobile": "9822114401",
+      "brand": "TATA",
+      "model": "Tata Safari",
+      "variant": "Accomplished Plus 6S (Dark Edition)",
+      "color": "Oberon Black",
+      "booking_amount": 51000,
+      "payment_mode": "NEFT",
+      "status": "PENDING_ALLOCATION",
+      "booking_date": "2026-10-02T05:00:07.161Z",
+      "created_at": "2026-10-02T05:00:07.161Z"
+    },
+    {
+      "id": "bkg-002",
+      "receipt_no": "BK-TATA-802",
+      "order_no": "ORD-2026-002",
+      "customer_name": "Pooja Kulkarni",
+      "mobile": "9822114402",
+      "brand": "TATA",
+      "model": "Tata Curvv.ev",
+      "variant": "Empowered Plus 55",
+      "color": "Virtual Sunrise",
+      "booking_amount": 25000,
+      "payment_mode": "UPI",
+      "status": "VIN_ALLOCATED",
+      "allocated_vin_no": "MAT612345S9988773",
+      "booking_date": "2026-10-02T05:00:07.161Z",
+      "created_at": "2026-10-02T05:00:07.161Z"
+    },
+    {
+      "id": "bkg-003",
+      "receipt_no": "BK-HYUN-803",
+      "order_no": "ORD-2026-003",
+      "customer_name": "Rohan Mehta",
+      "mobile": "9822114403",
+      "brand": "HYUNDAI",
+      "model": "Hyundai Creta",
+      "variant": "SX(O) Turbo DCT",
+      "color": "Titan Grey",
+      "booking_amount": 50000,
+      "payment_mode": "NetBanking",
+      "status": "PENDING_ALLOCATION",
+      "booking_date": "2026-10-02T05:00:07.161Z",
+      "created_at": "2026-10-02T05:00:07.161Z"
+    }
+  ],
+  "challan_invoices": [
+    {
+      "id": "chl-001",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "branch_id": "33333333-3333-3333-3333-333333333331",
+      "booking_id": "bkg-002",
+      "challan_no": "CHL-2026-0091",
+      "invoice_no": "INV-TATA-2026-0412",
+      "challan_type": "TAX_INVOICE_DELIVERY",
+      "vin_no": "MAT612345S9988773",
+      "customer_name": "Pooja Kulkarni",
+      "mobile_no": "9822114402",
+      "city": "Pune",
+      "model": "Tata Curvv.ev",
+      "variant": "Empowered Plus 55",
+      "colour": "Virtual Sunrise",
+      "sale_consultant": "Anita Joshi",
+      "team_leader": "Amit Shinde",
+      "financier_name": "Tata Capital Financial Services",
+      "ex_showroom": 1749000,
+      "corporate": 15000,
+      "exchange": 35000,
+      "discount": 20000,
+      "net": 1679000,
+      "challan_date": "2026-09-23",
+      "delivery_date": "2026-09-24",
+      "created_at": "2026-09-23T10:04:58.253Z"
+    },
+    {
+      "id": "chl-002",
+      "organization_id": "11111111-1111-1111-1111-111111111111",
+      "branch_id": "33333333-3333-3333-3333-333333333331",
+      "booking_id": "bkg-004",
+      "challan_no": "CHL-2026-0092",
+      "invoice_no": "INV-TATA-2026-0413",
+      "challan_type": "DELIVERY_GATE_PASS",
+      "vin_no": "MAT612345S9988774",
+      "customer_name": "Deepak Joshi",
+      "mobile_no": "9822114404",
+      "city": "Pune",
+      "model": "Tata Nexon",
+      "variant": "Fearless Plus S",
+      "colour": "Daytona Grey",
+      "sale_consultant": "Anita Joshi",
+      "team_leader": "Amit Shinde",
+      "financier_name": "ICICI Bank Car Loans",
+      "ex_showroom": 1399000,
+      "corporate": 10000,
+      "exchange": 25000,
+      "discount": 15000,
+      "net": 1349000,
+      "challan_date": "2026-09-23",
+      "delivery_date": "2026-09-23",
+      "created_at": "2026-09-23T10:04:58.253Z"
+    }
+  ],
   "repair_tickets": [],
-  "pdi_certificates": [],
+  "pdi_certificates": [
+    {
+      "id": "cert-001",
+      "certificate_number": "CERT-TATA-88773",
+      "vehicle_id": "veh-003",
+      "vin": "MAT612345S9988773",
+      "branch_id": "33333333-3333-3333-3333-333333333331",
+      "issued_by": "a0000000-0000-0000-0000-000000000003",
+      "verification_qr_token": "QR-CRV-88773-VERIFIED",
+      "issued_at": "2026-09-22T10:04:58.253Z"
+    },
+    {
+      "id": "cert-002",
+      "certificate_number": "CERT-TATA-88774",
+      "vehicle_id": "veh-004",
+      "vin": "MAT612345S9988774",
+      "branch_id": "33333333-3333-3333-3333-333333333331",
+      "issued_by": "a0000000-0000-0000-0000-000000000003",
+      "verification_qr_token": "QR-NEX-88774-VERIFIED",
+      "issued_at": "2026-09-21T10:04:58.253Z"
+    }
+  ],
   "qa_reviews": [],
   "pdi_sessions": [],
   "yard_inward_entries": [],
-  "vehicle_transfers": [],
+  "vehicle_transfers": [
+    {
+      "id": "idt-001",
+      "transfer_no": "IDT-2026-001",
+      "vin": "MAT612345S9988772",
+      "model": "Tata Harrier",
+      "variant": "Fearless Plus Dark",
+      "color": "Oberon Black",
+      "from_stockyard_id": "44444444-4444-4444-4444-444444444441",
+      "from_stockyard_name": "Pune Central Stockyard",
+      "to_stockyard_id": "44444444-4444-4444-4444-444444444444",
+      "to_stockyard_name": "Jodhpur (Basni)",
+      "from_bay": "Bay A-2",
+      "to_bay": "",
+      "transfer_type": "INTER_DEALER",
+      "reason": "Customer Urgent Booking Allocation at Jodhpur Branch",
+      "transporter": "Rajputana Logistics",
+      "driver_name": "Mukesh Sharma",
+      "driver_phone": "9829012345",
+      "carrier_reg_no": "RJ-19-GA-4501",
+      "status": "PENDING_APPROVAL",
+      "level_1_status": "PENDING",
+      "level_1_approved_by": null,
+      "level_1_approved_at": null,
+      "level_2_status": "PENDING",
+      "level_2_approved_by": null,
+      "level_2_approved_at": null,
+      "level_3_status": "PENDING",
+      "level_3_approved_by": null,
+      "level_3_approved_at": null,
+      "gatepass_no": "",
+      "gatepass_issued_at": null,
+      "dispatched_at": null,
+      "received_at": null,
+      "created_by": "Suresh Patil (Yard Supervisor)",
+      "created_at": "2026-09-27T04:15:00.000Z"
+    },
+    {
+      "id": "idt-002",
+      "transfer_no": "IDT-2026-002",
+      "vin": "MAT612345S9988771",
+      "model": "Tata Safari",
+      "variant": "Accomplished Plus 6S (Dark Edition)",
+      "color": "Oberon Black",
+      "from_stockyard_id": "44444444-4444-4444-4444-444444444442",
+      "from_stockyard_name": "Chakan Inward Logistics Yard",
+      "to_stockyard_id": "44444444-4444-4444-4444-444444444441",
+      "to_stockyard_name": "Pune Central Stockyard",
+      "from_bay": "Bay C-1",
+      "to_bay": "Bay A-1",
+      "transfer_type": "INTER_YARD",
+      "reason": "Stock consolidation from Factory Inward Yard to Central Yard",
+      "transporter": "FastTrack Fleet Services",
+      "driver_name": "Ramesh Pawar",
+      "driver_phone": "9822119988",
+      "carrier_reg_no": "MH-12-PQ-8899",
+      "status": "DISPATCHED_IN_TRANSIT",
+      "level_1_status": "APPROVED",
+      "level_1_approved_by": "Amit Shinde (Yard Supervisor)",
+      "level_1_approved_at": "2026-09-26T18:00:00.000Z",
+      "level_2_status": "APPROVED",
+      "level_2_approved_by": "Rajesh Dhoot (Branch Manager)",
+      "level_2_approved_at": "2026-09-26T20:00:00.000Z",
+      "level_3_status": "APPROVED",
+      "level_3_approved_by": "System Administrator (GM)",
+      "level_3_approved_at": "2026-09-26T21:00:00.000Z",
+      "gatepass_no": "GP-2026-0881",
+      "gatepass_issued_at": "2026-09-26T21:00:00.000Z",
+      "dispatched_at": "2026-09-26T22:30:00.000Z",
+      "received_at": null,
+      "created_by": "Amit Shinde (Yard Supervisor)",
+      "created_at": "2026-09-26T16:00:00.000Z"
+    }
+  ],
   "yard_bays": [
     {
       "id": "bay-pune-a1",
@@ -1205,8 +1404,8 @@
       "stockyard_name": "Pune Central Stockyard",
       "bay_code": "Bay A-1",
       "zone": "Zone A — Inward Staging",
-      "status": "VACANT",
-      "current_vin": null
+      "status": "OCCUPIED",
+      "current_vin": "MAT612345S9988771"
     },
     {
       "id": "bay-pune-a2",
@@ -1214,8 +1413,8 @@
       "stockyard_name": "Pune Central Stockyard",
       "bay_code": "Bay A-2",
       "zone": "Zone A — Inward Staging",
-      "status": "VACANT",
-      "current_vin": null
+      "status": "OCCUPIED",
+      "current_vin": "MAT612345S9988772"
     },
     {
       "id": "bay-pune-a3",
@@ -1223,8 +1422,8 @@
       "stockyard_name": "Pune Central Stockyard",
       "bay_code": "Bay A-3",
       "zone": "Zone A — Inward Staging",
-      "status": "VACANT",
-      "current_vin": null
+      "status": "OCCUPIED",
+      "current_vin": "MAT612345S9988774"
     },
     {
       "id": "bay-pune-a4",
@@ -1286,8 +1485,8 @@
       "stockyard_name": "Chakan Inward Logistics Yard",
       "bay_code": "Bay C-4",
       "zone": "Zone C — Storage",
-      "status": "VACANT",
-      "current_vin": null
+      "status": "OCCUPIED",
+      "current_vin": "MAT612345S9988773"
     },
     {
       "id": "bay-hadapsar-h1",
@@ -1295,8 +1494,8 @@
       "stockyard_name": "Hadapsar Pre-Delivery Hub",
       "bay_code": "Bay H-1",
       "zone": "Zone H — Hyundai Delivery",
-      "status": "VACANT",
-      "current_vin": null
+      "status": "OCCUPIED",
+      "current_vin": "MAL612345S9988775"
     },
     {
       "id": "bay-hadapsar-h2",
@@ -1304,8 +1503,8 @@
       "stockyard_name": "Hadapsar Pre-Delivery Hub",
       "bay_code": "Bay H-2",
       "zone": "Zone H — Hyundai Delivery",
-      "status": "VACANT",
-      "current_vin": null
+      "status": "OCCUPIED",
+      "current_vin": "MAL612345S9988776"
     }
   ]
 }

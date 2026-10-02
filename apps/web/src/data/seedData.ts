@@ -1,6 +1,22 @@
 import { supabase } from '../lib/supabase';
 import initialStockVehicles from './initialVehicles.json';
 
+// Auto-purge old demo records from client browser localStorage on fresh launch
+if (typeof window !== 'undefined') {
+  const PURGE_KEY = 'autoprime_clean_slate_2026_01';
+  if (!localStorage.getItem(PURGE_KEY)) {
+    localStorage.removeItem('dhoot_stock_inventory');
+    localStorage.removeItem('dhoot_bookings_inventory');
+    localStorage.removeItem('dhoot_challans_inventory');
+    localStorage.removeItem('dhoot_repairs_inventory');
+    localStorage.removeItem('dhoot_vehicle_transfers');
+    localStorage.removeItem('dhoot_deleted_vins');
+    localStorage.removeItem('dhoot_deleted_booking_receipts');
+    localStorage.removeItem('dhoot_deleted_challan_nos');
+    localStorage.setItem(PURGE_KEY, 'true');
+  }
+}
+
 export const TATA_ORG_ID = '11111111-1111-1111-1111-111111111111';
 export const HYUNDAI_ORG_ID = '11111111-1111-1111-1111-111111111112';
 
@@ -1763,14 +1779,24 @@ export const syncWithSupabase = async () => {
     // 2. Fetch Live Vehicles from Database / Worker API
     try {
       const { data: dbVehicles } = await supabase.from('vehicles').select('*');
-      if (dbVehicles && Array.isArray(dbVehicles) && dbVehicles.length > 0) {
-        saveStockInventory(dbVehicles);
+      if (Array.isArray(dbVehicles)) {
+        if (dbVehicles.length > 0) {
+          saveStockInventory(dbVehicles);
+        } else {
+          localStorage.removeItem('dhoot_stock_inventory');
+          window.dispatchEvent(new Event('stock-updated'));
+        }
       } else {
         const res = await fetch(`${API_BASE}/api/v1/stock`);
         if (res.ok) {
           const json = await res.json();
-          if (json.data && Array.isArray(json.data) && json.data.length > 0) {
-            saveStockInventory(json.data);
+          if (json.data && Array.isArray(json.data)) {
+            if (json.data.length > 0) {
+              saveStockInventory(json.data);
+            } else {
+              localStorage.removeItem('dhoot_stock_inventory');
+              window.dispatchEvent(new Event('stock-updated'));
+            }
           }
         }
       }
@@ -1810,15 +1836,24 @@ export const syncWithSupabase = async () => {
     // 5. Fetch Vehicle Transfers & Yard Bays
     try {
       const { data: dbTransfers } = await supabase.from('vehicle_transfers').select('*');
-      if (dbTransfers && Array.isArray(dbTransfers) && dbTransfers.length > 0) {
+      if (Array.isArray(dbTransfers)) {
         saveVehicleTransfers(dbTransfers);
       }
     } catch (e) {}
 
     try {
       const { data: dbBays } = await supabase.from('yard_bays').select('*');
-      if (dbBays && Array.isArray(dbBays) && dbBays.length > 0) {
+      if (Array.isArray(dbBays) && dbBays.length > 0) {
         saveYardBays(dbBays);
+      }
+    } catch (e) {}
+
+    // 6. Fetch Live Repair Tickets
+    try {
+      const { data: dbRepairs } = await supabase.from('repair_tickets').select('*');
+      if (Array.isArray(dbRepairs)) {
+        localStorage.setItem('dhoot_repairs_inventory', JSON.stringify(dbRepairs));
+        window.dispatchEvent(new Event('repairs-updated'));
       }
     } catch (e) {}
 

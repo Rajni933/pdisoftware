@@ -520,8 +520,8 @@ function initDb() {
     master_insurance_providers: INITIAL_INSURANCE,
     master_designations: [],
     master_nature_types: [],
-    vehicles: INITIAL_VEHICLES,
-    bookings: INITIAL_BOOKINGS,
+    vehicles: [],
+    bookings: [],
     challan_invoices: [],
     repair_tickets: [],
     qa_reviews: [],
@@ -530,20 +530,20 @@ function initDb() {
     checklist_items: [],
     checklist_categories: [],
     yard_inward_entries: [],
-    vehicle_transfers: INITIAL_TRANSFERS,
+    vehicle_transfers: [],
     yard_bays: []
   };
 
   let modified = false;
   for (const [table, defaultRows] of Object.entries(defaultTables)) {
-    if (!db[table] || !Array.isArray(db[table]) || db[table].length === 0) {
+    if (!db[table] || !Array.isArray(db[table])) {
       db[table] = defaultRows;
       modified = true;
     }
   }
 
   // Ensure default staff users exist even if users table was empty
-  if (db.users.length === 0) {
+  if (!db.users || !Array.isArray(db.users) || db.users.length === 0) {
     db.users = INITIAL_USERS;
     modified = true;
   }
